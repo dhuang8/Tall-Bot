@@ -44,7 +44,7 @@ Responds with the time converted to other time zones
 Responds with `I think its hilarious u kids talking shit about `...
 #### whens...
 Responds with `never`
-#### wat
+#### what/wat
 Responds with the message before but in all caps
 #### jonio
 Responds with my website that parses joniosan's Twitch archive

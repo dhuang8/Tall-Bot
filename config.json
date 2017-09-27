@@ -1,0 +1,12 @@
+{
+    "adminID": "",
+    "botChannelID": "",
+    "errorChannelID": "",
+    "secretChannelID": "",
+    "token": "",
+    "botlink": "",
+    "api": {
+        "youtube": "",
+        "darksky": ""
+    }
+}

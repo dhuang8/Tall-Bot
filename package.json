@@ -1,0 +1,24 @@
+{
+  "name": "personaldiscordbot",
+  "version": "2.0.0",
+  "main": "discordbot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bufferutil": "^3.0.2",
+    "cheerio": "^1.0.0-rc.2",
+    "discord.js": "^11.2.1",
+    "erlpack": "github:hammerandchisel/erlpack",
+    "libsodium-wrappers": "^0.5.2",
+    "moment-timezone": "^0.5.13",
+    "node-opus": "^0.2.6",
+    "request": "^2.82.0",
+    "uws": "^0.14.5",
+    "ytdl-core": "^0.7.20"
+  },
+  "devDependencies": {},
+  "description": ""
+}

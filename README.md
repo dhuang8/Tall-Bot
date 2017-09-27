@@ -1,6 +1,8 @@
 # Personal Discord Bot
 Updated to discord.js 11.2.1.
+
 [Test the bot](https://discord.gg/YpjRNZT)
+
 [Invite the bot to a server](https://discordapp.com/oauth2/authorize?client_id=180762874593935360&scope=bot&permissions=4294967295)
 
 ## Commands

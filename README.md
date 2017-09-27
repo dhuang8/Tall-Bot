@@ -27,17 +27,17 @@ Quotes a message based on ID or number of messages before the last message
 ### .eval (JS code)
 Runs JavaScript code. Admin only.
 ### .weather (location)
-Returns the current weather and the forecast for the next 7 days
+Returns the current weather and the forecast for the next 7 days at location term
 ### .pt (search_term) [online] [num_results]
 Searches the cheapest results from poe.trade 
 ### .roll (max_roll)
 Rolls a `max_roll` sided die
 ### .roll (#d#)
-Rolls DnD style dice
-### (d:dd am est)
+Rolls DnD style dice and adds them
+### (0:00 am est)
 Responds with the time converted to other time zones
 ### fuck (you|u) (something)
-Responds with `I think its hilarious u kids talking shit about **something**`...
+Responds with `I think its hilarious u kids talking shit about `...
 ### whens (something)
 Responds with `never`
 ### wat

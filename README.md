@@ -1,5 +1,5 @@
 # Personal Discord Bot
-Updated to discord.js 11.2.1.
+Updated for discord.js 11.2.1.
 
 [Test the bot](https://discord.gg/YpjRNZT)
 

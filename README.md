@@ -55,7 +55,7 @@ Returns a random meme message when a message contains `meme` anywhere
 ### botlink
 Returns the link to invite the bot to other servers
 ### dat boi
-Responds with`???????????? o *** waddup ?? here ?? come dat b?i???? right????th ?? ere`
+Responds with some long dat boi response
 ### animal
 Uploads a random cute animal gif
 ### setpoeleague

@@ -41,7 +41,7 @@ Rolls DnD style dice and adds them
 #### (0:00 am est)
 Responds with the time converted to other time zones
 #### fuck (you|u) (something)
-Responds with `I think its hilarious u kids talking shit about `...
+Responds with `I think its hilarious u kids talking shit about ...`
 #### whens...
 Responds with `never`
 #### what/wat
@@ -69,4 +69,4 @@ Stops currently played music
 
 ## To do
 Port the rest of the code over: Mainly Overwatch charts and Spotify.
-Async and await to improve readability
+Async and await maybe

@@ -40,32 +40,22 @@ Rolls a `max_roll` sided die
 Rolls DnD style dice and adds them
 #### (0:00 am est)
 Responds with the time converted to other time zones
-#### fuck (you|u) (something)
-Responds with `I think its hilarious u kids talking shit about ...`
-#### whens...
-Responds with `never`
-#### what/wat
-Responds with the message before but in all caps
 #### jonio
 Responds with my website that parses joniosan's Twitch archive
 #### .addmeme (copy_pasta)
-Adds another message to meme when someone says `meme`
+Adds another message to the meme list
 #### .searchmeme (search_term)
 Searches meme messages
 #### meme (num)
 Returns a specific meme message
-#### meme
-Returns a random meme message when a message contains `meme` anywhere
 #### botlink
 Returns the link to invite the bot to other servers
-#### dat boi
-Responds with some long dat boi response
-#### animal
-Uploads a random cute animal gif
 #### setpoeleague
 Sets or resets the user's Path of Exile league used to search poe.trade
 #### stop
 Stops currently played music
+#### other hidden commands
+Good luck finding them
 
 ## To do
 Port the rest of the code over: Mainly Overwatch charts and Spotify.

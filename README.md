@@ -10,8 +10,10 @@ Updated for discord.js 11.2.1.
 Replies with "pong"
 #### time
 Responds with the current time in several time zones
-#### .sv (search term)
+#### .sv (search_term)
 Searches the Shadowverse card database and returns with the card art and stats
+#### .ygo (search_term)
+Searches Yu-Gi-Oh! trading card database and returns with card text and price
 #### .remindme ("message") (date)
 Sets a reminder and responds with the id
 #### .cancelremindme (id)

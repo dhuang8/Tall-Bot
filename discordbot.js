@@ -22,6 +22,8 @@ const bot = new Discord.Client();
 
 let timeouts = [];
 
+var serverVol = {};
+
 let copypasta = [];
 fs.readFile("../copypasta.txt", 'utf8', function (e, data) {
     if (e) {
@@ -61,7 +63,7 @@ CustomCommand.prototype.onMessage = function (message) {
 }
 
 //start richembeds with a random color
-let save = Discord.RichEmbed;
+let save = Discord.MessageEmbed;
 Discord.RichEmbed = function (data) {
     let rich = new save(data);
     return rich.setColor("RANDOM"); //parseInt(Math.random() * 16777216));
@@ -194,7 +196,7 @@ function richQuote(message) {
         let rich = new Discord.RichEmbed();
         let username;
         if (message.member !== null && message.member.nickname !== null) {
-            username = `${message.member.nickname}(${message.author.username}#${message.author.discriminator})`
+            username = `${message.member.nickname} (${message.author.username}#${message.author.discriminator})`
         } else username = `${message.author.username}#${message.author.discriminator}`
         rich.setAuthor(username, message.author.displayAvatarURL)
         rich.setDescription(message.content);
@@ -205,52 +207,56 @@ function richQuote(message) {
     }
 }
 
+
+
 function playSound(channel, URL, setvolume, setstart, setduration) {
     try {
-        setvolume = setvolume || .3;
+        setvolume = setvolume || serverVol[channel.guild] / 100 || .2;
         setstart = setstart || 0;
         //console.log(channel.guild.voiceConnection);
 
-        if (channel.guild.voiceConnection != null && channel.guild.voiceConnection.player != null && channel.guild.voiceConnection.player.streams != null) {
+        let leave = function () {
+            channel.leave();
+        }
+        if (channel.guild.voiceConnection != null && channel.guild.voiceConnection.player != null) {
+            //if in the same voice channel
             if (channel.guild.voiceConnection.channel.equals(channel)) {
-                //console.log(111)
-                //console.log(channel.guild.voiceConnection.player.streams.first());
-                //console.log(channel.guild.voiceConnection.player.prism.transcoder);
-                channel.guild.voiceConnection.player.streams.first().dispatcher.removeAllListeners('end');
-                channel.guild.voiceConnection.player.streams.first().dispatcher.end();
-
-                const dispatcher = channel.guild.voiceConnection.playStream(URL, {
-                    seek: setstart,
-                    volume: setvolume
-                });
-                dispatcher.on('end', () => {
-                    channel.leave();
-                });
+                let thisDispatch = channel.guild.voiceConnection.dispatcher;
+                //if playing sound
+                if (thisDispatch) {
+                    thisDispatch.removeAllListeners('end');
+                    thisDispatch.on('end', () => {
+                        const dispatcher = channel.guild.voiceConnection.playStream(URL, {
+                            seek: setstart,
+                            volume: setvolume
+                        }).on('end', leave);
+                    });
+                    thisDispatch.end();
+                    //sitting in channel without playing sound
+                } else {
+                    channel.guild.voiceConnection.playStream(URL, {
+                        seek: setstart,
+                        volume: setvolume
+                    }).on('end', leave);
+                }
+                //if in another voice channel
             } else {
-                //console.log(222)
-                channel.guild.voiceConnection.player.streams.first().dispatcher.removeAllListeners('end');
-                channel.guild.voiceConnection.player.streams.first().dispatcher.end();
-
+                channel.guild.voiceConnection.dispatcher.removeAllListeners('end');
+                channel.guild.voiceConnection.dispatcher.end();
                 channel.join().then(connnection => {
                     const dispatcher = connnection.playStream(URL, {
                         seek: setstart,
                         volume: setvolume
-                    });
-                    dispatcher.once('end', () => {
-                        channel.leave();
-                    });
+                    }).on('end', leave);
                 })
             }
+            //not in a voice channel
         } else {
-            //console.log(333)
             channel.join().then(connnection => {
                 const dispatcher = connnection.playStream(URL, {
                     seek: setstart,
                     volume: setvolume
-                });
-                dispatcher.once('end', () => {
-                    channel.leave();
-                });
+                }).on('end', leave);
             })
         }
     } catch (e) {
@@ -262,7 +268,7 @@ function combineMessAndProm(lm, rp) {
     return lm.then((loadingMessage) => {
         rp.then((args) => {
             console.log(args);
-            loadingMessage.edit.apply(loadingMessage,args).catch(err);
+            loadingMessage.edit.apply(loadingMessage, args).catch(err);
         }).catch((error) => {
             err(error, loadingMessage, "`Error`");
         })
@@ -313,10 +319,20 @@ commandList.push((message) => {
         let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         //msg += fullName;
         let inputTime = moment();
-        let msg = fullZones.map((v) => {
-            inputTime.tz(v).format('ddd, MMM Do YYYY, h:mma z')
+        let msg = inputTime.valueOf() + "\n";
+        msg += fullZones.map((v) => {
+            return inputTime.tz(v).format('ddd, MMM Do YYYY, h:mma z')
         }).join("\n");
         msg = "`" + msg + "`";
+        message.channel.send(msg).catch(err);
+        return true;
+    }
+});
+//k
+commandList.push((message) => {
+    let a = /^k$/i.exec(message.content);
+    if (a) {
+        let msg = `You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside`;
         message.channel.send(msg).catch(err);
         return true;
     }
@@ -333,7 +349,6 @@ commandList.push((message) => {
             }
         }).then((body) => {
             let $ = cheerio.load(body);
-            console.log($);
 
             let list = [];
 
@@ -376,7 +391,7 @@ commandList.push((message) => {
                     return `${i + 1}. ${v[0]}`
                 }).join("\n") + "```";
                 //message.channel.sendMessage(msg).catch(err);
-                
+
                 extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
                     var num = parseInt(message.content) - 1;
                     if (num < list.length && num > -1) {
@@ -411,7 +426,7 @@ commandList.push((message) => {
             let rich = Discord.RichEmbed();
             rich.setTitle(reminder);
             rich.setDescription("Setting reminder to");
-            rich.setTimestamp(time);
+            rich.setTimestamp(time.toDate());
             let timeoutid = timeouts.length;
             timeouts[timeoutid] = bot.setTimeout(() => {
                 message.reply(`reminder: ${reminder}`, {
@@ -484,6 +499,142 @@ commandList.push((message) => {
             bot.clearTimeout(timeouts[a[1]]);
             return true;
         }
+    }
+})
+//.ygo (card_name)
+commandList.push((message) => {
+    let a = /^\.ygo (.+)$/i.exec(message.content)
+    if (a) {
+        requestpromise("https://www.ygohub.com/api/all_cards").then((data1) => {
+            try {
+                data1 = JSON.parse(data1)
+            } catch (e) {
+                err(e);
+            }
+            if (data1.status == "success") {
+                let results = [];
+
+                function card(name) {
+                    return requestpromise(`https://www.ygohub.com/api/card_info?name=${encodeURIComponent(name)}`).then((data) => {
+                        try {
+                            data = JSON.parse(data)
+                            if (data.status == "success") {
+                                let rich = new Discord.RichEmbed();
+                                rich.setImage(data.card.image_path)
+                                rich.setTitle(name)
+                                rich.setURL(`http://yugioh.wikia.com/wiki/${encodeURIComponent(name)}`)
+                                if (data.card.pendulum_text) {
+                                    let pendulum_text = "**"
+                                    if (data.card.pendulum_left) pendulum_text += data.card.pendulum_left + ":arrow_backward:"
+                                    if (data.card.pendulum_right) pendulum_text += "  " + ":arrow_forward:" + data.card.pendulum_right
+                                    pendulum_text += "**\n";
+                                    pendulum_text += data.card.pendulum_text;
+                                    rich.addField("Pendulum", pendulum_text);
+                                }
+                                let text = "";
+                                if (data.card.property) {
+                                    text += "**" + data.card.property + "**";
+                                    text += "\n";
+                                }
+                                if (data.card.attribute) {
+                                    text += data.card.attribute;
+                                    text += "\n";
+                                }
+                                if (data.card.stars) {
+                                    text += data.card.stars + ":star: ".repeat(data.card.stars)
+                                    text += "\n";
+                                }
+                                if (data.card.link_markers) {
+                                    let ascii_arrows = {
+                                        Top: ":arrow_up:",
+                                        Bottom: ":arrow_down:",
+                                        Left: ":arrow_left:",
+                                        Right: ":arrow_right:",
+                                        "Top-Left": ":arrow_upper_left:",
+                                        "Top-Right": ":arrow_upper_right:",
+                                        "Bottom-Left": ":arrow_lower_left:",
+                                        "Bottom-Right": ":arrow_lower_right:"
+                                    };
+                                    for (let i = 0; i < data.card.link_markers.length; i++) {
+                                        text += ascii_arrows[data.card.link_markers[i]] + " ";
+                                    }
+                                    text += "\n";
+                                }
+                                if (data.card.species) {
+                                    if (data.card.monster_types) {
+                                        data.card.monster_types.unshift(data.card.species);
+                                        text += "**[" + data.card.monster_types.join("/") + "]**"
+                                    } else {
+                                        text += data.card.species
+                                    }
+                                    text += "\n";
+                                }
+                                if (data.card.materials) {
+                                    text += data.card.materials;
+                                    text += "\n";
+                                }
+                                text += data.card.text;
+                                let stats = "";
+                                if (data.card.attack) {
+                                    stats += "ATK/" + data.card.attack
+                                }
+                                if (data.card.defense) {
+                                    stats += " DEF/" + data.card.defense
+                                }
+                                if (data.card.link_number) {
+                                    stats += " LINK – " + data.card.link_number
+                                }
+                                if (stats != "") text += "\n**" + stats + "**";
+                                rich.addField(data.card.type, text);
+                                if (data.card.legality && data.card.legality.TCG && data.card.legality.TCG.Advanced) rich.addField("Status", data.card.legality.TCG.Advanced);
+                                let price_text = "";
+                                if (data.card.price_avg) price_text += "**Average: **" + data.card.price_avg + "\n";
+                                if (data.card.price_low) price_text += "**Low: **" + data.card.price_low + "\n";
+                                if (data.card.price_high) price_text += "**High: **" + data.card.price_high + "\n";
+                                if (price_text != "") rich.addField("Price", price_text);
+                                return message.channel.send("", {
+                                    embed: rich
+                                });
+                            }
+                            return message.channel.send("`Error`");
+                        } catch (e) {
+                            err(e);
+                        }
+                    })
+                }
+
+                for (let i = 0; i < data1.cards.length; i++) {
+                    let search = a[1].toLowerCase();
+                    if (data1.cards[i].toLowerCase().indexOf(search) > -1) {
+                        results.push(data1.cards[i]);
+                        if (results.length > 11) break;
+                    }
+                }
+                if (results.length < 1) {
+                    message.channel.send("`No results.`").catch(err);
+                } else if (results.length == 1) {
+                    card(results[0])
+                } else {
+                    let msg = "```" + results.map((v, i) => {
+                        return `${i + 1}. ${v}`
+                    }).join("\n") + "```";
+                    //message.channel.sendMessage(msg).catch(err);
+
+                    extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                        var num = parseInt(message.content) - 1;
+                        if (num < results.length && num > -1) {
+                            card(results[num])
+                            return true;
+                        }
+                        return false;
+                    })
+                    message.channel.send(msg);
+                }
+            } else {
+                message.channel.send("`Could not load card list`");
+            }
+        })
+        return true;
     }
 })
 //.gw2api key (key)
@@ -640,114 +791,148 @@ commandList.push((message) => {
         let from = a[2].toUpperCase();
         let to = "USD";
         if (a[3]) to = a[3].toUpperCase();
-        let chartpromise = requestpromise(`https://min-api.cryptocompare.com/data/histominute?fsym=${encodeURIComponent(from)}&tsym=${encodeURIComponent(to)}&limit=2000&aggregate=10`)
-            .then(body => {
-                try {
-                    let res = JSON.parse(body);
-                    if (res.Response && res.Response === "Error") {
-                        return 
-                    }
-                    var EXTENDED_MAP =
-                        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
-                    var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
+        let chartpromise = requestpromise(`https://min-api.cryptocompare.com/data/histominute?fsym=${encodeURIComponent(from)}&tsym=${encodeURIComponent(to)}&limit=144&aggregate=10`).then(body => {
+            try {
+                let res = JSON.parse(body);
+                if (res.Response && res.Response === "Error") {
+                    return
+                }
+                var EXTENDED_MAP =
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
+                var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
 
-                    function extendedEncode(arrVals, minVal, maxVal) {
-                        var chartData = '';
+                function extendedEncode(arrVals, minVal, maxVal) {
+                    var chartData = '';
 
-                        for (let i = 0, len = arrVals.length; i < len; i++) {
-                            // In case the array vals were translated to strings.
-                            var numericVal = new Number(arrVals[i]);
-                            // Scale the value to maxVal.
-                            var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
-                                EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
+                    for (let i = 0, len = arrVals.length; i < len; i++) {
+                        // In case the array vals were translated to strings.
+                        var numericVal = new Number(arrVals[i]);
+                        // Scale the value to maxVal.
+                        var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
+                            EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
 
-                            if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
-                                chartData += "..";
-                            } else if (scaledVal < 0) {
-                                chartData += '__';
-                            } else {
-                                // Calculate first and second digits and add them to the output.
-                                var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
-                                var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
-                                chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
-                            }
-                        }
-
-                        return chartData;
-                    }
-
-
-                    let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=000000"
-                    let low = res.Data[0].close;
-                    let high = res.Data[0].close;
-                    let x_data = [];
-                    let y_data = [];
-                    let curDay = moment.tz(res.Data[0].time * 1000, "America/New_York").day();
-                    let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                    let day_string = [];
-                    let time_string = [];
-                    for (let i = 0; i < res.Data.length; i++) {
-                        if (res.Data[i].close < low) low = res.Data[i].close;
-                        if (res.Data[i].close > high) high = res.Data[i].close;
-                        x_data.push(res.Data[i].time);
-                        y_data.push(res.Data[i].close);
-                        let day = moment.tz(res.Data[i].time * 1000, "America/New_York").day();
-                        if (day != curDay) {
-                            curDay = day;
-                            day_string.push(weekdays[day]);
-                            time_string.push(res.Data[i].time);
-                            //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
+                        if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
+                            chartData += "..";
+                        } else if (scaledVal < 0) {
+                            chartData += '__';
+                        } else {
+                            // Calculate first and second digits and add them to the output.
+                            var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
+                            var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
+                            chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
                         }
                     }
-                    //console.log(x_data,res.Data[0].time,res.Data[res.Data.length - 1].time)
-                    chart_url += "&chd=e:" + extendedEncode(x_data, res.Data[0].time, res.Data[res.Data.length - 1].time) + "," + extendedEncode(y_data, low, high);
-                    chart_url += "&chxr=0," + res.Data[0].time + "," + res.Data[res.Data.length - 1].time + "|1," + low + "," + high;
-                    chart_url += "&chxl=0:|" + day_string.join("|");
-                    chart_url += "&chxp=0," + time_string.join(",");
-                    //chart_url += "&chds=" + res.Data[0].time + "," + res.Data[res.Data.length - 1].time + "," + low + "," + high;
-                    return chart_url;
-                    //console.log(chart_url)
-                    //let rich = new Discord.RichEmbed();
-                    //rich.setImage(chart_url);
-                    //message.channel.send(chart_url,{embed:rich}).catch(err);
-                } catch (e) {
-                    err(e);
+
+                    return chartData;
                 }
-            })
 
 
-        requestpromise(`https://min-api.cryptocompare.com/data/price?fsym=${encodeURIComponent(from)}&tsyms=${encodeURIComponent(to)}`)
-            .then(body => {
-                try {
-                    let res = JSON.parse(body);
-                    if (res.Response && res.Response === "Error") {
-                        let msg = res.Message;
-                        message.channel.send(`\`${msg}\``).catch(err);
-                        return;
+                let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=000000"
+                let low = res.Data[0].close;
+                let high = res.Data[0].close;
+                let x_data = [];
+                let y_data = [];
+
+                let curHour = moment.tz(res.Data[0].time * 1000, "America/New_York").hour();
+                let hour_string = [];
+                let time_string = [];
+                for (let i = 0; i < res.Data.length; i++) {
+                    if (res.Data[i].close < low) low = res.Data[i].close;
+                    if (res.Data[i].close > high) high = res.Data[i].close;
+                    x_data.push(res.Data[i].time);
+                    y_data.push(res.Data[i].close);
+                    let thisMoment = moment.tz(res.Data[i].time * 1000, "America/New_York");
+                    let thisHour = thisMoment.hour();
+                    if (parseInt(thisHour / 3) != parseInt(curHour / 3)) {
+                        curHour = thisHour;
+                        if (thisHour != 0) {
+                            hour_string.push(encodeURIComponent(thisMoment.format("h:mm a")));
+                        } else {
+                            hour_string.push(encodeURIComponent(thisMoment.format("dddd")));
+                        }
+                        time_string.push(res.Data[i].time);
+                        //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
                     }
-                    let to_amt = amt * parseFloat(res[to]);
-                    let rich = new Discord.RichEmbed();
-                    let image = "";
-                    console.log(coin);
-                    if (coin && coin.Data[from]) {
-                        image = "https://www.cryptocompare.com" + coin.Data[from].ImageUrl
-                        from += ` (${coin.Data[from].CoinName})`;
-                    }
-                    if (coin && coin.Data[to]) to += ` (${coin.Data[to].CoinName})`;
-                    let msg = `${amt} ${from} = ${to_amt} ${to}`;
-                    //rich.setDescription(msg)
-                    //rich.setFooter(msg,image)
-                    rich.setAuthor(msg, image);
-                    chartpromise.then(chart_url => {
-                        rich.setImage(chart_url);
-                        message.channel.send("", {
-                            embed: rich
-                        }).catch(err);
-                    })
-                } catch (e) {
-                    err(e);
                 }
-            })
+
+                /*let curDay = moment.tz(res.Data[0].time * 1000, "America/New_York").day();
+                let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                let day_string = [];
+                let time_string = [];
+                for (let i = 0; i < res.Data.length; i++) {
+                    if (res.Data[i].close < low) low = res.Data[i].close;
+                    if (res.Data[i].close > high) high = res.Data[i].close;
+                    x_data.push(res.Data[i].time);
+                    y_data.push(res.Data[i].close);
+                    let day = moment.tz(res.Data[i].time * 1000, "America/New_York").day();
+                    if (day != curDay) {
+                        curDay = day;
+                        day_string.push(weekdays[day]);
+                        time_string.push(res.Data[i].time);
+                        //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
+                    }
+                }*/
+                //console.log(x_data,res.Data[0].time,res.Data[res.Data.length - 1].time)
+                chart_url += "&chd=e:" + extendedEncode(x_data, res.Data[0].time, res.Data[res.Data.length - 1].time) + "," + extendedEncode(y_data, low, high);
+                chart_url += "&chxr=0," + res.Data[0].time + "," + res.Data[res.Data.length - 1].time + "|1," + low + "," + high;
+                chart_url += "&chxl=0:|" + hour_string.join("|");
+                chart_url += "&chxp=0," + time_string.join(",");
+
+                //add y ticks
+                chart_url += "&chxs=0,,10,0,lt";
+
+                //chart_url += "&chds=" + res.Data[0].time + "," + res.Data[res.Data.length - 1].time + "," + low + "," + high;
+                //console.log(chart_url)
+                return chart_url;
+                //let rich = new Discord.RichEmbed();
+                //rich.setImage(chart_url);
+                //message.channel.send(chart_url,{embed:rich}).catch(err);
+            } catch (e) {
+                err(e);
+            }
+        })
+
+
+        requestpromise(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${encodeURIComponent(from)}&tsyms=${encodeURIComponent(to)}`).then(body => {
+            try {
+                let res = JSON.parse(body);
+                if (res.Response && res.Response === "Error") {
+                    let msg = res.Message;
+                    message.channel.send(`\`${msg}\``).catch(err);
+                    return;
+                }
+                //let to_amt = amt * parseFloat(res[to]);
+                let fromsym = res.DISPLAY[from][to].FROMSYMBOL;
+                if (fromsym == from) fromsym = "";
+                let tosym = res.DISPLAY[from][to].TOSYMBOL;
+                if (tosym == to) tosym = "";
+                let to_amt = amt * res.RAW[from][to].PRICE;
+                let pctchange = Math.abs(res.DISPLAY[from][to].CHANGEPCT24HOUR);
+                let updown = "";
+                if (res.DISPLAY[from][to].CHANGEPCT24HOUR > 0) updown = "▲";
+                else if (res.DISPLAY[from][to].CHANGEPCT24HOUR < 0) updown = "▼";
+                let rich = new Discord.RichEmbed();
+                let image = "";
+                if (coin && coin.Data[from]) {
+                    image = "https://www.cryptocompare.com" + coin.Data[from].ImageUrl
+                    from += ` (${coin.Data[from].CoinName})`;
+                }
+                if (coin && coin.Data[to]) to += ` (${coin.Data[to].CoinName})`;
+                let msg = `${fromsym} ${amt} ${from} = ${tosym} ${to_amt} ${to} (${updown}${pctchange}%)`;
+                //rich.setDescription(msg)
+                //rich.setFooter(msg,image)
+                rich.setAuthor(msg, image);
+                rich.setFooter("Time is in EDT, the only relevant timezone.");
+                chartpromise.then(chart_url => {
+                    rich.setImage(chart_url);
+                    message.channel.send("", {
+                        embed: rich
+                    }).catch(err);
+                })
+            } catch (e) {
+                err(e);
+            }
+        })
         return true;
     }
 })
@@ -771,14 +956,14 @@ commandList.push((message) => {
         return true;
     }
 })
-//yts (search_term) [num_results]
+//.yts (search_term) [num_results]
 commandList.push((message) => {
     let a = /^\.?yts ([^\n\r]+?)(?: ([\d]{1,2}))?$/i.exec(message.content);
     if (a) {
         a[1] = encodeURIComponent(a[1]);
         var max = 6;
         if (a[2] && parseInt(a[2]) > 0 && parseInt(a[2]) < 51) max = parseInt(a[2]);
-        var rp = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key='+config.api.youtube+'&type=video&maxResults=' + max + '&q=' + a[1])
+        var rp = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=' + max + '&q=' + a[1])
         message.channel.send("`Loading...`").then(loadingMessage => {
             rp.then(body => {
                 let data = JSON.parse(body);
@@ -882,7 +1067,7 @@ commandList.push((message) => {
             let locName = data.RESULTS[i].name;
             let lat = data.RESULTS[i].lat;
             let lon = data.RESULTS[i].lon;
-            return requestpromise('https://api.darksky.net/forecast/'+darksky+'/' + data.RESULTS[i].lat + "," + data.RESULTS[i].lon + "?units=auto&exclude=minutely,hourly").then(body => {
+            return requestpromise('https://api.darksky.net/forecast/' + config.api.darksky + '/' + data.RESULTS[i].lat + "," + data.RESULTS[i].lon + "?units=auto&exclude=minutely").then(body => {
                 let data = JSON.parse(body);
                 let tM = "°C";
                 if (data.flags.units == "us") tM = "°F";
@@ -913,6 +1098,87 @@ commandList.push((message) => {
                     dayDesc += `\n${data.daily.data[i].summary}`;
                     rich.addField(`${dayIcon}${dayName}`, dayDesc, true)
                 }
+
+                function getImg() {
+                    let res = JSON.parse(body);
+                    if (res.Response && res.Response === "Error") {
+                        return
+                    }
+                    var EXTENDED_MAP =
+                        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
+                    var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
+
+                    function extendedEncode(arrVals, minVal, maxVal) {
+                        var chartData = '';
+
+                        for (let i = 0, len = arrVals.length; i < len; i++) {
+                            // In case the array vals were translated to strings.
+                            var numericVal = new Number(arrVals[i]);
+                            // Scale the value to maxVal.
+                            var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
+                                EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
+
+                            if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
+                                chartData += "..";
+                            } else if (scaledVal < 0) {
+                                chartData += '__';
+                            } else {
+                                // Calculate first and second digits and add them to the output.
+                                var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
+                                var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
+                                chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
+                            }
+                        }
+
+                        return chartData;
+                    }
+
+
+                    let hourdata = data.hourly.data;
+                    let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=FF0000,00FF00&chdl=Temp|Apparent%20temp&chdlp=t"
+                    let low = hourdata[0].temperature;
+                    let high = hourdata[0].temperature;
+                    let x_data = [];
+                    let y_data = [];
+                    let y2_data = [];
+
+                    let curHour = moment.tz(hourdata[0].time * 1000, data.timezone).hour();
+                    let hour_string = [];
+                    let time_string = [];
+                    let length = hourdata.length;
+                    for (let i = 0; i < length; i++) {
+                        if (hourdata[i].temperature < low) low = hourdata[i].temperature;
+                        else if (hourdata[i].temperature > high) high = hourdata[i].temperature;
+                        if (hourdata[i].apparentTemperature < low) low = hourdata[i].apparentTemperature;
+                        else if (hourdata[i].apparentTemperature > high) high = hourdata[i].apparentTemperature;
+                        x_data.push(hourdata[i].time);
+                        y_data.push(hourdata[i].temperature);
+                        y2_data.push(hourdata[i].apparentTemperature);
+                        let thisMoment = moment.tz(hourdata[i].time * 1000, data.timezone);
+                        let thisHour = thisMoment.hour();
+                        if (parseInt(thisHour / 3) != parseInt(curHour / 3)) {
+                            curHour = thisHour;
+                            if (thisHour != 0) {
+                                hour_string.push(encodeURIComponent(thisMoment.format("h:mm a")));
+                            } else {
+                                hour_string.push(encodeURIComponent(thisMoment.format("dddd")));
+                            }
+                            time_string.push(hourdata[i].time);
+                            //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
+                        }
+                    }
+                    chart_url += "&chd=e:" + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y_data, low, high);
+                    chart_url += "," + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y2_data, low, high);
+                    chart_url += "&chxr=0," + hourdata[0].time + "," + hourdata[length - 1].time + "|1," + low + "," + high;
+                    chart_url += "&chxl=0:|" + hour_string.join("|");
+                    chart_url += "&chxp=0," + time_string.join(",");
+
+                    //add y ticks
+                    chart_url += "&chxs=0,,10,0,lt";
+                    return chart_url;
+                }
+
+                rich.setImage(getImg());
                 return rich;
             })
         })
@@ -933,12 +1199,12 @@ commandList.push((message) => {
 })
 //.pt (search_term) [online] [num_results]
 commandList.push((message) => {
-    let a = /^\.?pt ([^\r]+?)([ \n]?online)?(?: ([\d]{1,2}))?$/i.exec(message.content);
+    let a = /^\.?pt ([^\r]+?)([ \n]?offline)?(?: ([\d]{1,2}))?$/i.exec(message.content);
     if (a) {
         function poesearch(a, message) {
             let lm = message.channel.send("`Loading...`")
-            let online = "";
-            if (a[2] && a[2].toLowerCase() == " online") online = "x";
+            let online = "x";
+            if (a[2] && a[2].toLowerCase() == " offline") online = "";
             let count = 6;
             if (a[3] && parseInt(a[3]) < 21 && parseInt(a[3]) > 0) count = parseInt(a[3])
             let rp3;
@@ -971,11 +1237,30 @@ commandList.push((message) => {
                 group.forEach((e, i, aa) => {
                     aa[i] = e.split("\n")
                 })
+                //console.log(group);
                 if (group[0][0] === "Rarity: Unique") {
                     form.name = group[0][group[0].length - 2] + " " + group[0][group[0].length - 1];
                     form.rarity = "unique";
                     desc_list.push(`**Name: ${group[0][group[0].length-2]} ${group[0][group[0].length-1]}**`);
                     desc_list.push(`**Rarity: Unique**`);
+                } else if (group[0][group[0].length-1] === "Stygian Vise") {
+                    form.name = group[0][group[0].length - 1];
+                } else if (group[0][0] === "Rarity: Rare") {
+                    //$("#base").parent().find(".chosen-drop .chosen-results").children().each((i,e)=>{if ($(e).attr("class")=="group-result"){curr=$(e).text();a[curr]=[]} else {a[curr].push($(e).text())}})
+                    let bases = JSON.parse(`{"Helmet":["Aventail Helmet","Barbute Helmet","Battered Helm","Bone Circlet","Bone Helmet","Callous Mask","Close Helmet","Cone Helmet","Crusader Helmet","Deicide Mask","Eternal Burgonet","Ezomyte Burgonet","Fencer Helm","Festival Mask","Fluted Bascinet","Gilded Sallet","Gladiator Helmet","Golden Mask","Golden Wreath","Great Crown","Great Helmet","Harlequin Mask","Hubris Circlet","Hunter Hood","Iron Circlet","Iron Hat","Iron Mask","Lacquered Helmet","Leather Cap","Leather Hood","Lion Pelt","Lunaris Circlet","Magistrate Crown","Mind Cage","Necromancer Circlet","Nightmare Bascinet","Noble Tricorne","Pig-Faced Bascinet","Plague Mask","Praetor Crown","Prophet Crown","Raven Mask","Reaver Helmet","Regicide Mask","Royal Burgonet","Rusted Coif","Sallet","Samite Helmet","Scare Mask","Secutor Helm","Siege Helmet","Silken Hood","Sinner Tricorne","Solaris Circlet","Soldier Helmet","Steel Circlet","Torture Cage","Tribal Circlet","Tricorne","Ursine Pelt","Vaal Mask","Vine Circlet","Visored Sallet","Wolf Pelt","Zealot Helmet"],"One Hand Axe":["Arming Axe","Boarding Axe","Broad Axe","Butcher Axe","Ceremonial Axe","Chest Splitter","Cleaver","Decorative Axe","Engraved Hatchet","Etched Hatchet","Infernal Axe","Jade Hatchet","Jasper Axe","Karui Axe","Reaver Axe","Royal Axe","Runic Hatchet","Rusted Hatchet","Siege Axe","Spectral Axe","Tomahawk","Vaal Hatchet","War Axe","Wraith Axe","Wrist Chopper"],"Flask":["Amethyst Flask","Aquamarine Flask","Basalt Flask","Bismuth Flask","Colossal Hybrid Flask","Colossal Life Flask","Colossal Mana Flask","Diamond Flask","Divine Life Flask","Divine Mana Flask","Eternal Life Flask","Eternal Mana Flask","Giant Life Flask","Giant Mana Flask","Grand Life Flask","Grand Mana Flask","Granite Flask","Greater Life Flask","Greater Mana Flask","Hallowed Hybrid Flask","Hallowed Life Flask","Hallowed Mana Flask","Jade Flask","Large Hybrid Flask","Large Life Flask","Large Mana Flask","Medium Hybrid Flask","Medium Life Flask","Medium Mana Flask","Quartz Flask","Quicksilver Flask","Ruby Flask","Sacred Hybrid Flask","Sacred Life Flask","Sacred Mana Flask","Sanctified Life Flask","Sanctified Mana Flask","Sapphire Flask","Silver Flask","Small Hybrid Flask","Small Life Flask","Small Mana Flask","Stibnite Flask","Sulphur Flask","Topaz Flask"],"Fishing Rods":["Fishing Rod"],"One Hand Sword":["Ancient Sword","Antique Rapier","Apex Rapier","Baselard","Basket Rapier","Battered Foil","Battle Sword","Broad Sword","Burnished Foil","Charan's Sword","Copper Sword","Corsair Sword","Courtesan Sword","Cutlass","Dragonbone Rapier","Dragoon Sword","Dusk Blade","Elder Sword","Elegant Foil","Elegant Sword","Estoc","Eternal Sword","Fancy Foil","Gemstone Sword","Gladius","Graceful Sword","Grappler","Harpy Rapier","Hook Sword","Jagged Foil","Jewelled Foil","Legion Sword","Midnight Blade","Pecoraro","Primeval Rapier","Rusted Spike","Rusted Sword","Sabre","Serrated Foil","Smallsword","Spiraled Foil","Tempered Foil","Thorn Rapier","Tiger Hook","Twilight Blade","Vaal Blade","Vaal Rapier","Variscite Blade","War Sword","Whalebone Rapier","Wyrmbone Rapier"],"Claw":["Awl","Blinder","Cat's Paw","Double Claw","Eagle Claw","Eye Gouger","Fright Claw","Gemini Claw","Gouger","Great White Claw","Gut Ripper","Hellion's Paw","Imperial Claw","Nailed Fist","Noble Claw","Prehistoric Claw","Sharktooth Claw","Sparkling Claw","Terror Claw","Thresher Claw","Throat Stabber","Tiger's Paw","Timeworn Claw","Twin Claw","Vaal Claw"],"Breach":["Ancient Reliquary Key","Blessing of Chayula","Blessing of Esh","Blessing of Tul","Blessing of Uul-Netol","Blessing of Xoph","Chayula's Breachstone","Esh's Breachstone","Splinter of Chayula","Splinter of Esh","Splinter of Tul","Splinter of Uul-Netol","Splinter of Xoph","Tul's Breachstone","Uul-Netol's Breachstone","Xoph's Breachstone"],"Body Armour":["Arena Plate","Assassin's Garb","Astral Plate","Battle Lamellar","Battle Plate","Blood Raiment","Bone Armour","Bronze Plate","Buckskin Tunic","Cabalist Regalia","Carnal Armour","Chain Hauberk","Chainmail Doublet","Chainmail Tunic","Chainmail Vest","Chestplate","Colosseum Plate","Commander's Brigandine","Conjurer's Vestment","Conquest Chainmail","Copper Plate","Coronal Leather","Crimson Raiment","Crusader Chainmail","Crusader Plate","Crypt Armour","Cutthroat's Garb","Desert Brigandine","Destiny Leather","Destroyer Regalia","Devout Chainmail","Dragonscale Doublet","Eelskin Tunic","Elegant Ringmail","Exquisite Leather","Field Lamellar","Frontier Leather","Full Chainmail","Full Dragonscale","Full Leather","Full Plate","Full Ringmail","Full Scale Armour","Full Wyrmscale","General's Brigandine","Gladiator Plate","Glorious Leather","Glorious Plate","Golden Mantle","Golden Plate","Holy Chainmail","Hussar Brigandine","Infantry Brigandine","Lacquered Garb","Latticed Ringmail","Light Brigandine","Lordly Plate","Loricated Ringmail","Mage's Vestment","Majestic Plate","Necromancer Silks","Occultist's Vestment","Oiled Coat","Oiled Vest","Ornate Ringmail","Padded Jacket","Padded Vest","Plate Vest","Quilted Jacket","Ringmail Coat","Sacrificial Garb","Sadist Garb","Sage's Robe","Saint's Hauberk","Saintly Chainmail","Savant's Robe","Scale Doublet","Scale Vest","Scarlet Raiment","Scholar's Robe","Sentinel Jacket","Shabby Jerkin","Sharkskin Tunic","Silk Robe","Silken Garb","Silken Vest","Silken Wrap","Simple Robe","Sleek Coat","Soldier's Brigandine","Spidersilk Robe","Strapped Leather","Sun Leather","Sun Plate","Thief's Garb","Triumphant Lamellar","Vaal Regalia","Varnished Coat","War Plate","Waxed Garb","Widowsilk Robe","Wild Leather","Wyrmscale Doublet","Zodiac Leather"],"Map":["Abyss Map","Academy Map","Acid Lakes Map","Alleyways Map","Ancient City Map","Arachnid Nest Map","Arachnid Tomb Map","Arcade Map","Arena Map","Arid Lake Map","Armoury Map","Arsenal Map","Ashen Wood Map","Atoll Map","Barrows Map","Basilica Map","Bazaar Map","Beach Map","Beacon Map","Belfry Map","Bog Map","Bone Crypt Map","Burial Chambers Map","Cage Map","Caldera Map","Canyon Map","Carcass Map","Castle Ruins Map","Catacombs Map","Cavern Map","Cells Map","Cemetery Map","Channel Map","Chateau Map","City Square Map","Colonnade Map","Colosseum Map","Conservatory Map","Coral Ruins Map","Core Map","Courthouse Map","Courtyard Map","Coves Map","Crematorium Map","Crimson Temple Map","Crypt Map","Crystal Ore Map","Cursed Crypt Map","Dark Forest Map","Defiled Cathedral Map","Desert Map","Desert Spring Map","Dig Map","Dunes Map","Dungeon Map","Estuary Map","Excavation Map","Factory Map","Fields Map","Flooded Mine Map","Forge of the Phoenix Map","Gardens Map","Geode Map","Ghetto Map","Gorge Map","Graveyard Map","Grotto Map","Harbinger Map","Haunted Mansion Map","High Gardens Map","Iceberg Map","Infested Valley Map","Ivory Temple Map","Jungle Valley Map","Laboratory Map","Lair Map","Lair of the Hydra Map","Lava Chamber Map","Lava Lake Map","Leyline Map","Lighthouse Map","Lookout Map","Malformation Map","Marshes Map","Mausoleum Map","Maze Map","Maze of the Minotaur Map","Mesa Map","Mineral Pools Map","Moon Temple Map","Mud Geyser Map","Museum Map","Necropolis Map","Oasis Map","Orchard Map","Overgrown Ruin Map","Overgrown Shrine Map","Palace Map","Park Map","Pen Map","Peninsula Map","Phantasmagoria Map","Pier Map","Pit Map","Pit of the Chimera Map","Plateau Map","Plaza Map","Port Map","Precinct Map","Primordial Pool Map","Promenade Map","Quarry Map","Racecourse Map","Ramparts Map","Reef Map","Relic Chambers Map","Residence Map","Scriptorium Map","Sepulchre Map","Sewer Map","Shaped Academy Map","Shaped Acid Lakes Map","Shaped Arachnid Nest Map","Shaped Arachnid Tomb Map","Shaped Arcade Map","Shaped Arena Map","Shaped Arid Lake Map","Shaped Armoury Map","Shaped Arsenal Map","Shaped Ashen Wood Map","Shaped Atoll Map","Shaped Barrows Map","Shaped Beach Map","Shaped Bog Map","Shaped Burial Chambers Map","Shaped Canyon Map","Shaped Castle Ruins Map","Shaped Catacombs Map","Shaped Cavern Map","Shaped Cells Map","Shaped Cemetery Map","Shaped Channel Map","Shaped Colonnade Map","Shaped Courtyard Map","Shaped Coves Map","Shaped Crypt Map","Shaped Crystal Ore Map","Shaped Desert Map","Shaped Dunes Map","Shaped Dungeon Map","Shaped Factory Map","Shaped Ghetto Map","Shaped Graveyard Map","Shaped Grotto Map","Shaped Jungle Valley Map","Shaped Malformation Map","Shaped Marshes Map","Shaped Mesa Map","Shaped Mud Geyser Map","Shaped Museum Map","Shaped Oasis Map","Shaped Orchard Map","Shaped Overgrown Shrine Map","Shaped Peninsula Map","Shaped Phantasmagoria Map","Shaped Pier Map","Shaped Pit Map","Shaped Port Map","Shaped Primordial Pool Map","Shaped Promenade Map","Shaped Quarry Map","Shaped Racecourse Map","Shaped Ramparts Map","Shaped Reef Map","Shaped Sewer Map","Shaped Shore Map","Shaped Spider Forest Map","Shaped Spider Lair Map","Shaped Strand Map","Shaped Temple Map","Shaped Terrace Map","Shaped Thicket Map","Shaped Tower Map","Shaped Tropical Island Map","Shaped Underground River Map","Shaped Vaal City Map","Shaped Vaal Pyramid Map","Shaped Villa Map","Shaped Waste Pool Map","Shaped Wharf Map","Shipyard Map","Shore Map","Shrine Map","Siege Map","Spider Forest Map","Spider Lair Map","Springs Map","Strand Map","Sulphur Vents Map","Sulphur Wastes Map","Summit Map","Sunken City Map","Temple Map","Terrace Map","Thicket Map","Torture Chamber Map","Tower Map","Toxic Sewer Map","Tribunal Map","Tropical Island Map","Underground River Map","Underground Sea Map","Vaal City Map","Vaal Pyramid Map","Vaal Temple Map","Vault Map","Villa Map","Volcano Map","Waste Pool Map","Wasteland Map","Waterways Map","Wharf Map"],"One Hand Mace":["Ancestral Club","Auric Mace","Barbed Club","Battle Hammer","Behemoth Mace","Bladed Mace","Ceremonial Mace","Dragon Mace","Dream Mace","Driftwood Club","Flanged Mace","Gavel","Legion Hammer","Nightmare Mace","Ornate Mace","Pernarch","Petrified Club","Phantom Mace","Rock Breaker","Spiked Club","Stone Hammer","Tenderizer","Tribal Club","War Hammer","Wyrm Mace"],"Amulet":["Agate Amulet","Amber Amulet","Ashscale Talisman","Avian Twins Talisman","Black Maw Talisman","Blue Pearl Amulet","Bonespire Talisman","Breakrib Talisman","Chrysalis Talisman","Citrine Amulet","Clutching Talisman","Coral Amulet","Deadhand Talisman","Deep One Talisman","Fangjaw Talisman","Gold Amulet","Greatwolf Talisman","Hexclaw Talisman","Horned Talisman","Jade Amulet","Jet Amulet","Jet Amulet","Lapis Amulet","Lone Antler Talisman","Longtooth Talisman","Mandible Talisman","Marble Amulet","Monkey Paw Talisman","Monkey Twins Talisman","Onyx Amulet","Paua Amulet","Primal Skull Talisman","Rot Head Talisman","Rotfeather Talisman","Ruby Amulet","Spinefuse Talisman","Splitnewt Talisman","Three Hands Talisman","Three Rat Talisman","Turquoise Amulet","Undying Flesh Talisman","Wereclaw Talisman","Writhing Talisman"],"Two Hand Mace":["Brass Maul","Colossus Mallet","Coronal Maul","Dread Maul","Driftwood Maul","Fright Maul","Great Mallet","Imperial Maul","Jagged Maul","Karui Maul","Mallet","Meatgrinder","Morning Star","Piledriver","Plated Maul","Sledgehammer","Solar Maul","Spiny Maul","Steelhead","Terror Maul","Totemic Maul","Tribal Maul"],"Sceptre":["Abyssal Sceptre","Blood Sceptre","Bronze Sceptre","Carnal Sceptre","Crystal Sceptre","Darkwood Sceptre","Driftwood Sceptre","Grinning Fetish","Horned Sceptre","Iron Sceptre","Karui Sceptre","Lead Sceptre","Ochre Sceptre","Opal Sceptre","Platinum Sceptre","Quartz Sceptre","Ritual Sceptre","Royal Sceptre","Sambar Sceptre","Sekhem","Shadow Sceptre","Stag Sceptre","Tyrant's Sekhem","Vaal Sceptre","Void Sceptre"],"Two Hand Axe":["Abyssal Axe","Dagger Axe","Despot Axe","Double Axe","Ezomyte Axe","Fleshripper","Gilded Axe","Headsman Axe","Jade Chopper","Jasper Chopper","Karui Chopper","Labrys","Noble Axe","Poleaxe","Shadow Axe","Stone Axe","Sundering Axe","Talon Axe","Timber Axe","Vaal Axe","Void Axe","Woodsplitter"],"Prophecy":["A Call into the Void","A Firm Foothold","A Forest of False Idols","A Gracious Master","A Master Seeks Help","A Prodigious Hand","A Regal Death","A Valuable Combination","A Whispered Prayer","Abnormal Effulgence","Against the Tide","An Unseen Peril","Anarchy's End I","Anarchy's End II","Anarchy's End III","Anarchy's End IV","Ancient Doom","Ancient Rivalries I","Ancient Rivalries II","Ancient Rivalries III","Ancient Rivalries IV","Baptism by Death","Beyond Sight I","Beyond Sight II","Beyond Sight III","Beyond Sight IV","Beyond Sight V","Blood in the Eyes","Blood of the Betrayed","Bountiful Traps","Brothers in Arms","Cleanser of Sins","Crash Test","Crushing Squall","Custodians of Silence","Day of Sacrifice I","Day of Sacrifice II","Day of Sacrifice III","Day of Sacrifice IV","Deadly Rivalry I","Deadly Rivalry II","Deadly Rivalry III","Deadly Rivalry IV","Deadly Rivalry V","Deadly Twins","Defiled in the Scepter","Delay Test","Delay and Crash Test","Dying Cry","Echoes of Lost Love","Echoes of Mutation","Echoes of Witchcraft","Ending the Torment","Enter the Maelström","Erased from Memory","Erasmus' Gift","Fallow At Last","Fated Connections","Fear's Wide Reach","Fire and Brimstone","Fire and Ice","Fire from the Sky","Fire, Wood and Stone","Flesh of the Beast","Forceful Exorcism","From Death Springs Life","From The Void","Gilded Within","Golden Touch","Graceful Flames","Heart of the Fire","Heavy Blows","Hidden Reinforcements","Hidden Vaal Pathways","Holding the Bridge","Hunter's Lesson","Ice from Above","In the Grasp of Corruption","Kalandra's Craft","Lasting Impressions","Lightning Falls","Living Fires","Lost in the Pages","Monstrous Treasure","Mouth of Horrors","Mysterious Invaders","Nature's Resilience","Nemesis of Greed","Notched Flesh","Overflowing Riches","Path of Betrayal","Plague of Frogs","Plague of Rats","Pleasure and Pain","Pools of Wealth","Possessed Foe","Power Magnified","Rebirth","Reforged Bonds","Resistant to Change","Risen Blood","Roth's Legacy","SHOULD NOT APPEAR","Sanctum of Stone","Severed Limbs","Smothering Tendrils","Soil, Worms and Blood","Storm on the Horizon","Storm on the Shore","Strong as a Bull","Thaumaturgical History I","Thaumaturgical History II","Thaumaturgical History III","Thaumaturgical History IV","The Aesthete's Spirit","The Alchemist","The Ambitious Bandit I","The Ambitious Bandit II","The Ambitious Bandit III","The Apex Predator","The Beautiful Guide","The Beginning and the End","The Black Stone I","The Black Stone II","The Black Stone III","The Black Stone IV","The Blacksmith","The Blessing","The Bloody Flowers Redux","The Bowstring's Music","The Brothers of Necromancy","The Brutal Enforcer","The Child of Lunaris","The Corrupt","The Cursed Choir","The Dream Trial","The Dreamer's Dream","The Eagle's Cry","The Emperor's Trove","The Feral Lord I","The Feral Lord II","The Feral Lord III","The Feral Lord IV","The Feral Lord V","The Flayed Man","The Flow of Energy","The Forgotten Garrison","The Forgotten Soldiers","The Fortune Teller's Collection","The Four Feral Exiles","The God of Misfortune","The Hardened Armour","The Hollow Pledge","The Hungering Swarm","The Invader","The Jeweller's Touch","The Karui Rebellion","The King and the Brambles","The King's Path","The Lady in Black","The Last Watch","The Lost Maps","The Lost Undying","The Misunderstood Queen","The Mysterious Gift","The Nest","The Pair","The Petrified","The Pirate's Den","The Plaguemaw I","The Plaguemaw II","The Plaguemaw III","The Plaguemaw IV","The Plaguemaw V","The Prison Guard","The Prison Key","The Queen's Vaults","The Scout","The Servant's Heart","The Sharpened Blade","The Silverwood","The Singular Spirit","The Sinner's Stone","The Snuffed Flame","The Soulless Beast","The Spread of Corruption","The Stockkeeper","The Sword King's Passion","The Trembling Earth","The Twins","The Unbreathing Queen I","The Unbreathing Queen II","The Unbreathing Queen III","The Unbreathing Queen IV","The Unbreathing Queen V","The Undead Brutes","The Undead Storm","The Vanguard","The Walking Mountain","The Ward's Ward","The Warmongers I","The Warmongers II","The Warmongers III","The Warmongers IV","The Watcher's Watcher","The Wealthy Exile","Through the Mirage","Touched by Death","Touched by the Wind","Trash to Treasure","Twice Enchanted","Unbearable Whispers I","Unbearable Whispers II","Unbearable Whispers III","Unbearable Whispers IV","Unbearable Whispers V","Undead Uprising","Unnatural Energy","Vaal Invasion","Vaal Winds","Visions of the Drowned","Vital Transformation","Waiting in Ambush","Weeping Death","Wind and Thunder","Winter's Mournful Melodies"],"Gem":["Abyssal Cry","Added Chaos Damage","Added Cold Damage","Added Fire Damage","Added Lightning Damage","Additional Accuracy","Ancestral Call Support","Ancestral Protector","Ancestral Warchief","Anger","Animate Guardian","Animate Weapon","Arc","Arcane Surge Support","Arctic Armour","Arctic Breath","Assassin's Mark","Ball Lightning","Ball Lightning","Barrage","Bear Trap","Blade Flurry","Blade Vortex","Bladefall","Blasphemy","Blast Rain","Blight","Blind","Blink Arrow","Block Chance Reduction","Blood Magic","Blood Rage","Bloodlust","Bodyswap","Bone Offering","Brutality Support","Burning Arrow","Burning Damage Support","Cast On Critical Strike","Cast on Death","Cast on Melee Kill","Cast when Damage Taken","Cast when Stunned","Cast while Channelling Support","Caustic Arrow","Chain","Chance to Bleed Support","Chance to Flee","Chance to Ignite","Charged Dash","Clarity","Cleave","Cluster Traps","Cold Penetration","Cold Snap","Cold to Fire","Concentrated Effect","Conductivity","Contagion","Controlled Destruction","Conversion Trap","Convocation","Cremation","Culling Strike","Curse On Hit","Cyclone","Damage on Full Life Support","Dark Pact","Deadly Ailments Support","Decay Support","Decoy Totem","Desecrate","Despair","Determination","Detonate Dead","Detonate Mines","Devouring Totem","Discharge","Discipline","Dominating Blow","Double Strike","Dual Strike","Earthquake","Efficacy Support","Elemental Damage with Attacks Support","Elemental Focus","Elemental Hit","Elemental Proliferation","Elemental Weakness","Empower","Endurance Charge on Melee Stun","Enduring Cry","Enfeeble","Enhance","Enlighten","Essence Drain","Ethereal Knives","Explosive Arrow","Faster Attacks","Faster Casting","Faster Projectiles","Fire Nova Mine","Fire Penetration","Fire Trap","Fireball","Firestorm","Flame Dash","Flame Surge","Flame Totem","Flameblast","Flammability","Flesh Offering","Flicker Strike","Fork","Fortify","Freeze Mine","Freezing Pulse","Frenzy","Frost Blades","Frost Bomb","Frost Wall","Frostbite","Frostbolt","Generosity","Glacial Cascade","Glacial Hammer","Grace","Greater Multiple Projectiles","Ground Slam","Haste","Hatred","Heavy Strike","Herald of Ash","Herald of Ice","Herald of Thunder","Hypothermia","Ice Bite","Ice Crash","Ice Nova","Ice Shot","Ice Spear","Ice Trap","Ignite Proliferation Support","Immolate Support","Immortal Call","Incinerate","Increased Area of Effect","Increased Critical Damage","Increased Critical Strikes","Increased Duration","Infernal Blow","Innervate","Iron Grip","Iron Will","Item Quantity","Item Rarity","Kinetic Blast","Knockback","Lacerate","Leap Slam","Less Duration","Lesser Multiple Projectiles","Lesser Poison Support","Life Gain on Hit","Life Leech","Lightning Arrow","Lightning Penetration","Lightning Strike","Lightning Tendrils","Lightning Trap","Lightning Warp","Magma Orb","Maim Support","Mana Leech","Melee Physical Damage","Melee Splash","Minefield","Minion Damage","Minion Life","Minion Speed","Minion and Totem Elemental Resistance","Mirage Archer Support","Mirror Arrow","Molten Shell","Molten Strike","Multiple Traps","Multistrike","Onslaught Support","Orb of Storms","Phase Run","Physical Projectile Attack Damage","Physical to Lightning","Pierce","Poacher's Mark","Point Blank","Poison","Portal","Power Charge On Critical","Power Siphon","Projectile Weakness","Puncture","Punishment","Purity of Elements","Purity of Fire","Purity of Ice","Purity of Lightning","Rain of Arrows","Raise Spectre","Raise Zombie","Rallying Cry","Ranged Attack Totem","Reave","Reckoning","Reduced Mana","Rejuvenation Totem","Remote Mine","Righteous Fire","Riposte","Ruthless Support","Scorching Ray","Searing Bond","Shield Charge","Shock Nova","Shockwave Totem","Shrapnel Shot","Siege Ballista","Slower Projectiles","Smoke Mine","Spark","Spectral Throw","Spell Cascade Support","Spell Echo","Spell Totem","Spirit Offering","Split Arrow","Static Strike","Storm Barrier Support","Storm Burst","Storm Call","Stun","Summon Chaos Golem","Summon Flame Golem","Summon Ice Golem","Summon Lightning Golem","Summon Raging Spirit","Summon Skeleton","Summon Stone Golem","Sunder","Sweep","Swift Affliction Support","Tempest Shield","Temporal Chains","Tornado Shot","Trap","Trap Cooldown","Trap and Mine Damage","Unbound Ailments Support","Unearth","Vaal Arc","Vaal Breach","Vaal Burning Arrow","Vaal Clarity","Vaal Cold Snap","Vaal Cyclone","Vaal Detonate Dead","Vaal Discipline","Vaal Double Strike","Vaal Fireball","Vaal Flameblast","Vaal Glacial Hammer","Vaal Grace","Vaal Ground Slam","Vaal Haste","Vaal Ice Nova","Vaal Immortal Call","Vaal Lightning Strike","Vaal Lightning Trap","Vaal Lightning Warp","Vaal Molten Shell","Vaal Power Siphon","Vaal Rain of Arrows","Vaal Reave","Vaal Righteous Fire","Vaal Spark","Vaal Spectral Throw","Vaal Storm Call","Vaal Summon Skeletons","Vengeance","Vigilant Strike","Vile Toxins Support","Viper Strike","Vitality","Void Manipulation","Volatile Dead","Volley Support","Vortex","Vulnerability","Warlord's Mark","Whirling Blades","Wild Strike","Wither","Wrath"],"Two Hand Sword":["Bastard Sword","Butcher Sword","Corroded Blade","Curved Blade","Engraved Greatsword","Etched Greatsword","Exquisite Blade","Ezomyte Blade","Footman Sword","Headman's Sword","Highland Blade","Infernal Sword","Lion Sword","Lithe Blade","Longsword","Ornate Sword","Reaver Sword","Spectral Sword","Tiger Sword","Two-Handed Sword","Vaal Greatsword","Wraith Sword"],"Jewel":["Cobalt Jewel","Crimson Jewel","Ghastly Eye Jewel","Hypnotic Eye Jewel","Murderous Eye Jewel","Prismatic Jewel","Searching Eye Jewel","Viridian Jewel"],"Bow":["Assassin Bow","Bone Bow","Citadel Bow","Composite Bow","Compound Bow","Crude Bow","Death Bow","Decimation Bow","Decurve Bow","Golden Flame","Grove Bow","Harbinger Bow","Highborn Bow","Imperial Bow","Ivory Bow","Long Bow","Maraketh Bow","Ranger Bow","Recurve Bow","Reflex Bow","Royal Bow","Short Bow","Sniper Bow","Spine Bow","Steelwood Bow","Thicket Bow"],"Gloves":["Ambush Mitts","Ancient Gauntlets","Antique Gauntlets","Arcanist Gloves","Assassin's Mitts","Bronze Gauntlets","Bronzescale Gauntlets","Carnal Mitts","Chain Gloves","Clasped Mitts","Conjurer Gloves","Crusader Gloves","Deerskin Gloves","Dragonscale Gauntlets","Eelskin Gloves","Embroidered Gloves","Fingerless Silk Gloves","Fishscale Gauntlets","Goathide Gloves","Golden Bracers","Goliath Gauntlets","Gripped Gloves","Hydrascale Gauntlets","Iron Gauntlets","Ironscale Gauntlets","Legion Gloves","Mesh Gloves","Murder Mitts","Nubuck Gloves","Plated Gauntlets","Rawhide Gloves","Ringmail Gloves","Riveted Gloves","Samite Gloves","Satin Gloves","Serpentscale Gauntlets","Shagreen Gloves","Sharkskin Gloves","Silk Gloves","Slink Gloves","Soldier Gloves","Sorcerer Gloves","Spiked Gloves","Stealth Gloves","Steel Gauntlets","Steelscale Gauntlets","Strapped Mitts","Titan Gauntlets","Trapper Mitts","Vaal Gauntlets","Velvet Gloves","Wool Gloves","Wrapped Mitts","Wyrmscale Gauntlets","Zealot Gloves"],"Map Fragments":["Divine Vessel","Eber's Key","Fragment of the Chimera","Fragment of the Hydra","Fragment of the Minotaur","Fragment of the Phoenix","Inya's Key","Mortal Grief","Mortal Hope","Mortal Ignorance","Mortal Rage","Offering to the Goddess","Sacrifice at Dawn","Sacrifice at Dusk","Sacrifice at Midnight","Sacrifice at Noon","Volkuur's Key","Yriel's Key"],"Quiver":["Blunt Arrow Quiver","Broadhead Arrow Quiver","Conductive Quiver","Cured Quiver","Fire Arrow Quiver","Heavy Quiver","Light Quiver","Penetrating Arrow Quiver","Rugged Quiver","Serrated Arrow Quiver","Sharktooth Arrow Quiver","Spike-Point Arrow Quiver","Two-Point Arrow Quiver"],"Divination Card":["A Mother's Parting Gift","Abandoned Wealth","Anarchy's Price","Assassin's Favour","Atziri's Arsenal","Audacity","Birth of the Three","Blind Venture","Boundless Realms","Bowyer's Dream","Call to the First Ones","Cartographer's Delight","Chaotic Disposition","Coveted Possession","Death","Destined to Crumble","Dialla's Subjugation","Doedre's Madness","Dying Anguish","Earth Drinker","Emperor of Purity","Emperor's Luck","Gemcutter's Promise","Gift of the Gemling Queen","Glimmer of Hope","Grave Knowledge","Her Mask","Heterochromia","Hope","House of Mirrors","Hubris","Humility","Hunter's Resolve","Hunter's Reward","Jack in the Box","Lantador's Lost Love","Last Hope","Left to Fate","Light and Truth","Lingering Remnants","Lost Worlds","Loyalty","Lucky Connections","Lucky Deck","Lysah's Respite","Mawr Blaidd","Merciless Armament","Might is Right","Mitts","No Traces","Pride Before the Fall","Prosperity","Rain Tempter","Rain of Chaos","Rats","Rebirth","Scholar of the Seas","Shard of Fate","Struck by Lightning","The Aesthete","The Arena Champion","The Artist","The Avenger","The Battle Born","The Betrayal","The Blazing Fire","The Body","The Brittle Emperor","The Calling","The Carrion Crow","The Cartographer","The Cataclysm","The Catalyst","The Celestial Justicar","The Chains that Bind","The Coming Storm","The Conduit","The Cursed King","The Dapper Prodigy","The Dark Mage","The Demoness","The Devastator","The Doctor","The Doppelganger","The Dragon","The Dragon's Heart","The Drunken Aristocrat","The Encroaching Darkness","The Endurance","The Enlightened","The Ethereal","The Explorer","The Eye of the Dragon","The Feast","The Fiend","The Fletcher","The Flora's Gift","The Formless Sea","The Forsaken","The Fox","The Gambler","The Garish Power","The Gemcutter","The Gentleman","The Gladiator","The Harvester","The Hermit","The Hoarder","The Hunger","The Immortal","The Incantation","The Inoculated","The Inventor","The Jester","The King's Blade","The King's Heart","The Last One Standing","The Lich","The Lion","The Lord in Black","The Lover","The Lunaris Priestess","The Mercenary","The Metalsmith's Gift","The Oath","The Offering","The One With All","The Opulent","The Pack Leader","The Pact","The Penitent","The Poet","The Polymath","The Porcupine","The Queen","The Rabid Rhoa","The Realm","The Risk","The Road to Power","The Ruthless Ceinture","The Saint's Treasure","The Scarred Meadow","The Scavenger","The Scholar","The Sephirot","The Sigil","The Siren","The Soul","The Spark and the Flame","The Spoiled Prince","The Standoff","The Stormcaller","The Summoner","The Sun","The Surgeon","The Surveyor","The Survivalist","The Thaumaturgist","The Throne","The Tower","The Traitor","The Trial","The Twins","The Tyrant","The Union","The Valkyrie","The Valley of Steel Boxes","The Vast","The Visionary","The Void","The Warden","The Warlord","The Watcher","The Web","The Wind","The Wolf","The Wolf's Shadow","The Wolven King's Bite","The Wolverine","The Wrath","The Wretched","Three Faces in the Dark","Thunderous Skies","Time-Lost Relic","Tranquillity","Treasure Hunter","Turn the Other Cheek","Vinia's Token","Volatile Power","Wealth and Power"],"Shield":["Alder Spiked Shield","Alloyed Spiked Shield","Ancient Spirit Shield","Angelic Kite Shield","Archon Kite Shield","Baroque Round Shield","Battle Buckler","Bone Spirit Shield","Branded Kite Shield","Brass Spirit Shield","Bronze Tower Shield","Buckskin Tower Shield","Burnished Spiked Shield","Cardinal Round Shield","Cedar Tower Shield","Ceremonial Kite Shield","Champion Kite Shield","Chiming Spirit Shield","Colossal Tower Shield","Compound Spiked Shield","Copper Tower Shield","Corroded Tower Shield","Corrugated Buckler","Crested Tower Shield","Crimson Round Shield","Crusader Buckler","Driftwood Spiked Shield","Ebony Tower Shield","Elegant Round Shield","Enameled Buckler","Etched Kite Shield","Ezomyte Spiked Shield","Ezomyte Tower Shield","Fir Round Shield","Fossilised Spirit Shield","Gilded Buckler","Girded Tower Shield","Goathide Buckler","Golden Buckler","Hammered Buckler","Harmonic Spirit Shield","Imperial Buckler","Ironwood Buckler","Ivory Spirit Shield","Jingling Spirit Shield","Lacewood Spirit Shield","Lacquered Buckler","Laminated Kite Shield","Layered Kite Shield","Linden Kite Shield","Mahogany Tower Shield","Maple Round Shield","Mirrored Spiked Shield","Mosaic Kite Shield","Oak Buckler","Ornate Spiked Shield","Painted Buckler","Painted Tower Shield","Pine Buckler","Pinnacle Tower Shield","Plank Kite Shield","Polished Spiked Shield","Rawhide Tower Shield","Redwood Spiked Shield","Reinforced Kite Shield","Reinforced Tower Shield","Rotted Round Shield","Scarlet Round Shield","Shagreen Tower Shield","Sovereign Spiked Shield","Spiked Bundle","Spiked Round Shield","Spiny Round Shield","Splendid Round Shield","Splintered Tower Shield","Steel Kite Shield","Studded Round Shield","Supreme Spiked Shield","Tarnished Spirit Shield","Teak Round Shield","Thorium Spirit Shield","Titanium Spirit Shield","Twig Spirit Shield","Vaal Buckler","Vaal Spirit Shield","Walnut Spirit Shield","War Buckler","Yew Spirit Shield"],"Dagger":["Ambusher","Boot Blade","Boot Knife","Butcher Knife","Carving Knife","Copper Kris","Demon Dagger","Ezomyte Dagger","Fiend Dagger","Flaying Knife","Glass Shank","Golden Kris","Gutting Knife","Imp Dagger","Imperial Skean","Platinum Kris","Poignard","Prong Dagger","Royal Skean","Sai","Skean","Skinning Knife","Slaughter Knife","Stiletto","Trisula"],"Leaguestone":["Ambush Leaguestone","Anarchy Leaguestone","Beyond Leaguestone","Bloodlines Leaguestone","Breach Leaguestone","Domination Leaguestone","Essence Leaguestone","Invasion Leaguestone","Nemesis Leaguestone","Onslaught Leaguestone","Perandus Leaguestone","Prophecy Leaguestone","Rampage Leaguestone","Talisman Leaguestone","Tempest Leaguestone","Torment Leaguestone","Warbands Leaguestone"],"Wand":["Carved Wand","Crystal Wand","Demon's Horn","Driftwood Wand","Engraved Wand","Faun's Horn","Goat's Horn","Heathen Wand","Imbued Wand","Omen Wand","Opal Wand","Pagan Wand","Profane Wand","Prophecy Wand","Quartz Wand","Sage Wand","Serpent Wand","Spiraled Wand","Tornado Wand"],"Essence":["Essence of Anger","Essence of Anguish","Essence of Contempt","Essence of Delirium","Essence of Doubt","Essence of Dread","Essence of Envy","Essence of Fear","Essence of Greed","Essence of Hatred","Essence of Horror","Essence of Hysteria","Essence of Insanity","Essence of Loathing","Essence of Misery","Essence of Rage","Essence of Scorn","Essence of Sorrow","Essence of Spite","Essence of Suffering","Essence of Torment","Essence of Woe","Essence of Wrath","Essence of Zeal","Remnant of Corruption"],"Boots":["Ambush Boots","Ancient Greaves","Antique Greaves","Arcanist Slippers","Assassin's Boots","Bronzescale Boots","Carnal Boots","Chain Boots","Clasped Boots","Conjurer Boots","Crusader Boots","Deerskin Boots","Dragonscale Boots","Eelskin Boots","Goathide Boots","Golden Caligae","Goliath Greaves","Hydrascale Boots","Iron Greaves","Ironscale Boots","Leatherscale Boots","Legion Boots","Mesh Boots","Murder Boots","Nubuck Boots","Plated Greaves","Rawhide Boots","Reinforced Greaves","Ringmail Boots","Riveted Boots","Samite Slippers","Satin Slippers","Scholar Boots","Serpentscale Boots","Shackled Boots","Shagreen Boots","Sharkskin Boots","Silk Slippers","Slink Boots","Soldier Boots","Sorcerer Boots","Stealth Boots","Steel Greaves","Steelscale Boots","Strapped Boots","Titan Greaves","Trapper Boots","Two-Toned Boots","Vaal Greaves","Velvet Slippers","Wool Shoes","Wrapped Boots","Wyrmscale Boots","Zealot Boots"],"Currency":["Albino Rhoa Feather","Ancient Orb","Ancient Shard","Annulment Shard","Apprentice Cartographer's Seal","Apprentice Cartographer's Sextant","Armourer's Scrap","Binding Shard","Blacksmith's Whetstone","Blessed Orb","Cartographer's Chisel","Chaos Orb","Chaos Shard","Chromatic Orb","Divine Orb","Engineer's Orb","Engineer's Shard","Eternal Orb","Exalted Orb","Exalted Shard","Gemcutter's Prism","Glassblower's Bauble","Harbinger's Orb","Harbinger's Shard","Horizon Shard","Jeweller's Orb","Journeyman Cartographer's Seal","Journeyman Cartographer's Sextant","Master Cartographer's Seal","Master Cartographer's Sextant","Mirror Shard","Mirror of Kalandra","Orb of Alchemy","Orb of Alteration","Orb of Annulment","Orb of Augmentation","Orb of Binding","Orb of Chance","Orb of Fusing","Orb of Horizons","Orb of Regret","Orb of Scouring","Orb of Transmutation","Perandus Coin","Portal Scroll","Regal Orb","Regal Shard","Scroll of Wisdom","Silver Coin","Stacked Deck","Unshaping Orb","Vaal Orb"],"Ring":["Amethyst Ring","Breach Ring","Coral Ring","Diamond Ring","Gold Ring","Golden Hoop","Iron Ring","Moonstone Ring","Opal Ring","Paua Ring","Prismatic Ring","Ruby Ring","Sapphire Ring","Steel Ring","Topaz Ring","Two-Stone Ring","Unset Ring"],"Belt":["Chain Belt","Cloth Belt","Crystal Belt","Golden Obi","Heavy Belt","Leather Belt","Rustic Sash","Studded Belt","Stygian Vise","Vanguard Belt"],"Staff":["Coiled Staff","Crescent Staff","Eclipse Staff","Ezomyte Staff","Foul Staff","Gnarled Branch","Highborn Staff","Imperial Staff","Iron Staff","Judgement Staff","Lathi","Long Staff","Maelström Staff","Military Staff","Moon Staff","Primitive Staff","Primordial Staff","Quarterstaff","Royal Staff","Serpentine Staff","Vile Staff","Woodful Staff"]}`)
+                    let name = group[0][group[0].length-1]
+                    function getBase (name) {
+                        for (let i in bases) {
+                            if (bases[i].indexOf(name)>-1) {
+                                return i;
+                            }
+                        }
+                        return null;
+                    }
+                    form.type=getBase(name);
+                }
+                else {
+                    form.name = group[0][group[0].length - 1];
                 }
                 //TODO rare
                 //switch form to a string
@@ -983,7 +1268,11 @@ commandList.push((message) => {
                     return `${e}=${encodeURIComponent(form[e])}`
                 }).join("&");
 
-                if (group[group.length - 1][group[group.length - 1].length - 1] !== "x") {
+                let formose = false;
+                if (group[group.length - 1][group[group.length - 1].length - 1].search("f")>-1) {
+                    formose=true;
+                }
+                if (group[group.length - 1][group[group.length - 1].length - 1].search("x")<0) {
                     let itemlevel = group.findIndex((e) => {
                         return e[0].match(/Item Level: (\d+)/g)
                     });
@@ -991,22 +1280,83 @@ commandList.push((message) => {
                         itemlevel++;
                         if (group[itemlevel][0] !== "Unidentified") {
                             let group_count = 0;
+                            let totalresist=0;
+                            let totalhealth=0;
                             if (group[itemlevel].length === 1) {
-                                group[itemlevel][0].replace(/^(\+?)(\d+)(%?.+)$/, (m, p1, p2, p3) => {
-                                    formstring += `&mod_name=${replaceAll("%28implicit%29+"+encodeURIComponent(p1+"#"+p3),"%20","+")}&mod_min=${p2}&mod_max=`;
-                                    desc_list.push(`(implicit) ${p1}#${p3} (min: ${p2})`);
+                                let e = group[itemlevel][0];
+                                //group[itemlevel][0].replace(/^(\+?)(\d+)(%?.+)$/, (m, p1, p2, p3) => {
+                                    let b;
+                                    if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)){
+                                    totalresist += parseInt(b[2]);
+                                    }
+                                    else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)){
+                                        totalresist += parseInt(b[2])*2;
+                                    }
+                                    else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)){
+                                        totalresist += parseInt(b[2])*3;
+                                    }
+                                    else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)){
+                                        totalhealth += parseInt(b[2]);
+                                    }
+                                    else {
+                                        if (!formose) {
+                                            formstring += `&mod_name=${replaceAll("%28implicit%29+"+encodeURIComponent(p1+"#"+p3),"%20","+")}&mod_min=${p2}&mod_max=`;
+                                            desc_list.push(`(implicit) ${p1}#${p3} (min: ${p2})`);
+                                        }
+                                    }
                                     group_count++;
-                                });
+                                //});
                                 itemlevel++;
                             }
                             group[itemlevel].forEach((e) => {
-                                e.replace(/^(\+?)(\d+)(%?.+)$/, (m, p1, p2, p3) => {
-                                    formstring += `&mod_name=${replaceAll(encodeURIComponent(p1+"#"+p3),"%20","+")}&mod_min=${p2}&mod_max=`;
-                                    desc_list.push(`${p1}#${p3} (min: ${p2})`);
-                                    group_count++;
-                                });
+                                let b;
+                                //+?123%? anything
+                                if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)){
+                                    totalresist += parseInt(b[2]);
+                                }
+                                else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)){
+                                    totalresist += parseInt(b[2])*2;
+                                }
+                                else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)){
+                                    totalresist += parseInt(b[2])*3;
+                                }
+                                else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)){
+                                    totalhealth += parseInt(b[2]);
+                                }
+                                else if (b = /^(\+?)(\d+(?:\.\d+)?)(%?.+)$/.exec(e)) {
+                                    if (!formose) {
+                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1]+"#"+b[3]),"%20","+")}&mod_min=${b[2]}&mod_max=`;
+                                        desc_list.push(`${b[1]}#${b[3]} (min: ${b[2]})`);
+                                        group_count++;
+                                    }
+                                } else if (b = /^(Adds )(\d+)( to )(\d+)(.+)$/.exec(e)) {
+                                    if (!formose) {
+                                        let avg = (parseInt(b[2]) + parseInt(b[4])) / 2;
+                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1]+"#"+b[3]+"#"+b[5]),"%20","+")}&mod_min=${avg}&mod_max=`;
+                                        desc_list.push(`${b[1]}#${b[3]}#${b[5]} (min: ${avg})`);
+                                        group_count++;
+                                    }
+                                }
                             })
-                            formstring += "&group_type=And&group_min=&group_max=&group_count=" + group_count;
+                            if (formose && totalresist+totalhealth>0) {
+                                formstring += `&mod_name=%28pseudo%29+%2B%23%25+total+Elemental+Resistance&mod_min=&mod_max=&mod_name=%28pseudo%29+%28total%29+%2B%23+to+maximum+Life&mod_min=&mod_max=&group_type=Sum&group_min=${totalresist+totalhealth}&group_max=&group_count=2`
+                                desc_list.push(`(pseudo) +#% total Elemental Resistance`);
+                                desc_list.push(`(pseudo) (total) +# to maximum Life`);
+                                desc_list.push(`Group total (min: ${totalresist + totalhealth})`);
+                            }
+                            else {
+                                if (totalresist>0) {
+                                    formstring += `&mod_name=%28pseudo%29+%2B%23%25+total+Elemental+Resistance&mod_min=${totalresist}&mod_max=`;
+                                    desc_list.push(`(pseudo) +#% total Elemental Resistance (min: ${totalresist})`);
+                                    group_count++;
+                                }
+                                if (totalhealth>0) {
+                                    formstring += `&mod_name=%28pseudo%29+%28total%29+%2B%23+to+maximum+Life&mod_min=${totalhealth}&mod_max=`;
+                                    desc_list.push(`(pseudo) (total) +# to maximum Life (min: ${totalhealth})`);
+                                    group_count++;
+                                }
+                                formstring += "&group_type=And&group_min=&group_max=&group_count=" + group_count;
+                            }
                         }
                     }
                 }
@@ -1030,10 +1380,41 @@ commandList.push((message) => {
                     followRedirect: false,
                     method: "post",
                     body: "sort=price_in_chaos&bare=true",
+                    gzip: true,
                     headers: {
-                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "Accept-Encoding": "gzip"
                     }
                 }).then((body) => {
+                    //console.log(body.substr(0,10));
+                    let $ = cheerio.load(body);
+                    //console.log(body);
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle("Results - " + poeleague[message.author.id]);
+                    rich.setDescription(desc_list.join("\n"));
+                    rich.setURL(link);
+                    rich.setFooter('Type "setpoeleague" to change your PoE league')
+                    $(".item").slice(0, count).each((i, e) => {
+                        let title = $(e).attr("data-name");
+                        let corrupt = $(e).find(".title>span").text().trim();
+                        if (corrupt != "") title += " (" + corrupt + ")";
+                        //let wikilink = $(e).find(".wiki-link").attr("href");
+                        //if (wikilink != "") title = `[${title}](${wikilink})`;
+                        //.find(".title").clone().children().remove().end().text().trim();
+                        //console.log(title)
+                        let desc = $(e).attr("data-buyout");
+                        desc += "\n" + $(e).find(".found-time-ago").text().trim();
+                        desc += "\n" + $(e).find(".bottom-row .success.label").text().trim();
+                        rich.addField(title, desc, true)
+                    })
+                    return [link, {
+                        embed: rich
+                    }];
+                    //    let msg = `\`No search results found - ${poeleague[message.author.id]}\`\n${link}`;
+                    //    return [msg];
+
+                    /*
+
                     let regex = /<tbody[\s\S]+?data-buyout=\"([^\r\n]+)\"[\s\S]+?data-name=\"([^\r\n]+)\"[\s\S]+?<td class="item-cell">[\s\S]+?(?:<span class="label success corrupted">(corrupted)<\/span>[\s\S]+?)?<span class=\"found-time-ago\">([0-9a-zA-Z ]*?)<\/span>[\s\S]+?(?:<span class="success label">(online)<\/span>[^\r\n]+)?<\/tbody>/g;
                     let a = regex.exec(body);
                     if (a) {
@@ -1065,6 +1446,8 @@ commandList.push((message) => {
                         let msg = `\`No search results found - ${poeleague[message.author.id]}\`\n${link}`;
                         return [msg];
                     }
+                    */
+
                 });
             })
             lm.then((loadingMsg) => {
@@ -1177,7 +1560,7 @@ commandList.push((message) => {
         }
     }
 })
-//(0:00 am est)
+//(00:00 am est)
 commandList.push((message) => {
     let a = /(\d{1,2}(?::\d{2})? ?[ap]m) (est|cst|pst|nzdt|jst|utc)/i.exec(message.content);
     if (a) {
@@ -1194,7 +1577,7 @@ commandList.push((message) => {
         if (inputTime.diff(moment()) < 0) {
             inputTime.add(1, 'days');
         }
-        let msg = "`" + inputTime.fromNow();
+        let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow();
         for (let i = 0; i < fullZones.length; i++) {
             msg += "\n" + inputTime.tz(fullZones[i]).format('ddd, MMM Do YYYY, h:mma z');
         }
@@ -1215,7 +1598,7 @@ commandList.push((message) => {
 })
 //whens (something)
 commandList.push((message) => {
-    let a = /^(whens|when's|when is|when are).+$/.exec(message.content);
+    let a = /^(whens|when's|when is|when are).+$/i.exec(message.content);
     if (a) {
         var responses = ["never" /*,"soon™"*/ ]
         var msg = responses[Math.floor(Math.random() * responses.length)];
@@ -1225,7 +1608,7 @@ commandList.push((message) => {
 })
 //wat
 commandList.push((message) => {
-    let a = /^(what|wat)\??$/.exec(message.content)
+    let a = /^(what|wat)\??$/i.exec(message.content)
     if (a) {
         message.channel.fetchMessages({
             limit: 1,
@@ -1258,7 +1641,7 @@ commandList.push((message) => {
 })
 //.searchmeme (search_term)
 commandList.push((message) => {
-    let a = /^\.?searchmeme ([^\n\r]+?)$/.exec(message.content.toLowerCase());
+    let a = /^\.?searchmeme ([^\n\r]+?)$/i.exec(message.content.toLowerCase());
     if (a) {
         var copylist = [];
         for (var n = 0; n < copypasta.length; n++) {
@@ -1281,9 +1664,37 @@ commandList.push((message) => {
         return true;
     }
 })
+//.volume (num)
+commandList.push((message) => {
+    let a = /^\.?(?:volume|setvolume|vol) (\d{1,3})$/i.exec(message.content);
+    if (a) {
+        if (a[1] && parseInt(a[1]) > 0 && parseInt(a[1]) < 101) {
+            serverVol[message.channel.guild] = a[1];
+            let msg = "`Default server volume set to " + serverVol[message.channel.guild] + "`";
+            message.channel.send(msg).catch(err);
+            if (message.channel.guild.voiceConnection != null && message.channel.guild.voiceConnection.dispatcher != null) {
+                message.channel.guild.voiceConnection.dispatcher.setVolume(serverVol[message.channel.guild] / 100);
+            }
+        } else {
+            let msg = "`" + a[1] + " is not a valid parameter.`";
+            message.channel.send(msg).catch(err);
+        }
+        return true;
+    }
+})
+//.volume
+commandList.push((message) => {
+    let a = /^\.?(?:volume|setvolume|vol)$/i.exec(message.content);
+    if (a) {
+        let vol = serverVol[message.guild] || 20;
+        let msg = "`Default server volume set to " + vol + "`";
+        message.channel.send(msg).catch(err);
+        return true;
+    }
+})
 //meme (num)
 commandList.push((message) => {
-    let a = /^\.?meme ([\d]+?)$/.exec(message.content);
+    let a = /^\.?meme ([\d]+?)$/i.exec(message.content);
     if (a) {
         a[1] = parseInt(a[1]);
         var msg = "";
@@ -1303,7 +1714,7 @@ commandList.push((message) => {
 })
 //botlink
 commandList.push((message) => {
-    let a = /^botlink$/.exec(message.content.toLowerCase());
+    let a = /^botlink$/i.exec(message.content.toLowerCase());
     if (a) {
         if (message.author.id !== adminID) return;
         var msg = `<${botlink}>`;
@@ -1326,6 +1737,17 @@ commandList.push((message) => {
         //sendFiles(channelID, ["html/animalgifs/"+Math.floor(Math.random()*61+1)+".gif"]);
         let attach = new Discord.Attachment("/var/www/html/animalgifs/" + Math.floor(Math.random() * 61 + 1) + ".gif");
         message.channel.send(attach).catch(err);
+        return true;
+    }
+})
+//im (whatever)
+commandList.push((message) => {
+    let a = /(?:^|(?:\.|,) )(?:\w+ )?(?:im|i'm)((?: \w+){1,3})(?:\.|$)/i.exec(message.content.toLowerCase());
+    if (a) {
+        let responses = ["I'm just a bot.", "I don't have a name.", "Nice to see you.", ""]
+        let response = responses[parseInt(Math.random() * responses.length)];
+        var msg = `Hi${a[1]}. ${response}`;
+        message.channel.send(msg).catch(err);
         return true;
     }
 })

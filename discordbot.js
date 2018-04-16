@@ -12,6 +12,7 @@ const adminID = config.adminID;
 const botChannelID = config.botChannelID;
 const errorChannelID = config.errorChannelID;
 const secretChannelID = config.secretChannelID;
+const battlerite_key = config.battlerite_key;
 const token = config.token;
 const botlink = config.botlink;
 
@@ -48,6 +49,14 @@ fs.readFile("poeleague.json", 'utf8', function (e, data) {
     poeleague = JSON.parse(data);
 })
 
+let sts = {};
+fs.readFile("sts/items.json", 'utf8', function (e, data) {
+    if (e) {
+        return console.log(e);
+    }
+    sts = JSON.parse(data);
+})
+
 var CustomCommand = function (regex, callback) {
     this.regex = regex;
     this.callback = callback;
@@ -63,7 +72,8 @@ CustomCommand.prototype.onMessage = function (message) {
 }
 
 //start richembeds with a random color
-let save = Discord.MessageEmbed;
+let save = Discord.RichEmbed;
+//let save = Discord.MessageEmbed;
 Discord.RichEmbed = function (data) {
     let rich = new save(data);
     return rich.setColor("RANDOM"); //parseInt(Math.random() * 16777216));
@@ -93,10 +103,10 @@ var requestpromise = function (link) {
             if (error) reject(error);
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 try {
-                    body = JSON.parse(body);
-                    reject(body.text);
+                    let data = JSON.parse(body);
+                    reject (new Error(body));
                 } catch (e) {
-                    reject(`${response.statusCode} ${body}`)
+                    reject(new Error(`${response.statusCode} ${body}`))
                 }
             }
             //if (response.statusCode < 200 || response.statusCode >= 300) reject(response)
@@ -285,7 +295,7 @@ commandList.push((message) => {
 commandList.push((message) => {
     if (!message.channel.members || !message.channel.members.get(adminID)) {
         try {
-            let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}) said ${message.content} in ${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}` : "")}\``;
+            let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` ${message.cleanContent} \`\n${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}` : "")}\``;
             bot.channels.get(secretChannelID).send(msg).catch(err);
         } catch (e) {
             err(e);
@@ -439,7 +449,7 @@ commandList.push((message) => {
             return true;
         }
         //.remindme ("message") (12:00am utc)
-        b = /(\d{1,2}(?::\d{2})? ?[ap]m) (est|cst|pst|nzdt|jst|utc)/i.exec(timestring);
+        b = /(\d{1,2}(?::\d{2})? ?[ap]m) (est|cst|pst|edt|pdt|cdt|nzdt|jst|utc)/i.exec(timestring);
         if (b) {
             let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc"];
             let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
@@ -634,6 +644,200 @@ commandList.push((message) => {
                 message.channel.send("`Could not load card list`");
             }
         })
+        return true;
+    }
+})
+//.sts (search_term)
+commandList.push((message) => {
+    let a = /^\.sts (.+)$/i.exec(message.content)
+    if (a) {
+        let results = [];
+        for (let i = 0; i < sts.length; i++) {
+            if (sts[i].title.toLowerCase().indexOf(a[1].toLowerCase()) > -1) {
+                results.push(sts[i]);
+            }
+        }
+        if (results.length < 1) {
+            message.channel.send("No results");
+        } else if (results.length == 1) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(results[0].title);
+            rich.setImage(results[0].image)
+            rich.setDescription(results[0].description);
+            message.channel.send("", { embed: rich });
+        } else {
+            let msg = "```" + results.map((v, i) => {
+                return `${i + 1}. ${v.title}`
+            }).join("\n") + "```";
+            //message.channel.sendMessage(msg).catch(err);
+
+            extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                var num = parseInt(message.content) - 1;
+                if (num < results.length && num > -1) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(results[num].title);
+                    rich.setImage(results[num].image)
+                    rich.setDescription(results[num].description);
+                    message.channel.send("", { embed: rich });
+                    return true;
+                }
+                return false;
+            })
+            message.channel.send(msg);
+        }
+        return true;
+    }
+})
+//.br (battlerite_name) [season_number]
+commandList.push((message) => {
+    let a = /^\.br (\S+)(?: (\d{1,2}))?$/i.exec(message.content)
+    if (a) {
+        (async () => {
+            try {
+                let season = a[2] || 7;
+                let body = await requestpromise({
+                    url: "https://api.dc01.gamelockerapp.com/shards/global/players?filter[playerNames]=" + encodeURIComponent(a[1]),
+                    headers: {
+                        Authorization: "Bearer " + battlerite_key,
+                        Accept: "application/vnd.api+json"
+                    }
+                })
+                let data = JSON.parse(body);
+                
+                if (data.data.length < 1) return message.channel.send("`Player name not found`");
+                let player = data.data[0];
+                let id_names = [];
+                id_names[player.id] = player.attributes.name;
+
+
+                function IdToName(ids) {
+                    let promise_list = [];
+                    for (let i = 0; i < ids.length; i += 6) {
+                        let chunk = ids.slice(i, i + 6)
+                        promise_list.push(
+                            requestpromise({
+                                url: "https://api.dc01.gamelockerapp.com/shards/global/players?filter[playerIds]=" + chunk.join(","),
+                                headers: {
+                                    Authorization: "Bearer " + battlerite_key,
+                                    Accept: "application/vnd.api+json"
+                                }
+                            }).then((body) => {
+                                let data = JSON.parse(body);
+                                for (var i = 0; i < data.data.length; i++) {
+                                    let player = data.data[i];
+                                    id_names[player.id] = player.attributes.name
+                                }
+                                return;
+                            })
+                        )
+                    }
+                    return Promise.all(promise_list);
+                }
+
+                body = await requestpromise({
+                    //934603120233869312
+                    url: "https://api.dc01.gamelockerapp.com/shards/global/teams?tag[season]=" + season + "&tag[playerIds]=" + player.id,
+                    headers: {
+                        Authorization: "Bearer " + battlerite_key,
+                        Accept: "application/vnd.api+json"
+                    }
+                })
+
+                let team_data = JSON.parse(body).data;
+                let teams = [[], [], []];
+                for (let i = 0; i < team_data.length; i++) {
+                    let team = team_data[i].attributes;
+                    if (team.stats.placementGamesLeft == 0 || team.stats.members.length == 1) teams[team.stats.members.length - 1].push(team);
+                }
+                function teamCompare(a, b) {
+                    if (a.stats.placementGamesLeft == 0 && b.stats.placementGamesLeft == 0) {
+                        if (a.stats.league != b.stats.league) return b.stats.league - a.stats.league;
+                        if (a.stats.division != b.stats.division) return a.stats.division - b.stats.division;
+                        //if (a.stats.division_rating != b.stats.division_rating) return b.stats.division_rating-a.stats.division_rating;
+                        return b.stats.division_rating - a.stats.division_rating;
+                    }
+                    return a.stats.placementGamesLeft - b.stats.placementGamesLeft;
+                }
+                teams[1] = teams[1].sort(teamCompare).slice(0, 5)
+                teams[2] = teams[2].sort(teamCompare).slice(0, 5)
+                let ids = [];
+                for (let i = 0; i < teams.length; i++) {
+                    for (let j = 0; j < teams[i].length; j++) {
+                        for (let k = 0; k < teams[i][j].stats.members.length; k++) {
+                            if (typeof (id_names[teams[i][j].stats.members[k]]) == "undefined") {
+                                ids.push(teams[i][j].stats.members[k])
+                                id_names[teams[i][j].stats.members[k]] = teams[i][j].stats.members[k];
+                            }
+                        }
+                    }
+                }
+                await IdToName(ids);
+                for (let i = 0; i < teams.length; i++) {
+                    for (let j = 0; j < teams[i].length; j++) {
+                        teams[i][j].stats.members = teams[i][j].stats.members.map(x => id_names[x])
+                    }
+                }
+                function toDivisionString(league, division, placement_games) {
+                    if (placement_games > 0) return "Placement: " + placement_games + " remaining";
+                    let return_string = "";
+                    switch (league) {
+                        case 0:
+                            return_string = "Bronze";
+                            break;
+                        case 1:
+                            return_string = "Silver";
+                            break;
+                        case 2:
+                            return_string = "Gold";
+                            break;
+                        case 3:
+                            return_string = "Platinum";
+                            break;
+                        case 4:
+                            return_string = "Diamond";
+                            break;
+                        case 5:
+                            return_string = "Champion";
+                            break;
+                        case 6:
+                            return_string = "Grand Champion";
+                            break;
+                    }
+                    if (division > 0) return_string += " " + division;
+                    return return_string;
+                }
+                let rich = new Discord.RichEmbed();
+                rich.setTitle(player.attributes.name)
+                rich.setDescription(`Level ${player.attributes.stats[26]}`)
+                let stats = teams[0][0].stats;
+                let field_val = toDivisionString(stats.league, stats.division, stats.placementGamesLeft);
+                if (stats.placementGamesLeft < 1) field_val += " (Best: " + toDivisionString(stats.topLeague, stats.topDivision, stats.placementGamesLeft) + ")";
+
+                rich.addField("Solo", field_val)
+
+                function teamsToString(teams) {
+                    let field_val = "";
+                    for (let i = 0; i < teams.length; i++) {
+                        let stats = teams[i].stats;
+                        if (teams[i].name) field_val += `__**${teams[i].name}**__ **(${stats.members.join(", ")})**`
+                        else field_val += `**${stats.members.join(", ")}**`
+                        field_val += "\n" + toDivisionString(stats.league, stats.division, stats.placementGamesLeft)
+                        if (stats.placementGamesLeft < 1) field_val += " (Best: " + toDivisionString(stats.topLeague, stats.topDivision, stats.placementGamesLeft) + ")";
+                        field_val +="\n\n";
+                    }
+                    return field_val
+                }
+
+                if (teams[1].length>0) rich.addField("2v2", teamsToString(teams[1]))
+                if (teams[2].length>0) rich.addField("3v3", teamsToString(teams[2]));
+                
+                
+                message.channel.send("", { embed: rich })
+            } catch (e) {
+                message.channel.send("`Error`")
+                err(e);
+            }            
+        })();
         return true;
     }
 })
@@ -988,9 +1192,9 @@ commandList.push((message) => {
                                 message.reply(`Please be in a voice channel first!`).catch(err);
                                 return false;
                             }
-                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
-                                filter: 'audioonly'
-                            });
+                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId
+                                //, {                                filter: 'audioonly'                            }
+                            );
                             playSound(voiceChannel, stream);
                             return true;
                         } catch (e) {
@@ -1055,8 +1259,8 @@ commandList.push((message) => {
     }
 })
 //.weather (location)
-commandList.push((message) => {
-    let a = /^\.weather (\S.*)$/i.exec(message.content);
+function weather (content, channel) {
+    let a = /^\.weather (\S.*)$/i.exec(content);
     if (a) {
         var rp = requestpromise(`http:/` + `/autocomplete.wunderground.com/aq?query=${encodeURIComponent(a[1])}`).then(body => {
             let data = JSON.parse(body);
@@ -1183,26 +1387,29 @@ commandList.push((message) => {
             })
         })
 
-        message.channel.send("`Loading...`").then(loadingMessage => {
+        channel.send("`Loading...`").then(loadingMessage => {
             rp.then(output => {
-                    if (typeof output == "string") loadingMessage.edit(output);
-                    else loadingMessage.edit("", {
-                        embed: output
-                    });
-                })
+                if (typeof output == "string") loadingMessage.edit(output);
+                else loadingMessage.edit("", {
+                    embed: output
+                });
+            })
                 .catch(error => {
                     err(error, loadingMessage, "`Error`");
                 })
         }).catch(err)
         return true;
     }
+}
+commandList.push((message) => {
+    return weather(message.content, message.channel);
 })
 //.pt (search_term) [online] [num_results]
 commandList.push((message) => {
     let a = /^\.?pt ([^\r]+?)([ \n]?offline)?(?: ([\d]{1,2}))?$/i.exec(message.content);
     if (a) {
         function poesearch(a, message) {
-            let lm = message.channel.send("`Loading...`")
+            let lm = message.channel.send("`Loading...`").catch(err);
             let online = "x";
             if (a[2] && a[2].toLowerCase() == " offline") online = "";
             let count = 6;
@@ -1241,26 +1448,29 @@ commandList.push((message) => {
                 if (group[0][0] === "Rarity: Unique") {
                     form.name = group[0][group[0].length - 2] + " " + group[0][group[0].length - 1];
                     form.rarity = "unique";
-                    desc_list.push(`**Name: ${group[0][group[0].length-2]} ${group[0][group[0].length-1]}**`);
+                    desc_list.push(`**Name: ${group[0][group[0].length - 2]} ${group[0][group[0].length - 1]}**`);
                     desc_list.push(`**Rarity: Unique**`);
-                } else if (group[0][group[0].length-1] === "Stygian Vise") {
+                } else if (group[0][group[0].length - 1] === "Stygian Vise") {
+                    desc_list.push(`**Name: Stygian Vise**`);
                     form.name = group[0][group[0].length - 1];
                 } else if (group[0][0] === "Rarity: Rare") {
                     //$("#base").parent().find(".chosen-drop .chosen-results").children().each((i,e)=>{if ($(e).attr("class")=="group-result"){curr=$(e).text();a[curr]=[]} else {a[curr].push($(e).text())}})
                     let bases = JSON.parse(`{"Helmet":["Aventail Helmet","Barbute Helmet","Battered Helm","Bone Circlet","Bone Helmet","Callous Mask","Close Helmet","Cone Helmet","Crusader Helmet","Deicide Mask","Eternal Burgonet","Ezomyte Burgonet","Fencer Helm","Festival Mask","Fluted Bascinet","Gilded Sallet","Gladiator Helmet","Golden Mask","Golden Wreath","Great Crown","Great Helmet","Harlequin Mask","Hubris Circlet","Hunter Hood","Iron Circlet","Iron Hat","Iron Mask","Lacquered Helmet","Leather Cap","Leather Hood","Lion Pelt","Lunaris Circlet","Magistrate Crown","Mind Cage","Necromancer Circlet","Nightmare Bascinet","Noble Tricorne","Pig-Faced Bascinet","Plague Mask","Praetor Crown","Prophet Crown","Raven Mask","Reaver Helmet","Regicide Mask","Royal Burgonet","Rusted Coif","Sallet","Samite Helmet","Scare Mask","Secutor Helm","Siege Helmet","Silken Hood","Sinner Tricorne","Solaris Circlet","Soldier Helmet","Steel Circlet","Torture Cage","Tribal Circlet","Tricorne","Ursine Pelt","Vaal Mask","Vine Circlet","Visored Sallet","Wolf Pelt","Zealot Helmet"],"One Hand Axe":["Arming Axe","Boarding Axe","Broad Axe","Butcher Axe","Ceremonial Axe","Chest Splitter","Cleaver","Decorative Axe","Engraved Hatchet","Etched Hatchet","Infernal Axe","Jade Hatchet","Jasper Axe","Karui Axe","Reaver Axe","Royal Axe","Runic Hatchet","Rusted Hatchet","Siege Axe","Spectral Axe","Tomahawk","Vaal Hatchet","War Axe","Wraith Axe","Wrist Chopper"],"Flask":["Amethyst Flask","Aquamarine Flask","Basalt Flask","Bismuth Flask","Colossal Hybrid Flask","Colossal Life Flask","Colossal Mana Flask","Diamond Flask","Divine Life Flask","Divine Mana Flask","Eternal Life Flask","Eternal Mana Flask","Giant Life Flask","Giant Mana Flask","Grand Life Flask","Grand Mana Flask","Granite Flask","Greater Life Flask","Greater Mana Flask","Hallowed Hybrid Flask","Hallowed Life Flask","Hallowed Mana Flask","Jade Flask","Large Hybrid Flask","Large Life Flask","Large Mana Flask","Medium Hybrid Flask","Medium Life Flask","Medium Mana Flask","Quartz Flask","Quicksilver Flask","Ruby Flask","Sacred Hybrid Flask","Sacred Life Flask","Sacred Mana Flask","Sanctified Life Flask","Sanctified Mana Flask","Sapphire Flask","Silver Flask","Small Hybrid Flask","Small Life Flask","Small Mana Flask","Stibnite Flask","Sulphur Flask","Topaz Flask"],"Fishing Rods":["Fishing Rod"],"One Hand Sword":["Ancient Sword","Antique Rapier","Apex Rapier","Baselard","Basket Rapier","Battered Foil","Battle Sword","Broad Sword","Burnished Foil","Charan's Sword","Copper Sword","Corsair Sword","Courtesan Sword","Cutlass","Dragonbone Rapier","Dragoon Sword","Dusk Blade","Elder Sword","Elegant Foil","Elegant Sword","Estoc","Eternal Sword","Fancy Foil","Gemstone Sword","Gladius","Graceful Sword","Grappler","Harpy Rapier","Hook Sword","Jagged Foil","Jewelled Foil","Legion Sword","Midnight Blade","Pecoraro","Primeval Rapier","Rusted Spike","Rusted Sword","Sabre","Serrated Foil","Smallsword","Spiraled Foil","Tempered Foil","Thorn Rapier","Tiger Hook","Twilight Blade","Vaal Blade","Vaal Rapier","Variscite Blade","War Sword","Whalebone Rapier","Wyrmbone Rapier"],"Claw":["Awl","Blinder","Cat's Paw","Double Claw","Eagle Claw","Eye Gouger","Fright Claw","Gemini Claw","Gouger","Great White Claw","Gut Ripper","Hellion's Paw","Imperial Claw","Nailed Fist","Noble Claw","Prehistoric Claw","Sharktooth Claw","Sparkling Claw","Terror Claw","Thresher Claw","Throat Stabber","Tiger's Paw","Timeworn Claw","Twin Claw","Vaal Claw"],"Breach":["Ancient Reliquary Key","Blessing of Chayula","Blessing of Esh","Blessing of Tul","Blessing of Uul-Netol","Blessing of Xoph","Chayula's Breachstone","Esh's Breachstone","Splinter of Chayula","Splinter of Esh","Splinter of Tul","Splinter of Uul-Netol","Splinter of Xoph","Tul's Breachstone","Uul-Netol's Breachstone","Xoph's Breachstone"],"Body Armour":["Arena Plate","Assassin's Garb","Astral Plate","Battle Lamellar","Battle Plate","Blood Raiment","Bone Armour","Bronze Plate","Buckskin Tunic","Cabalist Regalia","Carnal Armour","Chain Hauberk","Chainmail Doublet","Chainmail Tunic","Chainmail Vest","Chestplate","Colosseum Plate","Commander's Brigandine","Conjurer's Vestment","Conquest Chainmail","Copper Plate","Coronal Leather","Crimson Raiment","Crusader Chainmail","Crusader Plate","Crypt Armour","Cutthroat's Garb","Desert Brigandine","Destiny Leather","Destroyer Regalia","Devout Chainmail","Dragonscale Doublet","Eelskin Tunic","Elegant Ringmail","Exquisite Leather","Field Lamellar","Frontier Leather","Full Chainmail","Full Dragonscale","Full Leather","Full Plate","Full Ringmail","Full Scale Armour","Full Wyrmscale","General's Brigandine","Gladiator Plate","Glorious Leather","Glorious Plate","Golden Mantle","Golden Plate","Holy Chainmail","Hussar Brigandine","Infantry Brigandine","Lacquered Garb","Latticed Ringmail","Light Brigandine","Lordly Plate","Loricated Ringmail","Mage's Vestment","Majestic Plate","Necromancer Silks","Occultist's Vestment","Oiled Coat","Oiled Vest","Ornate Ringmail","Padded Jacket","Padded Vest","Plate Vest","Quilted Jacket","Ringmail Coat","Sacrificial Garb","Sadist Garb","Sage's Robe","Saint's Hauberk","Saintly Chainmail","Savant's Robe","Scale Doublet","Scale Vest","Scarlet Raiment","Scholar's Robe","Sentinel Jacket","Shabby Jerkin","Sharkskin Tunic","Silk Robe","Silken Garb","Silken Vest","Silken Wrap","Simple Robe","Sleek Coat","Soldier's Brigandine","Spidersilk Robe","Strapped Leather","Sun Leather","Sun Plate","Thief's Garb","Triumphant Lamellar","Vaal Regalia","Varnished Coat","War Plate","Waxed Garb","Widowsilk Robe","Wild Leather","Wyrmscale Doublet","Zodiac Leather"],"Map":["Abyss Map","Academy Map","Acid Lakes Map","Alleyways Map","Ancient City Map","Arachnid Nest Map","Arachnid Tomb Map","Arcade Map","Arena Map","Arid Lake Map","Armoury Map","Arsenal Map","Ashen Wood Map","Atoll Map","Barrows Map","Basilica Map","Bazaar Map","Beach Map","Beacon Map","Belfry Map","Bog Map","Bone Crypt Map","Burial Chambers Map","Cage Map","Caldera Map","Canyon Map","Carcass Map","Castle Ruins Map","Catacombs Map","Cavern Map","Cells Map","Cemetery Map","Channel Map","Chateau Map","City Square Map","Colonnade Map","Colosseum Map","Conservatory Map","Coral Ruins Map","Core Map","Courthouse Map","Courtyard Map","Coves Map","Crematorium Map","Crimson Temple Map","Crypt Map","Crystal Ore Map","Cursed Crypt Map","Dark Forest Map","Defiled Cathedral Map","Desert Map","Desert Spring Map","Dig Map","Dunes Map","Dungeon Map","Estuary Map","Excavation Map","Factory Map","Fields Map","Flooded Mine Map","Forge of the Phoenix Map","Gardens Map","Geode Map","Ghetto Map","Gorge Map","Graveyard Map","Grotto Map","Harbinger Map","Haunted Mansion Map","High Gardens Map","Iceberg Map","Infested Valley Map","Ivory Temple Map","Jungle Valley Map","Laboratory Map","Lair Map","Lair of the Hydra Map","Lava Chamber Map","Lava Lake Map","Leyline Map","Lighthouse Map","Lookout Map","Malformation Map","Marshes Map","Mausoleum Map","Maze Map","Maze of the Minotaur Map","Mesa Map","Mineral Pools Map","Moon Temple Map","Mud Geyser Map","Museum Map","Necropolis Map","Oasis Map","Orchard Map","Overgrown Ruin Map","Overgrown Shrine Map","Palace Map","Park Map","Pen Map","Peninsula Map","Phantasmagoria Map","Pier Map","Pit Map","Pit of the Chimera Map","Plateau Map","Plaza Map","Port Map","Precinct Map","Primordial Pool Map","Promenade Map","Quarry Map","Racecourse Map","Ramparts Map","Reef Map","Relic Chambers Map","Residence Map","Scriptorium Map","Sepulchre Map","Sewer Map","Shaped Academy Map","Shaped Acid Lakes Map","Shaped Arachnid Nest Map","Shaped Arachnid Tomb Map","Shaped Arcade Map","Shaped Arena Map","Shaped Arid Lake Map","Shaped Armoury Map","Shaped Arsenal Map","Shaped Ashen Wood Map","Shaped Atoll Map","Shaped Barrows Map","Shaped Beach Map","Shaped Bog Map","Shaped Burial Chambers Map","Shaped Canyon Map","Shaped Castle Ruins Map","Shaped Catacombs Map","Shaped Cavern Map","Shaped Cells Map","Shaped Cemetery Map","Shaped Channel Map","Shaped Colonnade Map","Shaped Courtyard Map","Shaped Coves Map","Shaped Crypt Map","Shaped Crystal Ore Map","Shaped Desert Map","Shaped Dunes Map","Shaped Dungeon Map","Shaped Factory Map","Shaped Ghetto Map","Shaped Graveyard Map","Shaped Grotto Map","Shaped Jungle Valley Map","Shaped Malformation Map","Shaped Marshes Map","Shaped Mesa Map","Shaped Mud Geyser Map","Shaped Museum Map","Shaped Oasis Map","Shaped Orchard Map","Shaped Overgrown Shrine Map","Shaped Peninsula Map","Shaped Phantasmagoria Map","Shaped Pier Map","Shaped Pit Map","Shaped Port Map","Shaped Primordial Pool Map","Shaped Promenade Map","Shaped Quarry Map","Shaped Racecourse Map","Shaped Ramparts Map","Shaped Reef Map","Shaped Sewer Map","Shaped Shore Map","Shaped Spider Forest Map","Shaped Spider Lair Map","Shaped Strand Map","Shaped Temple Map","Shaped Terrace Map","Shaped Thicket Map","Shaped Tower Map","Shaped Tropical Island Map","Shaped Underground River Map","Shaped Vaal City Map","Shaped Vaal Pyramid Map","Shaped Villa Map","Shaped Waste Pool Map","Shaped Wharf Map","Shipyard Map","Shore Map","Shrine Map","Siege Map","Spider Forest Map","Spider Lair Map","Springs Map","Strand Map","Sulphur Vents Map","Sulphur Wastes Map","Summit Map","Sunken City Map","Temple Map","Terrace Map","Thicket Map","Torture Chamber Map","Tower Map","Toxic Sewer Map","Tribunal Map","Tropical Island Map","Underground River Map","Underground Sea Map","Vaal City Map","Vaal Pyramid Map","Vaal Temple Map","Vault Map","Villa Map","Volcano Map","Waste Pool Map","Wasteland Map","Waterways Map","Wharf Map"],"One Hand Mace":["Ancestral Club","Auric Mace","Barbed Club","Battle Hammer","Behemoth Mace","Bladed Mace","Ceremonial Mace","Dragon Mace","Dream Mace","Driftwood Club","Flanged Mace","Gavel","Legion Hammer","Nightmare Mace","Ornate Mace","Pernarch","Petrified Club","Phantom Mace","Rock Breaker","Spiked Club","Stone Hammer","Tenderizer","Tribal Club","War Hammer","Wyrm Mace"],"Amulet":["Agate Amulet","Amber Amulet","Ashscale Talisman","Avian Twins Talisman","Black Maw Talisman","Blue Pearl Amulet","Bonespire Talisman","Breakrib Talisman","Chrysalis Talisman","Citrine Amulet","Clutching Talisman","Coral Amulet","Deadhand Talisman","Deep One Talisman","Fangjaw Talisman","Gold Amulet","Greatwolf Talisman","Hexclaw Talisman","Horned Talisman","Jade Amulet","Jet Amulet","Jet Amulet","Lapis Amulet","Lone Antler Talisman","Longtooth Talisman","Mandible Talisman","Marble Amulet","Monkey Paw Talisman","Monkey Twins Talisman","Onyx Amulet","Paua Amulet","Primal Skull Talisman","Rot Head Talisman","Rotfeather Talisman","Ruby Amulet","Spinefuse Talisman","Splitnewt Talisman","Three Hands Talisman","Three Rat Talisman","Turquoise Amulet","Undying Flesh Talisman","Wereclaw Talisman","Writhing Talisman"],"Two Hand Mace":["Brass Maul","Colossus Mallet","Coronal Maul","Dread Maul","Driftwood Maul","Fright Maul","Great Mallet","Imperial Maul","Jagged Maul","Karui Maul","Mallet","Meatgrinder","Morning Star","Piledriver","Plated Maul","Sledgehammer","Solar Maul","Spiny Maul","Steelhead","Terror Maul","Totemic Maul","Tribal Maul"],"Sceptre":["Abyssal Sceptre","Blood Sceptre","Bronze Sceptre","Carnal Sceptre","Crystal Sceptre","Darkwood Sceptre","Driftwood Sceptre","Grinning Fetish","Horned Sceptre","Iron Sceptre","Karui Sceptre","Lead Sceptre","Ochre Sceptre","Opal Sceptre","Platinum Sceptre","Quartz Sceptre","Ritual Sceptre","Royal Sceptre","Sambar Sceptre","Sekhem","Shadow Sceptre","Stag Sceptre","Tyrant's Sekhem","Vaal Sceptre","Void Sceptre"],"Two Hand Axe":["Abyssal Axe","Dagger Axe","Despot Axe","Double Axe","Ezomyte Axe","Fleshripper","Gilded Axe","Headsman Axe","Jade Chopper","Jasper Chopper","Karui Chopper","Labrys","Noble Axe","Poleaxe","Shadow Axe","Stone Axe","Sundering Axe","Talon Axe","Timber Axe","Vaal Axe","Void Axe","Woodsplitter"],"Prophecy":["A Call into the Void","A Firm Foothold","A Forest of False Idols","A Gracious Master","A Master Seeks Help","A Prodigious Hand","A Regal Death","A Valuable Combination","A Whispered Prayer","Abnormal Effulgence","Against the Tide","An Unseen Peril","Anarchy's End I","Anarchy's End II","Anarchy's End III","Anarchy's End IV","Ancient Doom","Ancient Rivalries I","Ancient Rivalries II","Ancient Rivalries III","Ancient Rivalries IV","Baptism by Death","Beyond Sight I","Beyond Sight II","Beyond Sight III","Beyond Sight IV","Beyond Sight V","Blood in the Eyes","Blood of the Betrayed","Bountiful Traps","Brothers in Arms","Cleanser of Sins","Crash Test","Crushing Squall","Custodians of Silence","Day of Sacrifice I","Day of Sacrifice II","Day of Sacrifice III","Day of Sacrifice IV","Deadly Rivalry I","Deadly Rivalry II","Deadly Rivalry III","Deadly Rivalry IV","Deadly Rivalry V","Deadly Twins","Defiled in the Scepter","Delay Test","Delay and Crash Test","Dying Cry","Echoes of Lost Love","Echoes of Mutation","Echoes of Witchcraft","Ending the Torment","Enter the Maelström","Erased from Memory","Erasmus' Gift","Fallow At Last","Fated Connections","Fear's Wide Reach","Fire and Brimstone","Fire and Ice","Fire from the Sky","Fire, Wood and Stone","Flesh of the Beast","Forceful Exorcism","From Death Springs Life","From The Void","Gilded Within","Golden Touch","Graceful Flames","Heart of the Fire","Heavy Blows","Hidden Reinforcements","Hidden Vaal Pathways","Holding the Bridge","Hunter's Lesson","Ice from Above","In the Grasp of Corruption","Kalandra's Craft","Lasting Impressions","Lightning Falls","Living Fires","Lost in the Pages","Monstrous Treasure","Mouth of Horrors","Mysterious Invaders","Nature's Resilience","Nemesis of Greed","Notched Flesh","Overflowing Riches","Path of Betrayal","Plague of Frogs","Plague of Rats","Pleasure and Pain","Pools of Wealth","Possessed Foe","Power Magnified","Rebirth","Reforged Bonds","Resistant to Change","Risen Blood","Roth's Legacy","SHOULD NOT APPEAR","Sanctum of Stone","Severed Limbs","Smothering Tendrils","Soil, Worms and Blood","Storm on the Horizon","Storm on the Shore","Strong as a Bull","Thaumaturgical History I","Thaumaturgical History II","Thaumaturgical History III","Thaumaturgical History IV","The Aesthete's Spirit","The Alchemist","The Ambitious Bandit I","The Ambitious Bandit II","The Ambitious Bandit III","The Apex Predator","The Beautiful Guide","The Beginning and the End","The Black Stone I","The Black Stone II","The Black Stone III","The Black Stone IV","The Blacksmith","The Blessing","The Bloody Flowers Redux","The Bowstring's Music","The Brothers of Necromancy","The Brutal Enforcer","The Child of Lunaris","The Corrupt","The Cursed Choir","The Dream Trial","The Dreamer's Dream","The Eagle's Cry","The Emperor's Trove","The Feral Lord I","The Feral Lord II","The Feral Lord III","The Feral Lord IV","The Feral Lord V","The Flayed Man","The Flow of Energy","The Forgotten Garrison","The Forgotten Soldiers","The Fortune Teller's Collection","The Four Feral Exiles","The God of Misfortune","The Hardened Armour","The Hollow Pledge","The Hungering Swarm","The Invader","The Jeweller's Touch","The Karui Rebellion","The King and the Brambles","The King's Path","The Lady in Black","The Last Watch","The Lost Maps","The Lost Undying","The Misunderstood Queen","The Mysterious Gift","The Nest","The Pair","The Petrified","The Pirate's Den","The Plaguemaw I","The Plaguemaw II","The Plaguemaw III","The Plaguemaw IV","The Plaguemaw V","The Prison Guard","The Prison Key","The Queen's Vaults","The Scout","The Servant's Heart","The Sharpened Blade","The Silverwood","The Singular Spirit","The Sinner's Stone","The Snuffed Flame","The Soulless Beast","The Spread of Corruption","The Stockkeeper","The Sword King's Passion","The Trembling Earth","The Twins","The Unbreathing Queen I","The Unbreathing Queen II","The Unbreathing Queen III","The Unbreathing Queen IV","The Unbreathing Queen V","The Undead Brutes","The Undead Storm","The Vanguard","The Walking Mountain","The Ward's Ward","The Warmongers I","The Warmongers II","The Warmongers III","The Warmongers IV","The Watcher's Watcher","The Wealthy Exile","Through the Mirage","Touched by Death","Touched by the Wind","Trash to Treasure","Twice Enchanted","Unbearable Whispers I","Unbearable Whispers II","Unbearable Whispers III","Unbearable Whispers IV","Unbearable Whispers V","Undead Uprising","Unnatural Energy","Vaal Invasion","Vaal Winds","Visions of the Drowned","Vital Transformation","Waiting in Ambush","Weeping Death","Wind and Thunder","Winter's Mournful Melodies"],"Gem":["Abyssal Cry","Added Chaos Damage","Added Cold Damage","Added Fire Damage","Added Lightning Damage","Additional Accuracy","Ancestral Call Support","Ancestral Protector","Ancestral Warchief","Anger","Animate Guardian","Animate Weapon","Arc","Arcane Surge Support","Arctic Armour","Arctic Breath","Assassin's Mark","Ball Lightning","Ball Lightning","Barrage","Bear Trap","Blade Flurry","Blade Vortex","Bladefall","Blasphemy","Blast Rain","Blight","Blind","Blink Arrow","Block Chance Reduction","Blood Magic","Blood Rage","Bloodlust","Bodyswap","Bone Offering","Brutality Support","Burning Arrow","Burning Damage Support","Cast On Critical Strike","Cast on Death","Cast on Melee Kill","Cast when Damage Taken","Cast when Stunned","Cast while Channelling Support","Caustic Arrow","Chain","Chance to Bleed Support","Chance to Flee","Chance to Ignite","Charged Dash","Clarity","Cleave","Cluster Traps","Cold Penetration","Cold Snap","Cold to Fire","Concentrated Effect","Conductivity","Contagion","Controlled Destruction","Conversion Trap","Convocation","Cremation","Culling Strike","Curse On Hit","Cyclone","Damage on Full Life Support","Dark Pact","Deadly Ailments Support","Decay Support","Decoy Totem","Desecrate","Despair","Determination","Detonate Dead","Detonate Mines","Devouring Totem","Discharge","Discipline","Dominating Blow","Double Strike","Dual Strike","Earthquake","Efficacy Support","Elemental Damage with Attacks Support","Elemental Focus","Elemental Hit","Elemental Proliferation","Elemental Weakness","Empower","Endurance Charge on Melee Stun","Enduring Cry","Enfeeble","Enhance","Enlighten","Essence Drain","Ethereal Knives","Explosive Arrow","Faster Attacks","Faster Casting","Faster Projectiles","Fire Nova Mine","Fire Penetration","Fire Trap","Fireball","Firestorm","Flame Dash","Flame Surge","Flame Totem","Flameblast","Flammability","Flesh Offering","Flicker Strike","Fork","Fortify","Freeze Mine","Freezing Pulse","Frenzy","Frost Blades","Frost Bomb","Frost Wall","Frostbite","Frostbolt","Generosity","Glacial Cascade","Glacial Hammer","Grace","Greater Multiple Projectiles","Ground Slam","Haste","Hatred","Heavy Strike","Herald of Ash","Herald of Ice","Herald of Thunder","Hypothermia","Ice Bite","Ice Crash","Ice Nova","Ice Shot","Ice Spear","Ice Trap","Ignite Proliferation Support","Immolate Support","Immortal Call","Incinerate","Increased Area of Effect","Increased Critical Damage","Increased Critical Strikes","Increased Duration","Infernal Blow","Innervate","Iron Grip","Iron Will","Item Quantity","Item Rarity","Kinetic Blast","Knockback","Lacerate","Leap Slam","Less Duration","Lesser Multiple Projectiles","Lesser Poison Support","Life Gain on Hit","Life Leech","Lightning Arrow","Lightning Penetration","Lightning Strike","Lightning Tendrils","Lightning Trap","Lightning Warp","Magma Orb","Maim Support","Mana Leech","Melee Physical Damage","Melee Splash","Minefield","Minion Damage","Minion Life","Minion Speed","Minion and Totem Elemental Resistance","Mirage Archer Support","Mirror Arrow","Molten Shell","Molten Strike","Multiple Traps","Multistrike","Onslaught Support","Orb of Storms","Phase Run","Physical Projectile Attack Damage","Physical to Lightning","Pierce","Poacher's Mark","Point Blank","Poison","Portal","Power Charge On Critical","Power Siphon","Projectile Weakness","Puncture","Punishment","Purity of Elements","Purity of Fire","Purity of Ice","Purity of Lightning","Rain of Arrows","Raise Spectre","Raise Zombie","Rallying Cry","Ranged Attack Totem","Reave","Reckoning","Reduced Mana","Rejuvenation Totem","Remote Mine","Righteous Fire","Riposte","Ruthless Support","Scorching Ray","Searing Bond","Shield Charge","Shock Nova","Shockwave Totem","Shrapnel Shot","Siege Ballista","Slower Projectiles","Smoke Mine","Spark","Spectral Throw","Spell Cascade Support","Spell Echo","Spell Totem","Spirit Offering","Split Arrow","Static Strike","Storm Barrier Support","Storm Burst","Storm Call","Stun","Summon Chaos Golem","Summon Flame Golem","Summon Ice Golem","Summon Lightning Golem","Summon Raging Spirit","Summon Skeleton","Summon Stone Golem","Sunder","Sweep","Swift Affliction Support","Tempest Shield","Temporal Chains","Tornado Shot","Trap","Trap Cooldown","Trap and Mine Damage","Unbound Ailments Support","Unearth","Vaal Arc","Vaal Breach","Vaal Burning Arrow","Vaal Clarity","Vaal Cold Snap","Vaal Cyclone","Vaal Detonate Dead","Vaal Discipline","Vaal Double Strike","Vaal Fireball","Vaal Flameblast","Vaal Glacial Hammer","Vaal Grace","Vaal Ground Slam","Vaal Haste","Vaal Ice Nova","Vaal Immortal Call","Vaal Lightning Strike","Vaal Lightning Trap","Vaal Lightning Warp","Vaal Molten Shell","Vaal Power Siphon","Vaal Rain of Arrows","Vaal Reave","Vaal Righteous Fire","Vaal Spark","Vaal Spectral Throw","Vaal Storm Call","Vaal Summon Skeletons","Vengeance","Vigilant Strike","Vile Toxins Support","Viper Strike","Vitality","Void Manipulation","Volatile Dead","Volley Support","Vortex","Vulnerability","Warlord's Mark","Whirling Blades","Wild Strike","Wither","Wrath"],"Two Hand Sword":["Bastard Sword","Butcher Sword","Corroded Blade","Curved Blade","Engraved Greatsword","Etched Greatsword","Exquisite Blade","Ezomyte Blade","Footman Sword","Headman's Sword","Highland Blade","Infernal Sword","Lion Sword","Lithe Blade","Longsword","Ornate Sword","Reaver Sword","Spectral Sword","Tiger Sword","Two-Handed Sword","Vaal Greatsword","Wraith Sword"],"Jewel":["Cobalt Jewel","Crimson Jewel","Ghastly Eye Jewel","Hypnotic Eye Jewel","Murderous Eye Jewel","Prismatic Jewel","Searching Eye Jewel","Viridian Jewel"],"Bow":["Assassin Bow","Bone Bow","Citadel Bow","Composite Bow","Compound Bow","Crude Bow","Death Bow","Decimation Bow","Decurve Bow","Golden Flame","Grove Bow","Harbinger Bow","Highborn Bow","Imperial Bow","Ivory Bow","Long Bow","Maraketh Bow","Ranger Bow","Recurve Bow","Reflex Bow","Royal Bow","Short Bow","Sniper Bow","Spine Bow","Steelwood Bow","Thicket Bow"],"Gloves":["Ambush Mitts","Ancient Gauntlets","Antique Gauntlets","Arcanist Gloves","Assassin's Mitts","Bronze Gauntlets","Bronzescale Gauntlets","Carnal Mitts","Chain Gloves","Clasped Mitts","Conjurer Gloves","Crusader Gloves","Deerskin Gloves","Dragonscale Gauntlets","Eelskin Gloves","Embroidered Gloves","Fingerless Silk Gloves","Fishscale Gauntlets","Goathide Gloves","Golden Bracers","Goliath Gauntlets","Gripped Gloves","Hydrascale Gauntlets","Iron Gauntlets","Ironscale Gauntlets","Legion Gloves","Mesh Gloves","Murder Mitts","Nubuck Gloves","Plated Gauntlets","Rawhide Gloves","Ringmail Gloves","Riveted Gloves","Samite Gloves","Satin Gloves","Serpentscale Gauntlets","Shagreen Gloves","Sharkskin Gloves","Silk Gloves","Slink Gloves","Soldier Gloves","Sorcerer Gloves","Spiked Gloves","Stealth Gloves","Steel Gauntlets","Steelscale Gauntlets","Strapped Mitts","Titan Gauntlets","Trapper Mitts","Vaal Gauntlets","Velvet Gloves","Wool Gloves","Wrapped Mitts","Wyrmscale Gauntlets","Zealot Gloves"],"Map Fragments":["Divine Vessel","Eber's Key","Fragment of the Chimera","Fragment of the Hydra","Fragment of the Minotaur","Fragment of the Phoenix","Inya's Key","Mortal Grief","Mortal Hope","Mortal Ignorance","Mortal Rage","Offering to the Goddess","Sacrifice at Dawn","Sacrifice at Dusk","Sacrifice at Midnight","Sacrifice at Noon","Volkuur's Key","Yriel's Key"],"Quiver":["Blunt Arrow Quiver","Broadhead Arrow Quiver","Conductive Quiver","Cured Quiver","Fire Arrow Quiver","Heavy Quiver","Light Quiver","Penetrating Arrow Quiver","Rugged Quiver","Serrated Arrow Quiver","Sharktooth Arrow Quiver","Spike-Point Arrow Quiver","Two-Point Arrow Quiver"],"Divination Card":["A Mother's Parting Gift","Abandoned Wealth","Anarchy's Price","Assassin's Favour","Atziri's Arsenal","Audacity","Birth of the Three","Blind Venture","Boundless Realms","Bowyer's Dream","Call to the First Ones","Cartographer's Delight","Chaotic Disposition","Coveted Possession","Death","Destined to Crumble","Dialla's Subjugation","Doedre's Madness","Dying Anguish","Earth Drinker","Emperor of Purity","Emperor's Luck","Gemcutter's Promise","Gift of the Gemling Queen","Glimmer of Hope","Grave Knowledge","Her Mask","Heterochromia","Hope","House of Mirrors","Hubris","Humility","Hunter's Resolve","Hunter's Reward","Jack in the Box","Lantador's Lost Love","Last Hope","Left to Fate","Light and Truth","Lingering Remnants","Lost Worlds","Loyalty","Lucky Connections","Lucky Deck","Lysah's Respite","Mawr Blaidd","Merciless Armament","Might is Right","Mitts","No Traces","Pride Before the Fall","Prosperity","Rain Tempter","Rain of Chaos","Rats","Rebirth","Scholar of the Seas","Shard of Fate","Struck by Lightning","The Aesthete","The Arena Champion","The Artist","The Avenger","The Battle Born","The Betrayal","The Blazing Fire","The Body","The Brittle Emperor","The Calling","The Carrion Crow","The Cartographer","The Cataclysm","The Catalyst","The Celestial Justicar","The Chains that Bind","The Coming Storm","The Conduit","The Cursed King","The Dapper Prodigy","The Dark Mage","The Demoness","The Devastator","The Doctor","The Doppelganger","The Dragon","The Dragon's Heart","The Drunken Aristocrat","The Encroaching Darkness","The Endurance","The Enlightened","The Ethereal","The Explorer","The Eye of the Dragon","The Feast","The Fiend","The Fletcher","The Flora's Gift","The Formless Sea","The Forsaken","The Fox","The Gambler","The Garish Power","The Gemcutter","The Gentleman","The Gladiator","The Harvester","The Hermit","The Hoarder","The Hunger","The Immortal","The Incantation","The Inoculated","The Inventor","The Jester","The King's Blade","The King's Heart","The Last One Standing","The Lich","The Lion","The Lord in Black","The Lover","The Lunaris Priestess","The Mercenary","The Metalsmith's Gift","The Oath","The Offering","The One With All","The Opulent","The Pack Leader","The Pact","The Penitent","The Poet","The Polymath","The Porcupine","The Queen","The Rabid Rhoa","The Realm","The Risk","The Road to Power","The Ruthless Ceinture","The Saint's Treasure","The Scarred Meadow","The Scavenger","The Scholar","The Sephirot","The Sigil","The Siren","The Soul","The Spark and the Flame","The Spoiled Prince","The Standoff","The Stormcaller","The Summoner","The Sun","The Surgeon","The Surveyor","The Survivalist","The Thaumaturgist","The Throne","The Tower","The Traitor","The Trial","The Twins","The Tyrant","The Union","The Valkyrie","The Valley of Steel Boxes","The Vast","The Visionary","The Void","The Warden","The Warlord","The Watcher","The Web","The Wind","The Wolf","The Wolf's Shadow","The Wolven King's Bite","The Wolverine","The Wrath","The Wretched","Three Faces in the Dark","Thunderous Skies","Time-Lost Relic","Tranquillity","Treasure Hunter","Turn the Other Cheek","Vinia's Token","Volatile Power","Wealth and Power"],"Shield":["Alder Spiked Shield","Alloyed Spiked Shield","Ancient Spirit Shield","Angelic Kite Shield","Archon Kite Shield","Baroque Round Shield","Battle Buckler","Bone Spirit Shield","Branded Kite Shield","Brass Spirit Shield","Bronze Tower Shield","Buckskin Tower Shield","Burnished Spiked Shield","Cardinal Round Shield","Cedar Tower Shield","Ceremonial Kite Shield","Champion Kite Shield","Chiming Spirit Shield","Colossal Tower Shield","Compound Spiked Shield","Copper Tower Shield","Corroded Tower Shield","Corrugated Buckler","Crested Tower Shield","Crimson Round Shield","Crusader Buckler","Driftwood Spiked Shield","Ebony Tower Shield","Elegant Round Shield","Enameled Buckler","Etched Kite Shield","Ezomyte Spiked Shield","Ezomyte Tower Shield","Fir Round Shield","Fossilised Spirit Shield","Gilded Buckler","Girded Tower Shield","Goathide Buckler","Golden Buckler","Hammered Buckler","Harmonic Spirit Shield","Imperial Buckler","Ironwood Buckler","Ivory Spirit Shield","Jingling Spirit Shield","Lacewood Spirit Shield","Lacquered Buckler","Laminated Kite Shield","Layered Kite Shield","Linden Kite Shield","Mahogany Tower Shield","Maple Round Shield","Mirrored Spiked Shield","Mosaic Kite Shield","Oak Buckler","Ornate Spiked Shield","Painted Buckler","Painted Tower Shield","Pine Buckler","Pinnacle Tower Shield","Plank Kite Shield","Polished Spiked Shield","Rawhide Tower Shield","Redwood Spiked Shield","Reinforced Kite Shield","Reinforced Tower Shield","Rotted Round Shield","Scarlet Round Shield","Shagreen Tower Shield","Sovereign Spiked Shield","Spiked Bundle","Spiked Round Shield","Spiny Round Shield","Splendid Round Shield","Splintered Tower Shield","Steel Kite Shield","Studded Round Shield","Supreme Spiked Shield","Tarnished Spirit Shield","Teak Round Shield","Thorium Spirit Shield","Titanium Spirit Shield","Twig Spirit Shield","Vaal Buckler","Vaal Spirit Shield","Walnut Spirit Shield","War Buckler","Yew Spirit Shield"],"Dagger":["Ambusher","Boot Blade","Boot Knife","Butcher Knife","Carving Knife","Copper Kris","Demon Dagger","Ezomyte Dagger","Fiend Dagger","Flaying Knife","Glass Shank","Golden Kris","Gutting Knife","Imp Dagger","Imperial Skean","Platinum Kris","Poignard","Prong Dagger","Royal Skean","Sai","Skean","Skinning Knife","Slaughter Knife","Stiletto","Trisula"],"Leaguestone":["Ambush Leaguestone","Anarchy Leaguestone","Beyond Leaguestone","Bloodlines Leaguestone","Breach Leaguestone","Domination Leaguestone","Essence Leaguestone","Invasion Leaguestone","Nemesis Leaguestone","Onslaught Leaguestone","Perandus Leaguestone","Prophecy Leaguestone","Rampage Leaguestone","Talisman Leaguestone","Tempest Leaguestone","Torment Leaguestone","Warbands Leaguestone"],"Wand":["Carved Wand","Crystal Wand","Demon's Horn","Driftwood Wand","Engraved Wand","Faun's Horn","Goat's Horn","Heathen Wand","Imbued Wand","Omen Wand","Opal Wand","Pagan Wand","Profane Wand","Prophecy Wand","Quartz Wand","Sage Wand","Serpent Wand","Spiraled Wand","Tornado Wand"],"Essence":["Essence of Anger","Essence of Anguish","Essence of Contempt","Essence of Delirium","Essence of Doubt","Essence of Dread","Essence of Envy","Essence of Fear","Essence of Greed","Essence of Hatred","Essence of Horror","Essence of Hysteria","Essence of Insanity","Essence of Loathing","Essence of Misery","Essence of Rage","Essence of Scorn","Essence of Sorrow","Essence of Spite","Essence of Suffering","Essence of Torment","Essence of Woe","Essence of Wrath","Essence of Zeal","Remnant of Corruption"],"Boots":["Ambush Boots","Ancient Greaves","Antique Greaves","Arcanist Slippers","Assassin's Boots","Bronzescale Boots","Carnal Boots","Chain Boots","Clasped Boots","Conjurer Boots","Crusader Boots","Deerskin Boots","Dragonscale Boots","Eelskin Boots","Goathide Boots","Golden Caligae","Goliath Greaves","Hydrascale Boots","Iron Greaves","Ironscale Boots","Leatherscale Boots","Legion Boots","Mesh Boots","Murder Boots","Nubuck Boots","Plated Greaves","Rawhide Boots","Reinforced Greaves","Ringmail Boots","Riveted Boots","Samite Slippers","Satin Slippers","Scholar Boots","Serpentscale Boots","Shackled Boots","Shagreen Boots","Sharkskin Boots","Silk Slippers","Slink Boots","Soldier Boots","Sorcerer Boots","Stealth Boots","Steel Greaves","Steelscale Boots","Strapped Boots","Titan Greaves","Trapper Boots","Two-Toned Boots","Vaal Greaves","Velvet Slippers","Wool Shoes","Wrapped Boots","Wyrmscale Boots","Zealot Boots"],"Currency":["Albino Rhoa Feather","Ancient Orb","Ancient Shard","Annulment Shard","Apprentice Cartographer's Seal","Apprentice Cartographer's Sextant","Armourer's Scrap","Binding Shard","Blacksmith's Whetstone","Blessed Orb","Cartographer's Chisel","Chaos Orb","Chaos Shard","Chromatic Orb","Divine Orb","Engineer's Orb","Engineer's Shard","Eternal Orb","Exalted Orb","Exalted Shard","Gemcutter's Prism","Glassblower's Bauble","Harbinger's Orb","Harbinger's Shard","Horizon Shard","Jeweller's Orb","Journeyman Cartographer's Seal","Journeyman Cartographer's Sextant","Master Cartographer's Seal","Master Cartographer's Sextant","Mirror Shard","Mirror of Kalandra","Orb of Alchemy","Orb of Alteration","Orb of Annulment","Orb of Augmentation","Orb of Binding","Orb of Chance","Orb of Fusing","Orb of Horizons","Orb of Regret","Orb of Scouring","Orb of Transmutation","Perandus Coin","Portal Scroll","Regal Orb","Regal Shard","Scroll of Wisdom","Silver Coin","Stacked Deck","Unshaping Orb","Vaal Orb"],"Ring":["Amethyst Ring","Breach Ring","Coral Ring","Diamond Ring","Gold Ring","Golden Hoop","Iron Ring","Moonstone Ring","Opal Ring","Paua Ring","Prismatic Ring","Ruby Ring","Sapphire Ring","Steel Ring","Topaz Ring","Two-Stone Ring","Unset Ring"],"Belt":["Chain Belt","Cloth Belt","Crystal Belt","Golden Obi","Heavy Belt","Leather Belt","Rustic Sash","Studded Belt","Stygian Vise","Vanguard Belt"],"Staff":["Coiled Staff","Crescent Staff","Eclipse Staff","Ezomyte Staff","Foul Staff","Gnarled Branch","Highborn Staff","Imperial Staff","Iron Staff","Judgement Staff","Lathi","Long Staff","Maelström Staff","Military Staff","Moon Staff","Primitive Staff","Primordial Staff","Quarterstaff","Royal Staff","Serpentine Staff","Vile Staff","Woodful Staff"]}`)
-                    let name = group[0][group[0].length-1]
-                    function getBase (name) {
+                    let name = group[0][group[0].length - 1]
+                    function getBase(name) {
                         for (let i in bases) {
-                            if (bases[i].indexOf(name)>-1) {
+                            if (bases[i].indexOf(name) > -1) {
                                 return i;
                             }
                         }
                         return null;
                     }
-                    form.type=getBase(name);
+                    form.type = getBase(name);
+                    desc_list.push(`**Type: ${form.type}**`);
                 }
                 else {
                     form.name = group[0][group[0].length - 1];
+                    desc_list.push(`**Name: ${form.name}**`);
                 }
                 //TODO rare
                 //switch form to a string
@@ -1269,10 +1479,10 @@ commandList.push((message) => {
                 }).join("&");
 
                 let formose = false;
-                if (group[group.length - 1][group[group.length - 1].length - 1].search("f")>-1) {
-                    formose=true;
+                if (group[group.length - 1][group[group.length - 1].length - 1] == "f") {
+                    formose = true;
                 }
-                if (group[group.length - 1][group[group.length - 1].length - 1].search("x")<0) {
+                if (group[group.length - 1][group[group.length - 1].length - 1] != "x") {
                     let itemlevel = group.findIndex((e) => {
                         return e[0].match(/Item Level: (\d+)/g)
                     });
@@ -1280,77 +1490,79 @@ commandList.push((message) => {
                         itemlevel++;
                         if (group[itemlevel][0] !== "Unidentified") {
                             let group_count = 0;
-                            let totalresist=0;
-                            let totalhealth=0;
+                            let totalresist = 0;
+                            let totalhealth = 0;
                             if (group[itemlevel].length === 1) {
                                 let e = group[itemlevel][0];
                                 //group[itemlevel][0].replace(/^(\+?)(\d+)(%?.+)$/, (m, p1, p2, p3) => {
-                                    let b;
-                                    if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)){
+                                let b;
+                                if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)) {
                                     totalresist += parseInt(b[2]);
+                                }
+                                else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)) {
+                                    totalresist += parseInt(b[2]) * 2;
+                                }
+                                else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)) {
+                                    totalresist += parseInt(b[2]) * 3;
+                                }
+                                else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)) {
+                                    totalhealth += parseInt(b[2]);
+                                }
+                                else {
+                                    if (!formose && (b = /^(\+?)(\d+(?:\.\d+)?)(%?.+)$/.exec(e))) {
+                                        formstring += `&mod_name=${replaceAll("%28implicit%29+" + encodeURIComponent(b[1] + "#" + b[3]), "%20", "+")}&mod_min=${b[2]}&mod_max=`;
+                                        desc_list.push(`(implicit) ${b[1]}#${b[3]} (min: ${b[2]})`);
                                     }
-                                    else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)){
-                                        totalresist += parseInt(b[2])*2;
-                                    }
-                                    else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)){
-                                        totalresist += parseInt(b[2])*3;
-                                    }
-                                    else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)){
-                                        totalhealth += parseInt(b[2]);
-                                    }
-                                    else {
-                                        if (!formose) {
-                                            formstring += `&mod_name=${replaceAll("%28implicit%29+"+encodeURIComponent(p1+"#"+p3),"%20","+")}&mod_min=${p2}&mod_max=`;
-                                            desc_list.push(`(implicit) ${p1}#${p3} (min: ${p2})`);
-                                        }
-                                    }
-                                    group_count++;
+                                }
+                                group_count++;
                                 //});
                                 itemlevel++;
                             }
                             group[itemlevel].forEach((e) => {
                                 let b;
                                 //+?123%? anything
-                                if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)){
+                                if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning)( Resistance)/.exec(e)) {
                                     totalresist += parseInt(b[2]);
                                 }
-                                else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)){
-                                    totalresist += parseInt(b[2])*2;
+                                else if (b = /^(\+)(\d+)(% to )(Fire|Cold|Lightning) and (Fire|Cold|Lightning)( Resistances)/.exec(e)) {
+                                    totalresist += parseInt(b[2]) * 2;
                                 }
-                                else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)){
-                                    totalresist += parseInt(b[2])*3;
+                                else if (b = /^(\+)(\d+)(% to all Elemental Resistances)/.exec(e)) {
+                                    totalresist += parseInt(b[2]) * 3;
                                 }
-                                else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)){
+                                else if (b = /^(\+)(\d+)( to maximum Life)/.exec(e)) {
                                     totalhealth += parseInt(b[2]);
                                 }
                                 else if (b = /^(\+?)(\d+(?:\.\d+)?)(%?.+)$/.exec(e)) {
                                     if (!formose) {
-                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1]+"#"+b[3]),"%20","+")}&mod_min=${b[2]}&mod_max=`;
+                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1] + "#" + b[3]), "%20", "+")}&mod_min=${b[2]}&mod_max=`;
                                         desc_list.push(`${b[1]}#${b[3]} (min: ${b[2]})`);
                                         group_count++;
                                     }
                                 } else if (b = /^(Adds )(\d+)( to )(\d+)(.+)$/.exec(e)) {
                                     if (!formose) {
                                         let avg = (parseInt(b[2]) + parseInt(b[4])) / 2;
-                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1]+"#"+b[3]+"#"+b[5]),"%20","+")}&mod_min=${avg}&mod_max=`;
+                                        formstring += `&mod_name=${replaceAll(encodeURIComponent(b[1] + "#" + b[3] + "#" + b[5]), "%20", "+")}&mod_min=${avg}&mod_max=`;
                                         desc_list.push(`${b[1]}#${b[3]}#${b[5]} (min: ${avg})`);
                                         group_count++;
                                     }
                                 }
                             })
-                            if (formose && totalresist+totalhealth>0) {
-                                formstring += `&mod_name=%28pseudo%29+%2B%23%25+total+Elemental+Resistance&mod_min=&mod_max=&mod_name=%28pseudo%29+%28total%29+%2B%23+to+maximum+Life&mod_min=&mod_max=&group_type=Sum&group_min=${totalresist+totalhealth}&group_max=&group_count=2`
-                                desc_list.push(`(pseudo) +#% total Elemental Resistance`);
-                                desc_list.push(`(pseudo) (total) +# to maximum Life`);
-                                desc_list.push(`Group total (min: ${totalresist + totalhealth})`);
+                            if (formose) {
+                                if (totalresist + totalhealth > 0) {
+                                    formstring += `&mod_name=%28pseudo%29+%2B%23%25+total+Elemental+Resistance&mod_min=&mod_max=&mod_name=%28pseudo%29+%28total%29+%2B%23+to+maximum+Life&mod_min=&mod_max=&group_type=Sum&group_min=${totalresist + totalhealth}&group_max=&group_count=2`
+                                    desc_list.push(`(pseudo) +#% total Elemental Resistance`);
+                                    desc_list.push(`(pseudo) (total) +# to maximum Life`);
+                                    desc_list.push(`Group total (min: ${totalresist + totalhealth})`);
+                                }
                             }
                             else {
-                                if (totalresist>0) {
+                                if (totalresist > 0) {
                                     formstring += `&mod_name=%28pseudo%29+%2B%23%25+total+Elemental+Resistance&mod_min=${totalresist}&mod_max=`;
                                     desc_list.push(`(pseudo) +#% total Elemental Resistance (min: ${totalresist})`);
                                     group_count++;
                                 }
-                                if (totalhealth>0) {
+                                if (totalhealth > 0) {
                                     formstring += `&mod_name=%28pseudo%29+%28total%29+%2B%23+to+maximum+Life&mod_min=${totalhealth}&mod_max=`;
                                     desc_list.push(`(pseudo) (total) +# to maximum Life (min: ${totalhealth})`);
                                     group_count++;
@@ -1410,58 +1622,17 @@ commandList.push((message) => {
                     return [link, {
                         embed: rich
                     }];
-                    //    let msg = `\`No search results found - ${poeleague[message.author.id]}\`\n${link}`;
-                    //    return [msg];
-
-                    /*
-
-                    let regex = /<tbody[\s\S]+?data-buyout=\"([^\r\n]+)\"[\s\S]+?data-name=\"([^\r\n]+)\"[\s\S]+?<td class="item-cell">[\s\S]+?(?:<span class="label success corrupted">(corrupted)<\/span>[\s\S]+?)?<span class=\"found-time-ago\">([0-9a-zA-Z ]*?)<\/span>[\s\S]+?(?:<span class="success label">(online)<\/span>[^\r\n]+)?<\/tbody>/g;
-                    let a = regex.exec(body);
-                    if (a) {
-                        let rich = new Discord.RichEmbed();
-                        rich.setTitle("Results - " + poeleague[message.author.id]);
-                        rich.setDescription(desc_list.join("\n"));
-                        rich.setURL(link);
-                        rich.setFooter('Type "setpoeleague" to change your PoE league')
-                        let msg = "";
-                        while (a && count > 0) {
-                            let title = "";
-                            let desc = "";
-                            title += htmldecode(a[2]);
-                            if (a[3]) title += " (" + a[3] + ")"
-                            msg += " : " + a[1];
-                            desc = a[1];
-                            if (a[4] && a[4].length > 0) desc += "\n" + a[4]
-                            if (a[5]) desc += "\n" + a[5]
-                            msg += "\n"
-                            count--;
-                            a = regex.exec(body)
-                            rich.addField(title, desc, true)
-                        }
-                        msg += link
-                        return [link, {
-                            embed: rich
-                        }];
-                    } else {
-                        let msg = `\`No search results found - ${poeleague[message.author.id]}\`\n${link}`;
-                        return [msg];
-                    }
-                    */
-
-                });
-            })
-            lm.then((loadingMsg) => {
-                rp2.catch((e) => {
-                    err(e, loadingMsg, "`Error loading poe.trade`");
+                }).catch((e) => {
+                    setLeague("Update your league", lm, message);
+                    return;
+                    //err(e, loadingMsg, "`Error loading poe.trade`");
                 })
             })
             Promise.all([lm, rp2]).then((things) => {
                 things[0].edit.apply(things[0], things[1]).catch(err);
             })
         }
-        if (poeleague[message.author.id]) poesearch(a, message);
-        else {
-            let loadingmessage = message.channel.send("`Loading league list`");
+        function setLeague(top, loadingmessage, message, checked) {
             let rp = requestpromise("http://api.pathofexile.com/leagues?type=main&compact=0");
             loadingmessage.then((loadingMessage) => {
                 rp.catch((e) => {
@@ -1470,7 +1641,7 @@ commandList.push((message) => {
             })
             Promise.all([loadingmessage, rp]).then((things) => {
                 try {
-                    let msg = message.author + "`It seems like you haven't set your league yet. Respond with the number to set your league.` ```";
+                    let msg = top + " ```";
                     let data2 = JSON.parse(things[1]);
                     let data = [];
                     for (let i = 0; i < data2.length; i++) {
@@ -1483,7 +1654,11 @@ commandList.push((message) => {
                         }
                         if (!solo) data.push(data2[i]);
                     }
-
+                    if (!checked) {
+                        if (data.indexOf(poeleague[message.author.id]) > -1) {
+                            return things[0].edit("`Error loading poe.trade`");
+                        }
+                    }
                     for (let i = 0; i < data.length; i++) {
                         msg += "" + (i + 1) + ". " + data[i].id + "\n";
                     }
@@ -1512,6 +1687,13 @@ commandList.push((message) => {
                 }
             })
         }
+        if (poeleague[message.author.id]) {
+            poesearch(a, message);
+        } else {
+            let loadingmessage = message.channel.send("`Loading league list`");
+            let msg = message.author + "`It seems like you haven't set your league yet. Respond with the number to set your league.` ```";
+            setLeague(msg, loadingmessage, message, true);
+        }
         return true;
     }
 })
@@ -1537,9 +1719,9 @@ commandList.push((message) => {
 })
 //.roll (#d#)
 commandList.push((message) => {
-    let a = /^\.roll (\d+)d(\d+)(\+\d+)?$/i.exec(message.content);
+    let a = /^\.roll (\d+)?d(\d+)(\+\d+)?$/i.exec(message.content);
     if (a) {
-        let num_dice = parseInt(a[1]);
+        let num_dice = parseInt(a[1]) || 1;
         let dice_side = parseInt(a[2]);
         if (num_dice > 0 && num_dice < 1000 && dice_side > 0) {
             let msg = "`(";
@@ -1567,7 +1749,7 @@ commandList.push((message) => {
         //var msg = '`test ' + a[1];
         let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc"];
         let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
-        let fullName = fullZones[shortZones.indexOf(a[2])];
+        let fullName = fullZones[shortZones.indexOf(a[2].toLowerCase())];
         //msg += fullName;
         let inputTime = moment.tz(a[1], "h:mma", fullName).subtract(1, 'days');
         if (!inputTime.isValid()) return;
@@ -1600,7 +1782,7 @@ commandList.push((message) => {
 commandList.push((message) => {
     let a = /^(whens|when's|when is|when are).+$/i.exec(message.content);
     if (a) {
-        var responses = ["never" /*,"soon™"*/ ]
+        var responses = ["never" /*,"soon™"*/]
         var msg = responses[Math.floor(Math.random() * responses.length)];
         message.channel.send(msg).catch(err);
         return true;
@@ -1614,7 +1796,7 @@ commandList.push((message) => {
             limit: 1,
             before: message.id
         }).then(theMsgs => {
-            //console.log(theMsgs);
+            console.log(theMsgs);
             message.channel.send(theMsgs.first().content.toUpperCase()).catch(err);
         }).catch(err);
         return true;
@@ -1692,6 +1874,8 @@ commandList.push((message) => {
         return true;
     }
 })
+//i miss the old ___
+//I miss the old qt, straight from the go qt, chop up the soul qt, set on his goals qt, I hate the new qt, the bad mood qt, the always rude qt, spaz in the news qt, I miss the sweet qt, chop up the beats qt, I got to say at that time I'd like to meet qt, see, I invented qt, it wasn't any qts, and now I look and look around there's so many qts, I used to love qt, I used to love qt, I even had the pink polo I thought I was qt, what if qt made a song about qt called 'I miss the old qt' Man, that'd be so qt. That's all it was qt, we still love qt, and I love you like qt loves qt.
 //meme (num)
 commandList.push((message) => {
     let a = /^\.?meme ([\d]+?)$/i.exec(message.content);
@@ -1742,11 +1926,16 @@ commandList.push((message) => {
 })
 //im (whatever)
 commandList.push((message) => {
-    let a = /(?:^|(?:\.|,) )(?:\w+ )?(?:im|i'm)((?: \w+){1,3})(?:\.|$)/i.exec(message.content.toLowerCase());
+    let a = /(?:^|(?:\.|,) )(?:\w+ )?(?:im|i'm)((?: \w+){1})(?:\.|$)/i.exec(message.content.toLowerCase());
     if (a) {
-        let responses = ["I'm just a bot.", "I don't have a name.", "Nice to see you.", ""]
+        let greetings = ["Hello", "Hi", "Hey"]
+        let responses = ["Nice to see you.", ""]
+        if (message.guild.me.nickname) {
+            responses.push(`I'm ${message.guild.me.nickname}`)
+        }
         let response = responses[parseInt(Math.random() * responses.length)];
-        var msg = `Hi${a[1]}. ${response}`;
+        let greeting = greetings[parseInt(Math.random() * greetings.length)];
+        var msg = `${greeting}${a[1]}. ${response}`;
         message.channel.send(msg).catch(err);
         return true;
     }
@@ -1811,7 +2000,7 @@ commandList.push((message) => {
     let a = /stop/i.exec(message.content);
     if (a) {
         let server = message.channel.guild;
-        if (server.voiceConnection != null /* && server.voiceConnection.player!=null && server.voiceConnection.player.streams !=null && server.voiceConnection.player.streams.first().dispatcher !=null*/ ) {
+        if (server.voiceConnection != null /* && server.voiceConnection.player!=null && server.voiceConnection.player.streams !=null && server.voiceConnection.player.streams.first().dispatcher !=null*/) {
             //server.voiceConnection.player.streams.first().dispatcher.removeAllListeners('end');
             //server.voiceConnection.player.streams.first().dispatcher.end();
             server.voiceConnection.disconnect();
@@ -1822,7 +2011,7 @@ commandList.push((message) => {
 
 bot.on('message', (message) => {
     if (commandList.some((v) => {
-            return v(message)
-        })) return;
+        return v(message)
+    })) return;
 });
 bot.login(token);

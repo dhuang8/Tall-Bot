@@ -14,6 +14,12 @@ Responds with the current time in several time zones
 Searches the Shadowverse card database and returns with the card art and stats
 #### .ygo (search_term)
 Searches Yu-Gi-Oh! trading card database and returns with card text and price
+#### .hs (search_term)
+Searches Hearthstone card database and returns with card information
+#### .sts (search_term)
+Searches Slay the Spire card and relic list and returns with information
+#### .br (username) [season_number]
+Searches Battlerite username and returns with teams and their league in that season.
 #### .remindme ("message") (date)
 Sets a reminder and responds with the id
 #### .cancelremindme (id)
@@ -58,7 +64,3 @@ Sets or resets the user's Path of Exile league used to search poe.trade
 Stops currently played music
 #### other hidden commands
 Good luck finding them
-
-## To do
-Port the rest of the code over: Mainly Overwatch charts and Spotify.
-Async and await maybe

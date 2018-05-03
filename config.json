@@ -6,7 +6,9 @@
     "token": "",
     "botlink": "",
     "api": {
-        "youtube": "",
-        "darksky": ""
+        "youtube":"",
+        "darksky":"",
+        "battlerite": "",
+        "hearthstone": ""
     }
 }

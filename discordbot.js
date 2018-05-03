@@ -12,7 +12,7 @@ const adminID = config.adminID;
 const botChannelID = config.botChannelID;
 const errorChannelID = config.errorChannelID;
 const secretChannelID = config.secretChannelID;
-const battlerite_key = config.battlerite_key;
+const apikey = config.api;
 const token = config.token;
 const botlink = config.botlink;
 
@@ -647,6 +647,126 @@ commandList.push((message) => {
         return true;
     }
 })
+//.hs (search_term)
+commandList.push((message) => {
+    let a = /^\.hs (.+)$/i.exec(message.content)
+    if (a) {
+        (async ()=>{
+            try {
+                let season = a[2] || 7;
+                let body = await requestpromise({
+                    url: "https://omgvamp-hearthstone-v1.p.mashape.com/cards/search/" + encodeURIComponent(a[1]),
+                    headers: {
+                        "X-Mashape-Key": apikey.hearthstone
+                    }
+                })
+                let results = JSON.parse(body);
+                function cardRich (card) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(card.name);
+                    rich.setImage(card.img)
+                    let desc = "";
+                    if (card.playerClass) desc += "**Class: **" + card.playerClass + "\n";
+                    if (card.cardSet) desc += "**Set: **" + card.cardSet + "\n";
+                    if (card.artist) desc += "**Artist: **" + card.artist + "\n";
+                    if (card.collectible) desc += "**Collectible**" + "\n";
+                    else desc += "**Uncollectible**" + "\n";
+                    if (card.type == "Hero") {
+                        let cardtext = card.text;
+                        cardtext = replaceAll(cardtext, "\\*", "\\*");
+                        cardtext = replaceAll(cardtext, "\\\\n", "\n");
+                        cardtext = replaceAll(cardtext, "<i>", "*");
+                        cardtext = replaceAll(cardtext, "</i>", "*");
+                        cardtext = replaceAll(cardtext, "<b>", "**");
+                        cardtext = replaceAll(cardtext, "</b>", "**");
+                        desc += "\n" + cardtext + "\n";
+                    }
+                    if (card.flavor) {
+                        let flavor = card.flavor;
+                        flavor = replaceAll(flavor, "\\*", "\\*");
+                        flavor = replaceAll(flavor, "\\\\n", "\n");
+                        flavor = replaceAll(flavor, "<i>", "*");
+                        flavor = replaceAll(flavor, "</i>", "*");
+                        flavor = replaceAll(flavor, "<b>", "**");
+                        flavor = replaceAll(flavor, "</b>", "**");
+                        desc += "\n" + flavor;
+                    }
+                    rich.setDescription(desc);
+                    return rich;
+                }
+                if (results.length<1) {
+                    message.channel.send("`No results`");
+                } else if (results.length == 1) {
+                    let rich = cardRich(results[0]);
+                    message.channel.send("", { embed: rich });
+                } else {
+                    let msg = "```" + results.map((v, i) => {
+                        let title = v.name;
+                        if (v.type == "Hero") title += " (Hero)"
+                        return `${i + 1}. ${title}`
+                    }).join("\n") + "```";
+
+                    extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                        var num = parseInt(message.content) - 1;
+                        if (num < results.length && num > -1) {
+                            let rich = cardRich(results[num]);
+                            message.channel.send("", { embed: rich });
+                            return true;
+                        }
+                        return false;
+                    })
+                    message.channel.send(msg);
+                }
+            } catch (e) {
+                try {
+                    let response = JSON.parse(e.message);
+                    message.channel.send("`" + response.error + " " + response.message + "`");
+                } catch (e) {
+                    message.channel.send("`" + e.message + "`");
+                }
+                err(e);
+            }
+        })()
+        return true;
+        /*
+        let results = [];
+        for (let i = 0; i < sts.length; i++) {
+            if (sts[i].title.toLowerCase().indexOf(a[1].toLowerCase()) > -1) {
+                results.push(sts[i]);
+            }
+        }
+        if (results.length < 1) {
+            message.channel.send("No results");
+        } else if (results.length == 1) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(results[0].title);
+            rich.setImage(results[0].image)
+            rich.setDescription(results[0].description);
+            message.channel.send("", { embed: rich });
+        } else {
+            let msg = "```" + results.map((v, i) => {
+                return `${i + 1}. ${v.title}`
+            }).join("\n") + "```";
+            //message.channel.sendMessage(msg).catch(err);
+
+            extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                var num = parseInt(message.content) - 1;
+                if (num < results.length && num > -1) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(results[num].title);
+                    rich.setImage(results[num].image)
+                    rich.setDescription(results[num].description);
+                    message.channel.send("", { embed: rich });
+                    return true;
+                }
+                return false;
+            })
+            message.channel.send(msg);
+        }
+        return true;
+        */
+    }
+})
 //.sts (search_term)
 commandList.push((message) => {
     let a = /^\.sts (.+)$/i.exec(message.content)
@@ -698,7 +818,7 @@ commandList.push((message) => {
                 let body = await requestpromise({
                     url: "https://api.dc01.gamelockerapp.com/shards/global/players?filter[playerNames]=" + encodeURIComponent(a[1]),
                     headers: {
-                        Authorization: "Bearer " + battlerite_key,
+                        Authorization: "Bearer " + apikey.battlerite,
                         Accept: "application/vnd.api+json"
                     }
                 })
@@ -718,7 +838,7 @@ commandList.push((message) => {
                             requestpromise({
                                 url: "https://api.dc01.gamelockerapp.com/shards/global/players?filter[playerIds]=" + chunk.join(","),
                                 headers: {
-                                    Authorization: "Bearer " + battlerite_key,
+                                    Authorization: "Bearer " + apikey.battlerite,
                                     Accept: "application/vnd.api+json"
                                 }
                             }).then((body) => {
@@ -738,7 +858,7 @@ commandList.push((message) => {
                     //934603120233869312
                     url: "https://api.dc01.gamelockerapp.com/shards/global/teams?tag[season]=" + season + "&tag[playerIds]=" + player.id,
                     headers: {
-                        Authorization: "Bearer " + battlerite_key,
+                        Authorization: "Bearer " + apikey.battlerite,
                         Accept: "application/vnd.api+json"
                     }
                 })
@@ -780,30 +900,12 @@ commandList.push((message) => {
                 function toDivisionString(league, division, placement_games) {
                     if (placement_games > 0) return "Placement: " + placement_games + " remaining";
                     let return_string = "";
-                    switch (league) {
-                        case 0:
-                            return_string = "Bronze";
-                            break;
-                        case 1:
-                            return_string = "Silver";
-                            break;
-                        case 2:
-                            return_string = "Gold";
-                            break;
-                        case 3:
-                            return_string = "Platinum";
-                            break;
-                        case 4:
-                            return_string = "Diamond";
-                            break;
-                        case 5:
-                            return_string = "Champion";
-                            break;
-                        case 6:
-                            return_string = "Grand Champion";
-                            break;
+                    let league_string = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Champion", "Grand Champion"];
+                    if (league > -1 && league < league_string.length) {
+                        return_string = league_string[league];
                     }
-                    if (division > 0) return_string += " " + division;
+                    if (division > 0 && division < 6) return_string += " " + division;
+                    else if (division > 0 && division < 6) return_string += " " + division;
                     return return_string;
                 }
                 let rich = new Discord.RichEmbed();
@@ -1167,7 +1269,7 @@ commandList.push((message) => {
         a[1] = encodeURIComponent(a[1]);
         var max = 6;
         if (a[2] && parseInt(a[2]) > 0 && parseInt(a[2]) < 51) max = parseInt(a[2]);
-        var rp = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=' + max + '&q=' + a[1])
+        var rp = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + apikey.youtube + '&type=video&maxResults=' + max + '&q=' + a[1])
         message.channel.send("`Loading...`").then(loadingMessage => {
             rp.then(body => {
                 let data = JSON.parse(body);
@@ -1271,7 +1373,7 @@ function weather (content, channel) {
             let locName = data.RESULTS[i].name;
             let lat = data.RESULTS[i].lat;
             let lon = data.RESULTS[i].lon;
-            return requestpromise('https://api.darksky.net/forecast/' + config.api.darksky + '/' + data.RESULTS[i].lat + "," + data.RESULTS[i].lon + "?units=auto&exclude=minutely").then(body => {
+            return requestpromise('https://api.darksky.net/forecast/' + apikey.darksky + '/' + data.RESULTS[i].lat + "," + data.RESULTS[i].lon + "?units=auto&exclude=minutely").then(body => {
                 let data = JSON.parse(body);
                 let tM = "°C";
                 if (data.flags.units == "us") tM = "°F";
@@ -1744,11 +1846,13 @@ commandList.push((message) => {
 })
 //(00:00 am est)
 commandList.push((message) => {
-    let a = /(\d{1,2}(?::\d{2})? ?[ap]m) (est|cst|pst|nzdt|jst|utc)/i.exec(message.content);
+    //
+    let a = /(\d{1,2}(?::\d{2})? ?(?:[ap]m)?) ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt)/i.exec(message.content);
     if (a) {
         //var msg = '`test ' + a[1];
-        let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc"];
-        let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
+        let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt"];
+        let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC", "America/New_York", "America/Chicago", "America/Los_Angeles"];
+        let fullZones2 = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         let fullName = fullZones[shortZones.indexOf(a[2].toLowerCase())];
         //msg += fullName;
         let inputTime = moment.tz(a[1], "h:mma", fullName).subtract(1, 'days');
@@ -1760,8 +1864,8 @@ commandList.push((message) => {
             inputTime.add(1, 'days');
         }
         let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow();
-        for (let i = 0; i < fullZones.length; i++) {
-            msg += "\n" + inputTime.tz(fullZones[i]).format('ddd, MMM Do YYYY, h:mma z');
+        for (let i = 0; i < fullZones2.length; i++) {
+            msg += "\n" + inputTime.tz(fullZones2[i]).format('ddd, MMM Do YYYY, h:mma z');
         }
         msg += "`";
         message.channel.send(msg).catch(err);
@@ -1906,6 +2010,15 @@ commandList.push((message) => {
         return true;
     }
 })
+//bad bot
+commandList.push((message) => {
+    let a = /(^| )(bad|dumb|stupid|shit) bot($| |\.)/i.exec(message.content);
+    if (a) {
+        let msg = "sorry";
+        message.channel.send(msg).catch(err);
+        return true;
+    }
+})
 //dat boi
 commandList.push((message) => {
     if (message.content.toLowerCase().indexOf("dat boi") > -1) {
@@ -1919,7 +2032,7 @@ commandList.push((message) => {
     if (message.content.toLowerCase().indexOf("animal") > -1) {
         //upload animal
         //sendFiles(channelID, ["html/animalgifs/"+Math.floor(Math.random()*61+1)+".gif"]);
-        let attach = new Discord.Attachment("/var/www/html/animalgifs/" + Math.floor(Math.random() * 61 + 1) + ".gif");
+        let attach = new Discord.Attachment("animalgifs/" + Math.floor(Math.random() * 61 + 1) + ".gif");
         message.channel.send(attach).catch(err);
         return true;
     }

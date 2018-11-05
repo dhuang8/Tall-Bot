@@ -1,0 +1,1522 @@
+[
+    {
+        "title": "A Thousand Cuts",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ae/G%3Fa-thousand-cuts.png",
+        "description": "**Rare**\n**Power**\nEnergy: 2\nWhenever you play a card, deal 1 (2) damage to ALL enemies."
+    },
+    {
+        "title": "Accuracy",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5a/G%3Faccuracy.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\n**Shiv**s deal 3 (5) additional damage."
+    },
+    {
+        "title": "Acrobatics",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fb/G%3Facrobatics.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nDraw 3 (4) cards. Discard 1 card."
+    },
+    {
+        "title": "Adrenaline",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cb/G%3Fadrenaline.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 1\nGain 1 (2) **Energy**. Draw 2 cards. **Exhaust**."
+    },
+    {
+        "title": "After Image",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b2/G%3Fafter-image.png",
+        "description": "**Rare**\n**Power**\nEnergy: 1\n(**Innate**).\nWhenever you play a card, gain 1 **Block**."
+    },
+    {
+        "title": "All Out Attack",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/24/G%3Fall-out-attack.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 10 (14) damage to ALL enemies. Draw 1 less card next turn."
+    },
+    {
+        "title": "Backflip",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1d/G%3Fbackflip.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 5 (8) **block**. Draw 2 cards."
+    },
+    {
+        "title": "Backstab",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/bb/G%3Fbackstab.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 12( 16) damage. **Innate**. **Exhaust**."
+    },
+    {
+        "title": "Bane",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/14/G%3Fbane.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 7 (10) damage. If the enemy is **Poison**ed, deal 7 (10) damage again."
+    },
+    {
+        "title": "Blade Dance",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b3/G%3Fblade-dance.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nAdd 2 (3) **Shiv**s to your hand."
+    },
+    {
+        "title": "Blur",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/57/G%3Fblur.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nGain 5(8) **Block**. **Block** is not removed at the start of your next turn."
+    },
+    {
+        "title": "Bouncing Flask",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b5/R_bouncing-flask.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2\nApply 3 **poison** to a random enemy 3 (4) times."
+    },
+    {
+        "title": "Bullet Time",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/37/R_bullet-time.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 3 (2)\nYou cannot draw any cards this turn. Reduce the cost of cards in your hand to 0 this turn."
+    },
+    {
+        "title": "Burst",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/af/R_burst.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 1\nThis turn your next 1 **Skill** is (2 **Skill**s are) played twice."
+    },
+    {
+        "title": "Calculated Gamble",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f9/R_calculated-gamble.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nDiscard your hand, then draw that many cards.\n\n**Exhaust**.(non-exhaust)"
+    },
+    {
+        "title": "Caltrops",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9d/R_caltrops.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nWhenever you are attacked, deal 3 (5) damage to the attacker."
+    },
+    {
+        "title": "Catalyst",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8f/R_catalyst.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nDouble (Triple) an enemy's **Poison**. **Exhaust**."
+    },
+    {
+        "title": "Choke",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e6/R_choke.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nDeal 12 damage. Whenever you play a card this turn, targeted enemy loses 3 (5) HP."
+    },
+    {
+        "title": "Cloak And Dagger",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/77/R_cloak-and-dagger.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 6 **Block.** Add 1 **Shiv** (2 **Shiv**s) to your hand."
+    },
+    {
+        "title": "Concentrate",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d2/R_concentrate.png",
+        "description": "**Unommon**\n**Skill**\nEnergy: 0\nDiscard 3 (2) cards. Gain 2 **Energy**."
+    },
+    {
+        "title": "Corpse Explosion",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6f/R_corpse-explosion.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 2\nEnemy loses all **Poison**. Deal damage equal to twice (3 times) the amount lost to ALL enemies."
+    },
+    {
+        "title": "Crippling Poison",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/dd/R_crippling-poison.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2\nApply 3 (5) **Poison**. Apply 3 (5) **Weak**."
+    },
+    {
+        "title": "Dagger Spray",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/32/R_dagger-spray.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 4 (6) damage to ALL enemies twice."
+    },
+    {
+        "title": "Dagger Throw",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3f/R_dagger-throw.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 9 (12) damage. Draw 1 card. Discard 1 card."
+    },
+    {
+        "title": "Dash",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/62/R_dash.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nGain 10 (13) **Block**. Deal 10 (13) damage."
+    },
+    {
+        "title": "Deadly Poison",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8b/R_deadly-poison.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nApply 4 (6) **Poison**."
+    },
+    {
+        "title": "Defend",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d9/R_defend.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 5 (8) **Block**."
+    },
+    {
+        "title": "Deflect",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d0/R_deflect.png",
+        "description": "**Common**\n**Skill**\nEnergy: 0\nGain 4(6) **Block**."
+    },
+    {
+        "title": "Die Die Die",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c9/R_die-die-die.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\nDeal 13 (17) damage to ALL enemies. \n\n**Exhaust**."
+    },
+    {
+        "title": "Distraction",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e2/R_distraction.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1 (0)\nAdd a random **Skill** to your hand. It costs 0 this turn. **Exhaust**."
+    },
+    {
+        "title": "Dodge and Roll",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e1/R_dodge-and-roll.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 4 (6) **Block**. Next turn gain 4 (6) **Block**."
+    },
+    {
+        "title": "Doppelganger",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/90/R_doppelganger.png",
+        "description": "**Rare**\n**Skill**\nEnergy: X\nNext turn, draw X(+1) cards and gain X(+1) **Energy**."
+    },
+    {
+        "title": "Endless Agony",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/04/R_endless-agony.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\nWhenever you draw this card, add a copy of it to your hand. Deal 4 (6) damage. **Exhaust**."
+    },
+    {
+        "title": "Envenom",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b5/R_envenom.png",
+        "description": "**Rare**\n**Power**\nEnergy: 2 (1)\nWhenever an attack deals unblocked damage, apply 1 **Poison**."
+    },
+    {
+        "title": "Escape Plan",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/37/R_escape-plan.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nDraw 1 card. If the card is a **Skill**, gain 3 (5) **Block**."
+    },
+    {
+        "title": "Eviscerate",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/2f/R_eviscerate.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 4\nCosts 1 less **Energy** for each card discarded this turn. Deal 6 (8) damage three times."
+    },
+    {
+        "title": "Expertise",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b8/Expertise.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nDraw cards until you have 6 (8) in hand."
+    },
+    {
+        "title": "Finisher",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/bf/R_finisher.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 6 (8) damage for each **Attack** played this turn."
+    },
+    {
+        "title": "Flechettes",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a4/R_flechettles.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 4 (6) damage for each **Skill** in your hand."
+    },
+    {
+        "title": "Flying Knee",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/82/R_flying-knee.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 8 (11) damage. Next turn gain 1 **Energy**."
+    },
+    {
+        "title": "Footwork",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a8/R_footwork.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nGain 2 (3) **Dexterity**."
+    },
+    {
+        "title": "Glass Knife",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/ca/R_glass-knife.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\nDeal 8 (12) damage twice. Glass Knife's damage is lowered by 2 this combat."
+    },
+    {
+        "title": "Grand Finale",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/32/R_grand-finale.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\nCan only be played if there are no cards in your draw pile. Deal 40 (50) damage to ALL enemies."
+    },
+    {
+        "title": "Heel Hook",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/56/R_heel-hook.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 5 (7) damage. If the enemy is **Weak**, Gain 1 **Energy** and draw 1 card."
+    },
+    {
+        "title": "Infinite Blades",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b8/R_infinite-blades.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\n(**Innate**).\nAt the start of your turn, add a **Shiv** to your hand."
+    },
+    {
+        "title": "Leg Sweep",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/41/R_leg-sweep.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2\nApply 2 (3) **Weak**. Gain 12 (15) **Block**."
+    },
+    {
+        "title": "Malaise",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/14/R_malaise.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: X\nSpend all **Energy**. Enemy loses X (+1) **Strength**. Apply X (+1) **Weak**. **Exhaust**."
+    },
+    {
+        "title": "Masterful Stab",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6d/R_masterful-stab.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\nCan only be played if there are no other cards in your hand. Deal 15 (20) damage."
+    },
+    {
+        "title": "Neutralize",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/30/R_neutralize.png",
+        "description": "**Common**\n**Attack**\nEnergy: 0\nDeal 3 (4) damage. Apply 1 (2) **Weak**."
+    },
+    {
+        "title": "Nightmare",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9b/Nightmare.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 3 (2)\nChoose a card.\nNext turn, add 3 copies of that card into your hand.\n\n**Exhaust**."
+    },
+    {
+        "title": "Noxious Fumes",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3f/R_noxious-fumes.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nAt the start of your turn, apply 2 (3) **Poison** to ALL enemies."
+    },
+    {
+        "title": "Outmaneuver",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/be/R_outmaneuver.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nNext turn gain 2 (3) **Energy**."
+    },
+    {
+        "title": "Phantasmal Killer",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c3/R_phantasmal-killer.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 2 (1)\nOn your next turn, your **Attack** damage is doubled."
+    },
+    {
+        "title": "Piercing Wail",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/99/R_piercing-wail.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nALL enemies lose 6 (8) **Strength** for 1 turn. **Exhaust**."
+    },
+    {
+        "title": "Poisoned Stab",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/85/R_poisoned-stab.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 5 (6) damage. Apply 3 (4) **Poison**."
+    },
+    {
+        "title": "Predator",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/41/R_predator.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nDeal 15 (20) damage. Draw 2 more cards next turn."
+    },
+    {
+        "title": "Prepared",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c0/R_prepared.png",
+        "description": "**Common**\n**Skill**\nEnergy: 0\nDraw 1 (2) card(s). Discard 1(2) card(s)."
+    },
+    {
+        "title": "Quick Slash",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/eb/R_quick-slash.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 8 (12) damage. Draw 1 card."
+    },
+    {
+        "title": "Reflex",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/29/R_reflex.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: \n**Unplayable**. If this card is discarded from your hand, draw 1 card."
+    },
+    {
+        "title": "Riddle With Holes",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/06/R_riddle-with-holes.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nDeal 3 (4) damage 5 times."
+    },
+    {
+        "title": "Setup",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f6/R_setup.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1 (0)\nPlace a card in your hand on top of your draw pile. It cost 0 until it is played."
+    },
+    {
+        "title": "Skewer",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b1/R_skewer.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: X\nSpend all **Energy**. Deal 7 (10) damage X times."
+    },
+    {
+        "title": "Slice",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/da/R_slice.png",
+        "description": "**Common**\n**Attack**\nEnergy: 0\nDeal 5 (8) damage."
+    },
+    {
+        "title": "Storm of Steel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a9/R_storm-of-steel.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 2\nDiscard your hand. Add 1 (Upgraded) **Shiv** to your hand for each card discarded."
+    },
+    {
+        "title": "Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5d/R_strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 6 (9) damage."
+    },
+    {
+        "title": "Sucker Punch",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6a/R_sucker-punch.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 7 (9) damage. Apply 1 (2) **Weak**."
+    },
+    {
+        "title": "Survivor",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/67/R_survivor.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 8(11) **Block**. Discard a card."
+    },
+    {
+        "title": "Tactician",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7f/R_tactician.png",
+        "description": "**Rare**\n**Skill**\nEnergy: \n**Unplayable**. If this card is discarded from your hand, gain 1 (2) **Energy**."
+    },
+    {
+        "title": "Terror",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/55/R_terror.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1(0)\nApply 99 **Vulnerable**. **Exhaust**."
+    },
+    {
+        "title": "Tools of the Trade",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9c/R_tools-of-the-trade.png",
+        "description": "**Rare**\n**Power**\nEnergy: 1(0)\nAt the start of your turn, draw 1 card and discard 1 card."
+    },
+    {
+        "title": "Underhanded Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/38/R_underhanded-strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: \n**Unplayable**. If this card is discarded from your hand, deal 7 (10) damage to a random enemy."
+    },
+    {
+        "title": "Unload",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/68/R_unload.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\nDeal 12 (16) damage. Discard ALL non-**Attack** cards."
+    },
+    {
+        "title": "Well-Laid Plans",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f6/R_well-laid-plans.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nAt the end of your turn, **Retain** up to 1(2) card."
+    },
+    {
+        "title": "Wraith Form",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1c/R_wraith-form.png",
+        "description": "**Rare**\n**Power**\nEnergy: 3\nWhenever you play a **Skill**, deal 3 (5) damage to a random enemy."
+    },
+    {
+        "title": "Bash",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f2/R-bash.png",
+        "description": "**Basic**\n**Attack**\nEnergy: 2\nDeal 8(10) damage. Apply **Vulnerable** for 2(3) turns."
+    },
+    {
+        "title": "Defend",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cc/R%3Fdefend.png",
+        "description": "**Basic**\n**Skill**\nEnergy: 1\nGain 5(8) **Block**."
+    },
+    {
+        "title": "Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/25/R-strike.png",
+        "description": "**Basic**\n**Attack**\nEnergy: 1\nDeal 6(9) damage."
+    },
+    {
+        "title": "Anger",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a6/R%3Fanger.png",
+        "description": "**Common**\n**Attack**\nEnergy: 0\nDeal 4(6) damage. Place a copy of this card in your discard pile."
+    },
+    {
+        "title": "Armaments",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3e/R%3Farmaments.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 5 **Block**. Upgrade a(ALL) card(s) in your hand for the rest of combat."
+    },
+    {
+        "title": "Body Slam",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b2/R%3Fbody-slam.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1(0)\nDeal damage equal to your current **Block**."
+    },
+    {
+        "title": "Clash",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cc/R%3Fclash.png",
+        "description": "**Common**\n**Attack**\nEnergy: 0\nCan only be played if every card in your hand is an Attack. Deal 14(18) damage."
+    },
+    {
+        "title": "Cleave",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/19/R%3Fcleave.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 7(10) damage to ALL enemies."
+    },
+    {
+        "title": "Clothesline",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/bc/R%3Fclothesline.png",
+        "description": "**Common**\n**Attack**\nEnergy: 2\nDeal 12(14) damage. Apply 2(3) **Weak**."
+    },
+    {
+        "title": "Dual Wield",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7c/R%3Fdual-wield.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nCreate a(2) copy(s) of an Attack or Power card in your hand."
+    },
+    {
+        "title": "Flex",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c4/R%3Fflex.png",
+        "description": "**Common**\n**Skill**\nEnergy: 0\nGain 2(4) **Strength**. At the end of your turn, lose 2(4) **Strength**."
+    },
+    {
+        "title": "Ghostly Armor",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6c/Ghostly_Armor.jpg",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\n**Ethereal**.\nGain 10(13) Block."
+    },
+    {
+        "title": "Havoc",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/86/R%3Fhavoc.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1(0)\nPlay the top card of your draw pile and **Exhaust** it."
+    },
+    {
+        "title": "Headbutt",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3f/R%3Fheadbutt.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 9(12) damage. Place a card from your discard pile on top of your draw pile."
+    },
+    {
+        "title": "Heavy Blade",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9f/R%3Fheavy-blade.png",
+        "description": "**Common**\n**Attack**\nEnergy: 2\nDeal 14 damage. **Strength** affects Heavy Blade 3(5) times."
+    },
+    {
+        "title": "Iron Wave",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cd/R%3Firon-wave.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nGain 5(7) **Block**. Deal 5(7) damage."
+    },
+    {
+        "title": "Perfected Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a1/R-perfected-strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: 2\nDeal 6 damage. Deals an additional +2(3) damage for ALL of your cards containing \"Strike\"."
+    },
+    {
+        "title": "Pommel Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/78/R-pommel-strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 9(10) damage. Draw 1(2) card(s)."
+    },
+    {
+        "title": "Shrug it Off",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e9/R-shrug-it-off.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 8(11) **Block**. Draw 1 card."
+    },
+    {
+        "title": "Sword Boomerang",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e4/R-sword-boomerang.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 3 damage to a random enemy 3(4) times."
+    },
+    {
+        "title": "Thunderclap",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fa/R-thunder-clap.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 4(7) damage and apply 1 **Vulnerable** to ALL enemies."
+    },
+    {
+        "title": "True Grit",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4c/R-true-grit.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1\nGain 7(9) **Block**. **Exhaust** a random(not random) card from your hand."
+    },
+    {
+        "title": "Twin Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/2f/R-twin-strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 5(7) damage twice."
+    },
+    {
+        "title": "Warcry",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f4/R-warcry.png",
+        "description": "**Common**\n**Skill**\nEnergy: 1(0)\nDraw 2 cards. Place a card from your hand on top of your draw pile. **Exhaust**."
+    },
+    {
+        "title": "Wild Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fa/R-wild-strike.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 12(17) damage. Shuffle a **Wound** into your draw pile."
+    },
+    {
+        "title": "Battle Trance",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ad/R%3Fbattle-trance.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nDraw 3(4) cards. You cannot draw additional cards this turn."
+    },
+    {
+        "title": "Blood for Blood",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/45/R%3Fblood-for-blood.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 4\nCost 1 less energy for each time you lose HP in combat. Deal 16(18) damage."
+    },
+    {
+        "title": "Bloodletting",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/53/W_blood-letting.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nGain 1 (2) energy. Lose 3 HP."
+    },
+    {
+        "title": "Burning Pact",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f8/W_burning-pact.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\n**Exhaust** 1 card. Draw 2(3) cards."
+    },
+    {
+        "title": "Carnage",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c6/R-Carnage.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\n**Ethereal**. Deal 18(26) damage."
+    },
+    {
+        "title": "Combust",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/52/R%3Fcombust.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nAt the end of your turn, lose 1 HP and deal 4(5) damage to ALL enemies."
+    },
+    {
+        "title": "Corruption",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e5/R%3Fcorruption.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 3(2)\nSkills cost 0. Whenever you play a Skill, **Exhaust** it."
+    },
+    {
+        "title": "Disarm",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/be/R%3Fdisarm.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nEnemy loses 2(3) **Strength**. **Exhaust**."
+    },
+    {
+        "title": "Dropkick",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/75/R%3Fdropkick.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 5(8) damage. If the target is **Vulnerable**, gain 1 energy and draw 1 card."
+    },
+    {
+        "title": "Entrench",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/44/R-Entrench.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2(1)\nDouble your current **Block**."
+    },
+    {
+        "title": "Evolve",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/17/R%3Fevolve.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nShuffle 2 **Wound**s into your draw pile. Whenever you draw a **Wound**, draw 1(2) card(s)."
+    },
+    {
+        "title": "Feel No Pain",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5d/R%3Ffeel-no-pain.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nWhenever a card is **Exhaust**ed, gain 4(6) **Block**."
+    },
+    {
+        "title": "Fire Breathing",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/0d/R%3Ffire-breathing.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1(0)\nAt the end of your turn, for each Attack played this turn deal 1 damage to ALL enemies."
+    },
+    {
+        "title": "Flame Barrier",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/03/R%3Fflame-barrier.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2\nGain 12(16) **Block**. Whenever you are attacked this turn, deal 4(6) damage to the attacker."
+    },
+    {
+        "title": "Hemokinesis",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7a/R%3Fhemokinesis.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nLose 3(2) HP. Deal 14(18) damage."
+    },
+    {
+        "title": "Infernal Blade",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ad/R%3Finfernal-blade.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1(0)\nAdd a random Attack to your hand. It costs 0 this turn. **Exhaust**."
+    },
+    {
+        "title": "Inflame",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/ed/R%3Finflame.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nGain 2(3) **Strength**."
+    },
+    {
+        "title": "Intimidate",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/bc/R%3Fintimidate.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nApply 1(2) **Weak** to ALL enemies. **Exhaust**."
+    },
+    {
+        "title": "Metallicize",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fd/R%3Fmetallicize.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1\nAt the end of your turn, gain 3(4) **Block**."
+    },
+    {
+        "title": "Power Through",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5f/W_power-through.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nAdd 2 **Wound**s to your hand. Gain 15(20) **Block**."
+    },
+    {
+        "title": "Pummel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/67/W_pummel.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 2 damage 4(5) times. **Exhaust**."
+    },
+    {
+        "title": "Rage",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/ee/W_rage.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nWhenever you play an Attack this turn, gain 4(6) **Block**"
+    },
+    {
+        "title": "Rampage",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/db/W_rampage.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 1\nDeal 8 damage. Every time this card is played, increase its damage by 4(8) for this combat."
+    },
+    {
+        "title": "Reckless Charge",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/22/W_reckless-charge.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\nGain 1 **Vulnerable**. Deal 9(12) damage."
+    },
+    {
+        "title": "Rupture",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c1/W_rupture.png",
+        "description": "**Uncommon**\n**Power**\nEnergy: 1(0)\nWhenever you lose HP from a card, gain 1 **Strength**."
+    },
+    {
+        "title": "Searing Blow",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/08/W_searing-blow.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nDeal 12(16+) damage. Can be upgraded any number of times."
+    },
+    {
+        "title": "Second Wind",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f7/W_second-wind.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\n**Exhaust** all non-Attack cards in your hand and gain 5(7) **Block** for each."
+    },
+    {
+        "title": "Seeing Red",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/2f/W_seeing-red.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1(0)\nGain 2 energy. **Exhaust**."
+    },
+    {
+        "title": "Sentinel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f6/W_sentinel.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nGain 5(8) **Block**. If this card is **Exhaust**ed, gain 2(3) energy."
+    },
+    {
+        "title": "Sever Soul",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a2/W_sever-soul.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\n**Exhaust** all non-Attack cards in your hand. Deal 16(20) damage."
+    },
+    {
+        "title": "Shockwave",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1f/W_shockwave.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 2\nApply 3(5) **Weak** and **Vulnerable** to ALL enemies."
+    },
+    {
+        "title": "Spot Weakness",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/84/W_spot-weakness.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1\nIf an enemy intends to attack, gain 3(4) **Strength**."
+    },
+    {
+        "title": "Uppercut",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1c/W_uppercut.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 2\nDeal 13 damage. Apply 1(2) **Weak**. Apply 1(2) **Vulnerable**."
+    },
+    {
+        "title": "Whirlwind",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ab/W_whirlwind.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: X\nSpend all energy. Deal 5(8) damage to ALL enemies X times."
+    },
+    {
+        "title": "Barricade",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9d/R%3Fbarricade.png",
+        "description": "**Rare**\n**Power**\nEnergy: 3(2)\n**Block** no longer expires at the start of your turn."
+    },
+    {
+        "title": "Bludgeon",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c8/R%3Fbludgeon.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 3\nDeal 32(42) damage."
+    },
+    {
+        "title": "Berserk",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/54/W_berserk.png",
+        "description": "**Rare**\n**Power**\nEnergy: 1(0)\nIf your HP is below 50%, gain 1 energy at the start of each turn."
+    },
+    {
+        "title": "Brutality",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7c/W_brutality.png",
+        "description": "**Rare**\n**Power**\nEnergy: 0\n(**Innate**) At the start of your turn, lose 1 HP and draw 1 card."
+    },
+    {
+        "title": "Dark Embrace",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/03/R%3Fdark-embrace.png",
+        "description": "**Rare**\n**Power**\nEnergy: 2(1)\nWhenever a card is **Exhaust**ed, draw 1 card."
+    },
+    {
+        "title": "Demon Form",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ac/R%3Fdemon-form.png",
+        "description": "**Rare**\n**Power**\nEnergy: 3\nAt the start of each turn, gain 2(3) **Strength**."
+    },
+    {
+        "title": "Double Tap",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e1/R%3Fdouble-tap.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 1\nThis turn, your next (2) Attack(s) is played twice."
+    },
+    {
+        "title": "Exhume",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/67/R%3Fexhume.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 1(0)\nChoose an **Exhaust**ed card and put it in your hand. **Exhaust**."
+    },
+    {
+        "title": "Feed",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1d/R%3Ffeed.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\nDeal 10(12) damage. If this kills the enemy, gain 3(4) permanent Max HP. **Exhaust**<span>.</span>"
+    },
+    {
+        "title": "Fiend Fire",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/72/R%3Ffiend-fire.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 2\n**Exhaust** your hand. Deal 7(10) damage for each **Exhaust**ed card. **Exhaust**."
+    },
+    {
+        "title": "Immolate",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8c/R%3Fimmolate.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 1\n**Exhaust** 1 card. If the chosen card was a **Status** or **Curse**, deal 10(15) damage to ALL enemies."
+    },
+    {
+        "title": "Impervious",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d3/R%3Fimpervious.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 2\nGain 30(40) **Block**. **Exhaust**."
+    },
+    {
+        "title": "Juggernaut",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/35/R%3Fjuggernaut.png",
+        "description": "**Rare**\n**Power**\nEnergy: 2\nWhenever you gain **Block**, deal 3(5) damage to ALL enemies."
+    },
+    {
+        "title": "Limit Break",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5c/R%3Flimit-break.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 1\nDouble your **Strength**. **Exhaust**(Don't **Exhaust**)."
+    },
+    {
+        "title": "Offering",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/84/W_offering.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nLose 4 HP. Gain 2 energy. Draw 3(5) cards. **Exhaust**."
+    },
+    {
+        "title": "Reaper",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e0/W_reaper.png",
+        "description": "**Rare**\n**Attack**\nEnergy: 2\nDeal 4(5) damage to ALL enemies. Heal for un**Block**ed damage. **Exhaust**."
+    },
+    {
+        "title": "J.A.X",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5f/JAX.png",
+        "description": "**Common**\n**Skill**\nEnergy: 0\nLose 3 HP.\nGain 2 (3) **Strength**.\n\n**Exhaust**.\n\n''(Obtained from event: **Drug Dealer**).''"
+    },
+    {
+        "title": "Shiv",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b6/Shiv.png",
+        "description": "**Common**\n**Attack**\nEnergy: 0\nDeal 4 damage.\n**Exhaust**.\n\n''(Obtained from the effects of various cards.)''"
+    },
+    {
+        "title": "Bandage Up",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4e/BandageUp.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nHeal 4 (6) HP.\n**Exhaust**."
+    },
+    {
+        "title": "Bite",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/41/G%3Fbite.png",
+        "description": "**Common**\n**Attack**\nEnergy: 1\nDeal 7(8) damage. Heal 2 (3) HP."
+    },
+    {
+        "title": "Blind",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/68/Blind.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nApply 2 **Weak**."
+    },
+    {
+        "title": "Dark Shackles",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/79/DarkShackles.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nEnemy loses 9 (15) **Strength** for the rest of this turn.\n**Exhaust**."
+    },
+    {
+        "title": "Deep Breath",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/62/DeepBreath.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nShuffle your discard pile into your draw pile.\nDraw 1 (2) card(s)."
+    },
+    {
+        "title": "Dramatic Entrance",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/42/DramaticEntrance.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\n**Innate**.\nDeal 6 (8) damage to ALL enemies.\n\n**Exhaust**."
+    },
+    {
+        "title": "Finesse",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/67/Finesse.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nGain 2 (4) **Block**.\nDraw 1 card."
+    },
+    {
+        "title": "Flash of Steel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/30/FlashOfSteel.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\nDeal 3 (6) damage.\nDraw 1 card."
+    },
+    {
+        "title": "Good Instincts",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b8/GoodInstincts.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nGain 4 (7) **Block**."
+    },
+    {
+        "title": "Jack Of All Trades",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d9/JackOfAllTrades.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nAdd 1 (2) random Colorless card(s) to your hand.\n**Exhaust**."
+    },
+    {
+        "title": "Madness",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/ee/Madness.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 1(0)\nA random card in your hand costs 0 for the rest of combat. **Exhaust**.\n\n(Obtained from event: **Winding Halls**)"
+    },
+    {
+        "title": "Mind Blast",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/26/MindBlast.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\n(**Innate**).\nDeal damage equal to the number of cards in your draw pile."
+    },
+    {
+        "title": "Panacea",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/37/Panacea.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nGain 1 (2) **Artifact**.\n**Exhaust**."
+    },
+    {
+        "title": "Purity",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a2/Purity.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nChoose and exhaust 3 (5) cards in your hand. **Exhaust**."
+    },
+    {
+        "title": "Swift Strike",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8b/SwiftStrike.png",
+        "description": "**Uncommon**\n**Attack**\nEnergy: 0\nDeal 5 (8) damage."
+    },
+    {
+        "title": "Trip",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cf/Trip.png",
+        "description": "**Uncommon**\n**Skill**\nEnergy: 0\nApply 2 **Vulnerable** (to ALL enemies)."
+    },
+    {
+        "title": "Apotheosis",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/93/Apotheosis.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 2 (1)\n**Upgrade** ALL of your cards for the rest of combat. **Exhaust**."
+    },
+    {
+        "title": "Enlightenment",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/60/Enlightment.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nReduce the cost of cards in your hand to 1 this turn (combat)."
+    },
+    {
+        "title": "Master Of Strategy",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/33/MasterOfStrategy.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nDraw 3 (4) cards. **Exhaust**."
+    },
+    {
+        "title": "Panache",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/19/Panache.png",
+        "description": "**Rare**\n**Power**\nEnergy: 0\nEvery time you play 5 cards in a single turn, deal 10 (14) damage to ALL enemies."
+    },
+    {
+        "title": "Sadistic Nature",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a8/SadisticNature.png",
+        "description": "**Rare**\n**Power**\nEnergy: 0\nWhenever you apply a **Debuff** to an enemy, they take 3 (4) damage."
+    },
+    {
+        "title": "Secret Technique",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5c/SecretTechnique.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nChoose a **Skill** from your draw pile and place it into your hand. **Exhaust**. (Don't Exhaust)"
+    },
+    {
+        "title": "Secret Weapon",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5a/SecretWeapon.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nChoose an **Attack** from your draw pile and place it into your hand. **Exhaust**. (Don't Exhaust)"
+    },
+    {
+        "title": "Thinking Ahead",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/0c/ThinkingAhead.png",
+        "description": "**Rare**\n**Skill**\nEnergy: 0\nDraw 2 cards. Place a card from your hand on top of your draw pile. **Exhaust**.\n(Don't Exhaust)"
+    },
+    {
+        "title": "Transmutation",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/cd/Transmutation.png",
+        "description": "**Rare**\n**Skill**\nEnergy: X\nAdd X random (**Upgraded**) colorless cards into your hand. **Exhaust**."
+    },
+    {
+        "title": "Clumsy",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8e/Clumsy.png",
+        "description": "**Curse**\nUnplayable.\n**Ethereal**."
+    },
+    {
+        "title": "Decay",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/93/Decay.png",
+        "description": "**Curse**\nUnplayable.\nAt the end of your turn, take 2 damage."
+    },
+    {
+        "title": "Doubt",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6a/Doubt.png",
+        "description": "**Curse**\nUnplayable.\nAt the end of your turn, gain 1 **Weak**."
+    },
+    {
+        "title": "Injury",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4e/Injury.png",
+        "description": "**Curse**\nUnplayable."
+    },
+    {
+        "title": "Necronomicurse",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/38/Necronomicurse.png",
+        "description": "**Curse**\nUnplayable.\nThere is no escape from this Curse.\n\n(Cannot be **Exhausted** or Removed from your deck.)"
+    },
+    {
+        "title": "Normality",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a5/Normality.png",
+        "description": "**Curse**\nUnplayable.\nYou cannot play more than 3 cards this turn."
+    },
+    {
+        "title": "Pain",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/54/Pain.png",
+        "description": "**Curse**\nUnplayable.\nWhile in hand, lose 1 HP when other cards are played."
+    },
+    {
+        "title": "Parasite",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f0/Parasite.png",
+        "description": "**Curse**\nUnplayable.\nIf transformed or removed from your deck, lose 3 Max HP."
+    },
+    {
+        "title": "Regret",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/27/Regret.png",
+        "description": "**Curse**\nUnplayable.\nAt the end of your turn, lose 1 HP for each card in your hand."
+    },
+    {
+        "title": "Writhe",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6e/Writhe.png",
+        "description": "**Curse**\nUnplayable.\n**Innate**."
+    },
+    {
+        "title": "Burn",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/bf/Burn.png",
+        "description": "**Status**\nUnplayable.\nAt the end of your turn, take 2 (4) damage."
+    },
+    {
+        "title": "Dazed",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ad/Dazed.png",
+        "description": "**Status**\nUnplayable.\n**Ethereal**."
+    },
+    {
+        "title": "Wound",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a4/Wound.png",
+        "description": "**Status**\nUnplayable."
+    },
+    {
+        "title": "Burning Blood",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/48/BurningBlood_73x80.png",
+        "description": "**Starter (Ironclad)**\nAt the end of combat, heal 6 HP."
+    },
+    {
+        "title": "Ring of the Snake",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/21/SerpentRing.png",
+        "description": "**Starter (Silent)**\nAt the start of each combat, draw 2 additional cards."
+    },
+    {
+        "title": "Anchor",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c0/Anchor.png",
+        "description": "**Common**\nStart each combat with 10 **Block**."
+    },
+    {
+        "title": "Ancient Tea Set",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5e/TeaSet.png",
+        "description": "**Common**\nWhenever you enter a **Rest Site**, start the next combat with 2 **Energy**."
+    },
+    {
+        "title": "Art of War",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fd/ArtOfWar.png",
+        "description": "**Common**\nIf you do not play any **Attack**s during your turn, gain an extra **Energy** next turn."
+    },
+    {
+        "title": "Bag of Marbles",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/be/Marbles.png",
+        "description": "**Common**\nAt the start of each combat, apply 1 **Vulnerable** to ALL enemies."
+    },
+    {
+        "title": "Bag of Preparation",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c6/BagOfPreparation.png",
+        "description": "**Common**\nAt the start of each combat, draw 2 additional cards."
+    },
+    {
+        "title": "Blood Vial",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4e/BloodVial.png",
+        "description": "**Common**\nAt the start of each combat, heal 2 HP."
+    },
+    {
+        "title": "Bronze Scales",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3e/BronzeScales.png",
+        "description": "**Common**\nWhenever you take damage, deal 3 damage back."
+    },
+    {
+        "title": "Dream Catcher",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d3/DreamCatcher.png",
+        "description": "**Common**\nWhenever you **rest**, you may add a card to your deck."
+    },
+    {
+        "title": "Happy Flower",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/81/Sunflower.png",
+        "description": "**Common**\nEvery 3 turns, gain 1 **Energy**."
+    },
+    {
+        "title": "Juzu Bracelet",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/23/JuzuBracelet.png",
+        "description": "**Common**\nRegular enemy combats are no longer encountered in **? rooms**."
+    },
+    {
+        "title": "Lantern",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f5/Lantern.png",
+        "description": "**Common**\nGain 1 **Energy** on the first turn of each combat."
+    },
+    {
+        "title": "Oddly Smooth Stone",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/43/SmoothStone.png",
+        "description": "**Common**\nAt the start of each combat, gain 1 **Dexterity**."
+    },
+    {
+        "title": "Omamori",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1a/Omamori.png",
+        "description": "**Common**\nNegate the next 2 **Curse**s you obtain."
+    },
+    {
+        "title": "Orichalcum",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/80/Orichalcum.png",
+        "description": "**Common**\nIf you end your turn without **Block**, gain 6 **Block**."
+    },
+    {
+        "title": "Pen Nib",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/70/PenNib.png",
+        "description": "**Common**\nEvery 10th **Attack** you play deals double damage."
+    },
+    {
+        "title": "Prayer Wheel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1f/PrayerWheel.png",
+        "description": "**Common**\nNon-Boss **chest**s now also contain cards."
+    },
+    {
+        "title": "Regal Pillow",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/36/Pillow.png",
+        "description": "**Common**\nHeal an additional 15 HP when you **Rest**."
+    },
+    {
+        "title": "Singing Bowl",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/eb/SingingBowl.png",
+        "description": "**Common**\nWhen adding cards to your deck, you may gain +2 Max HP instead."
+    },
+    {
+        "title": "Snecko Skull",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d7/SnakeSkull.png",
+        "description": "**Common (Silent)**\nWhenever you apply **Poison**, apply an additional 1 **Poison**."
+    },
+    {
+        "title": "Strawberry",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6d/Strawberry.png",
+        "description": "**Common**\nRaise your Max HP by 7."
+    },
+    {
+        "title": "Tiny Chest",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6b/TinyChest.png",
+        "description": "**Common**\nGain 30 **Gold**. You are 10% more likely to find treasure in **? rooms.**"
+    },
+    {
+        "title": "Vajra",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/dc/Vajra.png",
+        "description": "**Common**\nAt the start of each combat, gain 1 **Strength**."
+    },
+    {
+        "title": "War Paint",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/07/WarPaint.png",
+        "description": "**Common**\nUpon pick up, **Upgrade** 2 random **Skill**s."
+    },
+    {
+        "title": "Whetstone",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9f/Whetstone.png",
+        "description": "**Common**\nUpon pick up, **Upgrade** 2 random **Attack**s."
+    },
+    {
+        "title": "Blue Candle",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/1b/BlueCandle.png",
+        "description": "**Uncommon**\n**Curse** cards can now be played. Playing a Curse will make you lose 1 HP and **Exhaust**s the card."
+    },
+    {
+        "title": "Bottled Flame",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8d/FlameBottle.png",
+        "description": "**Uncommon**\nUpon pick up, choose an **Attack** card. At the start of each combat, this card will be in your hand."
+    },
+    {
+        "title": "Bottled Lightning",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a9/BottledLightning.png",
+        "description": "**Uncommon**\nUpon pick up, choose a **Skill** card. At the start of each combat, this card will be in your hand."
+    },
+    {
+        "title": "Bottled Tornado",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ac/BottledTornado.png",
+        "description": "**Uncommon**\nUpon pick up, choose a **Power** card. At the start of each combat, this card will be in your hand."
+    },
+    {
+        "title": "Centennial Puzzle",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/0f/CentennialPuzzle.png",
+        "description": "**Uncommon**\nThe first time you lose HP each combat, draw 3 cards."
+    },
+    {
+        "title": "Darkstone Periapt",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/ca/Darkstone.png",
+        "description": "**Uncommon**\nWhenever you obtain a **Curse**, increase your Max HP by 6."
+    },
+    {
+        "title": "Frozen Egg",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/dc/FrozenEgg.png",
+        "description": "**Uncommon**\nWhenever you add a **Power** card to your deck, it is **Upgrade**d."
+    },
+    {
+        "title": "Gremlin Horn",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/06/GremlinHorn.png",
+        "description": "**Uncommon**\nWhenever an enemy dies, gain 1 **Energy** and draw 1 card."
+    },
+    {
+        "title": "Kunai",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/d7/Kunai.png",
+        "description": "**Uncommon**\nEvery time you play 3 **Attacks** in a single turn, gain 1 **Dexterity**."
+    },
+    {
+        "title": "Letter Opener",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e5/LetterOpener.png",
+        "description": "**Uncommon**\nEvery time you play 3 **Skill**s in a single turn, deal 5 damage to ALL enemies."
+    },
+    {
+        "title": "Matryoshka",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7a/Matryoshka.png",
+        "description": "**Uncommon**\nThe next 2 **chests** you open contain 2 Relics. (Excludes boss chests)"
+    },
+    {
+        "title": "Meat on the Bone",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/58/Meat.png",
+        "description": "**Uncommon**\nIf your HP is at or below 50% at the end of combat, heal 12 HP."
+    },
+    {
+        "title": "Mercury Hourglass",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/11/Hourglass.png",
+        "description": "**Uncommon**\nAt the start of your turn, deal 3 damage to ALL enemies."
+    },
+    {
+        "title": "Molten Egg",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6c/StoneEgg.png",
+        "description": "**Uncommon**\nWhenever you add an **Attack** card to your deck, it is **Upgrade**d."
+    },
+    {
+        "title": "Mummified Hand",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4d/MummifiedHand.png",
+        "description": "**Uncommon**\nWhenever you play a **Power**, a random card in your hand costs 0 for the turn."
+    },
+    {
+        "title": "Ninja Scroll",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/81/NinjaScroll.png",
+        "description": "**Uncommon (Silent)**\nStart each combat with 3 **Shiv**s in hand."
+    },
+    {
+        "title": "Ornamental Fan",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/52/OrnamentalFan.png",
+        "description": "**Uncommon**\nEvery time you play 3 **Attack**s in a single turn, gain 4 **Block**."
+    },
+    {
+        "title": "Pantograph",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/82/Pantograph.png",
+        "description": "**Uncommon**\nAt the start of **boss** combats, heal 25 HP."
+    },
+    {
+        "title": "Paper Krane",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c0/PaperCrane.png",
+        "description": "**\nUncommon\n(Silent)**\nEnemies with **Weak** deal 50% less damage rather than 25%."
+    },
+    {
+        "title": "Paper Phrog",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/99/PaperFrog.png",
+        "description": "**Uncommon\n(Ironclad)**\nEnemies with **Vulnerable** take 75% more damage rather than 50%."
+    },
+    {
+        "title": "Pear",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/b/b0/Pear.png",
+        "description": "**Uncommon**\nRaise your Max HP by 10."
+    },
+    {
+        "title": "Runic Dodecahedron",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/33/Dodecahedron.png",
+        "description": "**Uncommon**\nIf your HP is full, gain 1 **Energy** at the start of each turn."
+    },
+    {
+        "title": "Self-Forming Clay",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a2/Clay.png",
+        "description": "**Uncommon\n(Ironclad)**\nWhenever you lose HP in combat, gain 3 **Block** next turn."
+    },
+    {
+        "title": "Shuriken",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ac/Shuriken.png",
+        "description": "**Uncommon**\nEvery time you play 3 **Attack**s in a single turn, gain 1 **Strength**."
+    },
+    {
+        "title": "Smiling Mask",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/04/MerchantMask.png",
+        "description": "**Uncommon**\nThe **merchant's** card removal service now always costs 50 **Gold**."
+    },
+    {
+        "title": "The Courier",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e5/Courier.png",
+        "description": "**Uncommon**\nThe **merchant** no longer runs out of **cards**, relics, or **potions** and his prices are reduced by 20%."
+    },
+    {
+        "title": "Toolbox",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/46/Toolbox.png",
+        "description": "**Uncommon**\nAt the start of each combat, add a random **colorless** card to your hand."
+    },
+    {
+        "title": "Tough Bandages",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f7/ToughBandages.png",
+        "description": "**Uncommon\n(Silent)**\nWhenever you **discard** a card during your turn, gain 3 **Block**."
+    },
+    {
+        "title": "Toxic Egg",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/38/ToxicEgg.png",
+        "description": "**Uncommon**\nWhenever you add a **Skill** card to your deck, it is **Upgrade**d."
+    },
+    {
+        "title": "Bird-Faced Urn",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/9c/AncientUrn.png",
+        "description": "**Rare**\nWhenever you play a **Power**, heal 2 HP."
+    },
+    {
+        "title": "Calipers",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/ed/Calipers.png",
+        "description": "**Rare**\nAt the start of your turn, lose 15 **Block** rather than all of your **Block**."
+    },
+    {
+        "title": "Champion Belt",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6d/ChampionBelt.png",
+        "description": "**Rare\n(Ironclad)**\nWhenever you apply **Vulnerable**, also apply 1 **Weak**."
+    },
+    {
+        "title": "Charon's Ashes",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f9/Ashes.png",
+        "description": "**Rare\n(Ironclad)**\nWhenever you **Exhaust** a card, deal 3 damage to ALL enemies."
+    },
+    {
+        "title": "Dead Branch",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/d/db/DeadBranch.png",
+        "description": "**Rare**\nWhenever you **Exhaust** a card, add a random card to your hand."
+    },
+    {
+        "title": "Du-Vu Doll",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/fa/DuvuDoll.png",
+        "description": "**Rare**\nFor each **Curse** in your deck, start each combat with 1 additional **Strength**."
+    },
+    {
+        "title": "Frozen Eye",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/97/FrozenEye.png",
+        "description": "**Rare**\nWhen viewing your Draw Pile, the cards are now shown in order."
+    },
+    {
+        "title": "Gambling Chip",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/9/93/GamblingChip.png",
+        "description": "**Rare**\nAt the start of each combat, discard any number of cards then draw that many."
+    },
+    {
+        "title": "Ginger",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/85/Ginger.png",
+        "description": "**Rare**\nYou can no longer become **Weak**ened."
+    },
+    {
+        "title": "Girya",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/84/Kettlebell.png",
+        "description": "**Rare**\nYou can now gain **Strength** at **Rest Sites**. (3 times max)"
+    },
+    {
+        "title": "Ice Cream",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/14/IceCream.png",
+        "description": "**Rare**\n**Energy** is now conserved between turns."
+    },
+    {
+        "title": "Magic Flower",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/0e/MagicFlower.png",
+        "description": "**Rare\n(Ironclad)**\nHealing is 50% more effective during combat."
+    },
+    {
+        "title": "Mango",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/38/Mango.png",
+        "description": "**Rare**\nRaise your Max HP by 14."
+    },
+    {
+        "title": "Old Coin",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/38/OldCoin.png",
+        "description": "**Rare**\nGain 300 **Gold**."
+    },
+    {
+        "title": "Peace Pipe",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/26/PeacePipe.png",
+        "description": "**Rare**\nYou can now remove cards from your deck at **Rest Sites**."
+    },
+    {
+        "title": "Red Skull",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4f/RedSkull.png",
+        "description": "**Rare\n(Ironclad)**\nWhile your HP is at or below 50%, you have 3 additional **Strength**."
+    },
+    {
+        "title": "Shovel",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/77/Shovel.png",
+        "description": "**Rare**\nYou can now Dig for loot at **Rest Sites**."
+    },
+    {
+        "title": "Sundial",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/1/15/Sundial.png",
+        "description": "**Rare**\nEvery 3 times you shuffle your deck, gain 2 **Energy**."
+    },
+    {
+        "title": "Thread and Needle",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/2f/ThreadAndNeedle.png",
+        "description": "**Rare**\nAt the start of each combat, gain 5 Plated Armor."
+    },
+    {
+        "title": "Tingsha",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/78/Tingsha.png",
+        "description": "**Rare\n(Silent )**\nWhenever you discard a card during your turn, deal 3 damage to a random enemy for each card discarded."
+    },
+    {
+        "title": "Torii",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/23/Torii.png",
+        "description": "**Rare**\nWhenever you would receive 5 or less unblocked **Attack** damage, reduce it to 1."
+    },
+    {
+        "title": "Unceasing Top",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/87/Top.png",
+        "description": "**Rare**\nWhenever you have no cards in hand during your turn, draw a card."
+    },
+    {
+        "title": "Astrolabe",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/83/Astrolabe.png",
+        "description": "**Boss**\nUpon pickup, choose and **Transform** 3 cards, then **Upgrade** them."
+    },
+    {
+        "title": "Black Blood",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/32/BlackBlood.png",
+        "description": "**Boss (Ironclad)**\nReplaces **Burning Blood**. At the end of combat, heal 10 HP."
+    },
+    {
+        "title": "Black Star",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/56/Blackstar.png",
+        "description": "**Boss**\n**Elites** now drop 2 Relics when defeated."
+    },
+    {
+        "title": "Calling Bell",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6e/Bell.png",
+        "description": "**Boss**\nObtain 3 **Curse**s and 3 Relics."
+    },
+    {
+        "title": "Cursed Key",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e0/CursedKey.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. Whenever you open a non-boss **chest**, obtain a **Curse**."
+    },
+    {
+        "title": "Ectoplasm",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/36/Ectoplasm.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. You can no longer gain **Gold**."
+    },
+    {
+        "title": "Eternal Feather",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f4/EternalFeather.png",
+        "description": "**Boss**\nFor every 5 cards in your deck, heal 2 HP whenever you enter a **Rest Site**."
+    },
+    {
+        "title": "Lizard Tail",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/ae/LizardTail.png",
+        "description": "**Boss**\nWhen you would die, heal to 50% of your Max HP instead (works once)."
+    },
+    {
+        "title": "Mark of Pain",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/45/MarkOfPain.png",
+        "description": "**Boss\n(Ironclad)**\nGain 1 **Energy** at the start of each turn. Start combats with 2 **Wound**s in your draw pile."
+    },
+    {
+        "title": "Orrery",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/75/Orrery.png",
+        "description": "**Boss**\nChoose and add 5 cards to your deck."
+    },
+    {
+        "title": "Pandora's Box",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8d/PandorasBox.png",
+        "description": "**Boss**\n**Transform** all **Strike**s and **Defend**s."
+    },
+    {
+        "title": "Philosopher's Stone",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/ca/PhilosopherStone.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. ALL enemies start with 2 **Strength**."
+    },
+    {
+        "title": "Question Card",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6e/QuestionCard.png",
+        "description": "**Boss**\nOn Card Reward screens, choose from 4 cards instead of 3."
+    },
+    {
+        "title": "Runic Cube",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/36/RunicCube.png",
+        "description": "**Boss\n(Ironclad)**\nWhenever you lose HP, draw 1 card."
+    },
+    {
+        "title": "Runic Dome",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/6/6d/RunicDome.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. You can no longer see enemy **Intent**s."
+    },
+    {
+        "title": "Runic Pyramid",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8e/RunicPyramid.png",
+        "description": "**Boss**\nAt the end of your turn, you no longer discard your hand. Draw 1 less card each turn."
+    },
+    {
+        "title": "Snecko Eye",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/5e/SneckoEye.png",
+        "description": "**Boss**\nDraw 2 additional cards each turn. Start each combat **Confused**."
+    },
+    {
+        "title": "Sozu",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/53/Sozu.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. You can no longer use **potions**."
+    },
+    {
+        "title": "The Specimen",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/2/23/Specimen.png",
+        "description": "**Boss (Silent)**\nWhenever an enemy dies, transfer any **Poison** it has to a random enemy."
+    },
+    {
+        "title": "Tiny House",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/53/TinyHouse.png",
+        "description": "**Boss**\nObtain 1 **potion**. Gain 30 **Gold**. Raise your Max HP by 5. Obtain 1 card."
+    },
+    {
+        "title": "Velvet Choker",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/4b/RedChoker.png",
+        "description": "**Boss**\nGain 1 **Energy** at the start of each turn. You cannot play more than 6 cards per turn."
+    },
+    {
+        "title": "White Beast Statue",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/42/WhiteBeast.png",
+        "description": "**Boss**\n**Potions** always drop after combat."
+    },
+    {
+        "title": "Bloody Idol",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/4/40/BloodyChalice.png",
+        "description": "**Event**\nWhenever you gain **Gold**, heal 5 HP."
+    },
+    {
+        "title": "Enchiridion",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8e/Enchiridion.png",
+        "description": "**Event**\nAt the start of each combat, add a random **Power** card to your hand. It costs 0 until the end of turn."
+    },
+    {
+        "title": "Golden Idol",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7a/GoldenIdolRelic.png",
+        "description": "**Event**\nEnemies drop 25% more **Gold**."
+    },
+    {
+        "title": "Necronomicon",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/78/Necronomicon.png",
+        "description": "**Event**\nThe first **Attack** played each turn that costs 2 or more is played twice. When you take this relic, become **Cursed**."
+    },
+    {
+        "title": "Neow's Lament",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/c/c4/Lament.png",
+        "description": "**Event**\nEnemies in your first 3 combats will have 1 HP."
+    },
+    {
+        "title": "Nilry's Codex",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/7c/Codex.png",
+        "description": "**Event**\nAt the end of each turn, you can choose 1 of 3 random cards to shuffle into your draw pile."
+    },
+    {
+        "title": "Nloth's Gift",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/5/53/NlothsGift.png",
+        "description": "**Event**\nTriples the chance of receiving rare cards as monster rewards."
+    },
+    {
+        "title": "Odd Mushroom",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/8/8c/Mushroom.png",
+        "description": "**Event**\nWhen **Vulnerable**, take 25% more damage rather than 50%."
+    },
+    {
+        "title": "Red Mask",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a4/RedMask.png",
+        "description": "**Event**\nAt the start of each combat, apply 1 **Weak** to ALL enemies."
+    },
+    {
+        "title": "Spirit Poop",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/7/74/SpiritPoop.png",
+        "description": "**Event**\nIt's unpleasant."
+    },
+    {
+        "title": "Cauldron",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/37/Cauldron.png",
+        "description": "**Shop**\nWhen obtained, brews 5 random **potions**."
+    },
+    {
+        "title": "Lee's Waffle",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/a/a5/Waffle.png",
+        "description": "**Shop**\nRaise your Max HP by 7 and heal all of your HP."
+    },
+    {
+        "title": "Medical Kit",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/f/f2/MedicalKit.png",
+        "description": "**Shop**\n**Status** cards can now be played. Playing a Status will **Exhaust** the card."
+    },
+    {
+        "title": "Membership Card",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/3/3d/MembershipCard.png",
+        "description": "**Shop**\nIn future acts, **shops** appear 50% more often. BONUS: 20% discount on all products!"
+    },
+    {
+        "title": "Strange Spoon",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/0/09/BigSpoon.png",
+        "description": "**Shop**\nCards which **Exhaust** when played will instead discard 50% of the time."
+    },
+    {
+        "title": "Toy Ornithopter",
+        "image": "https://vignette.wikia.nocookie.net/slay-the-spire/images/e/e4/Ornithopter.png",
+        "description": "**Shop**\nWhenever you use a **potion**, heal 3 HP."
+    }
+]

@@ -5,6 +5,7 @@ const request = require('request');
 const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
+const ytdl = require('ytdl-core');
 
 exports.getCommands = (bot) => {
     //start richembeds with a random color
@@ -18,7 +19,7 @@ exports.getCommands = (bot) => {
     function richQuote(message) {
         try {
             let rich = new Discord.RichEmbed();
-            let username = message.author.username;
+            let username = (message.member && message.member.nickname) ? message.member.nickname: message.author.username;
             rich.setAuthor(username, message.author.displayAvatarURL, message.url)
             rich.setDescription(message.content);
             rich.setTimestamp(message.createdAt)
@@ -117,20 +118,23 @@ exports.getCommands = (bot) => {
             battlerite:null,
             hearthstone:null
         },
-        token: null,
-        botlink: null
+        token: null
     };
-
-    //create file if it does not exist
-    //setTimeout(()=>{
         
     fs.readFile("./config.json", "utf8", (err,data) => {
         if (err && err.code === "ENOENT") {
             fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
-                console.log(e);
+                console.error(e);
             })
+            console.error("paste discord token in config.json and restart");
         } else {
-            config = JSON.parse(data)
+            config = JSON.parse(data);
+
+bot.on('ready', () => {
+    console.log('ready');
+    bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+});
+            bot.login(config.token);
         }
     })
     //},1000*10)
@@ -406,6 +410,9 @@ cancels a remindme reminder with id`,
             return true;
         }
     }))
+
+    //https://db.ygoprodeck.com/api-guide/
+
     commands.push(new Command({
         name: "ygo",
         regex: /^ygo (.+)$/i,
@@ -426,6 +433,7 @@ returns yu-gi-oh card data. must use full name`,
                 let data = JSON.parse(body);
                 let rich = new Discord.RichEmbed();
                 rich.setTitle(data.name);
+                data.description = replaceAll(data.description,"<br>","\n");
                 rich.setDescription(data.description);
                 rich.setImage(`http://www.ygo-api.com${encodeURI(data.imageUrl)}`);
                 message.channel.send("",{embed:rich}).catch(err);
@@ -438,7 +446,7 @@ returns yu-gi-oh card data. must use full name`,
     }))
     commands.push(new Command({
         name: "hs",
-        regex: /^hs (.+)$/i,
+        regex: /^hs (\S+)$/i,
         requirePrefix: true,
         testString: ".hs open the waygate",
         shortDesc: "returns hearthstone card data",
@@ -520,7 +528,7 @@ returns hearthstone card data`,
     let t7 = null;        
     fs.readFile("t7/t7.json", 'utf8', function (e, data) {
         if (e) {
-            return console.log(e);
+            console.log("Tekken 7 data not found");
         }
         t7 = JSON.parse(data);
     })
@@ -596,40 +604,53 @@ returns information about a tekken 7 character's move`,
                         poslist = char.moves[simplifiedinput];
                     } else {
                         let conditionstring = move.split("&");
+                        //returns a function that returns true if given field matches current field and satisfies value comparison
+                        function parseConditionArgs(fieldname, comparison, valuestring) {
+                            let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed","damage"]
+
+                            //compares the field value to the given value
+                            function comparefunc(value,comparison,valuestring,isnumfield) {
+                                if (comparison=="<" && isnumfield && !isNaN(valuestring)) {
+                                    return parseInt(value) < parseInt(valuestring);
+                                } else if (comparison==">" && isnumfield && !isNaN(valuestring)){
+                                    return parseInt(value) > parseInt(valuestring);
+                                } else if (comparison=="=" && isnumfield && !isNaN(valuestring)){
+                                    return parseInt(value) = parseInt(valuestring);
+                                } else if (comparison=="<"){
+                                    return value.endsWith(valuestring);
+                                } else if (comparison=="="){
+                                    return value == valuestring;
+                                } else if (comparison==">"){
+                                    return value.startsWith(valuestring);
+                                } else if (comparison==":"){
+                                    return value.indexOf(valuestring) > -1;
+                                }
+                            }
+                            return (field, value) => {
+                                let isnumfield = false;
+                                if (numfields.indexOf(field) > -1) {
+                                    if (isNaN(valuestring)) return false;
+                                    isnumfield = true;
+                                }
+                                if (field.indexOf(fieldname)>-1 && comparefunc(value,comparison,valuestring,isnumfield)) {
+                                    return true;
+                                }
+                                return false;
+                            }
+                        }
+
+                        let conditions = [];
+
                         let conditions = conditionstring.map((cur)=>{
                             let b;
-                            if (b = /(.+):(.+)/i.exec(cur)) {
+                            if (b = /(.+)([:=<>])(.+)/i.exec(cur)) {
                                 b[1] = simplifyfield(b[1]);
-                                b[2] = simplifyfield(b[2]);
-                                return (field, value) => {
-                                    if (field.indexOf(b[1])>-1 && value.indexOf(b[2])>-1) {
-                                        return true;
-                                    }
-                                    return false;
-                                }
+                                b[3] = simplifyfield(b[3]);
+                                return parseConditionArgs(b[1],b[2],b[3]);
                             } else if (b = /i(\d+)/i.exec(cur)) {
                                 b[1] = parseInt(b[1]);
                                 return (field, value) => {
                                     if (field.indexOf("startup")>-1 && parseInt(value) === b[1]) {
-                                        return true;
-                                    }
-                                    return false;
-                                }
-                                //add checks for < and >
-                            } else if (b = /(.+)([=])(.+)/i.exec(cur)) {
-                                b[1] = simplifyfield(b[1]);
-                                b[3] = simplifyfield(b[3]);
-                                if (!isNaN(b[3])) {
-                                    b[3] = parseInt(b[3]);
-                                    return (field, value) => {
-                                        if (field.indexOf(b[1])>-1 && parseInt(value) === b[3]) {
-                                            return true;
-                                        }
-                                        return false;
-                                    }
-                                }                                
-                                return (field, value) => {
-                                    if (field.indexOf(b[1])>-1 && value.indexOf(b[2])>-1) {
                                         return true;
                                     }
                                     return false;
@@ -700,12 +721,543 @@ returns information about a tekken 7 character's move`,
             return true;
         }
     }))
+    
+    let sts = null;        
+    fs.readFile("sts/items.json", 'utf8', function (e, data) {
+        if (e) {
+            return console.log(e);
+        }
+        sts = JSON.parse(data);
+    })
+
     commands.push(new Command({
-        name: "test",
-        regex: /^test$/i,
-        prefix: "",
-        testString: "test",
+        name: "sts",
+        regex: /^sts (\S+)$/i,
+        prefix: ".",
+        testString: ".sts apparition",
+        hardAsserts: ()=>{return sts;},
+        hidden: false,
+        requirePrefix: true,
+        shortDesc: "returns information on a Slay the Spire card or relic",
+        longDesc: `.sts (card_name or relic_name)
+returns information on a Slay the Spire card or relic. Matches by substring`,
+        func: (message, args) =>{
+            (async()=>{
+                let results = [];
+                sts.forEach((element) => {
+                    if (element.title.toLowerCase().indexOf(args[1].toLowerCase()) > -1) {
+                        results.push(element);
+                    }
+                })
+                if (results.length < 1) {
+                    return ["`No results`"];
+                } else if (results.length == 1) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(results[0].title);
+                    rich.setImage(results[0].image)
+                    rich.setDescription(results[0].description);
+                    return ["", { embed: rich }];
+                } else {
+                    let msg = "```" + results.map((v, i) => {
+                        return `${i + 1}. ${v.title}`
+                    }).join("\n") + "```";
+                    //message.channel.sendMessage(msg).catch(err);
+
+                    extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                        var num = parseInt(message.content) - 1;
+                        if (num < results.length && num > -1) {
+                            let rich = new Discord.RichEmbed();
+                            rich.setTitle(results[num].title);
+                            rich.setImage(results[num].image)
+                            rich.setDescription(results[num].description);
+                            message.channel.send("", { embed: rich });
+                            return true;
+                        }
+                        return false;
+                    })
+                    return [msg];
+                }
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+    
+    //todo: .br .gw2api
+    let coin = null;
+    requestpromise("https://www.cryptocompare.com/api/data/coinlist/").then(body => {
+        try {
+            coin = JSON.parse(body);
+        } catch (e) {
+            console.log(e);
+        }
+    })
+
+    commands.push(new Command({
+        name: "price",
+        regex: /^price(?: (\d*(?:\.\d+)?))? (\S+)(?: (\w+))?$/i,
+        prefix: ".",
+        testString: ".price 10 btc cad",
+        hardAsserts: ()=>{return coin;},
+        hidden: false,
+        requirePrefix: true,
+        shortDesc: "returns the exchange rate and a 30 hour graph of the price of a foreign currency or cryptocurrency",
+        longDesc: `.price [amount] (from_symbol) [to_symbol]
+returns a 30 hour graph of the price of a foreign currency or cryptocurrency
+amount (optional) - the amount of from_symbol currency. Default is 1.
+from_symbol - the currency symbol you are exchanging from. ex: CAD
+to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.`,
+        func: (message, args) =>{
+            (async()=>{
+                let amt = 1;
+                if (args[1]) amt = parseFloat(args[1]);
+                let from = args[2].toUpperCase();
+                let to = "USD";
+                if (args[3]) to = args[3].toUpperCase();
+                let chartpromise = requestpromise(`https://min-api.cryptocompare.com/data/histominute?fsym=${encodeURIComponent(from)}&tsym=${encodeURIComponent(to)}&limit=144&aggregate=10`).then(body => {
+                    try {
+                        let res = JSON.parse(body);
+                        if (res.Response && res.Response === "Error") {
+                            return ["`"+res.Response+"`"]
+                        }
+
+                        function extendedEncode(arrVals, minVal, maxVal) {
+                            var EXTENDED_MAP =
+                                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
+                            var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
+                            var chartData = '';
+
+                            for (let i = 0, len = arrVals.length; i < len; i++) {
+                                // In case the array vals were translated to strings.
+                                var numericVal = new Number(arrVals[i]);
+                                // Scale the value to maxVal.
+                                var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
+                                    EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
+
+                                if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
+                                    chartData += "..";
+                                } else if (scaledVal < 0) {
+                                    chartData += '__';
+                                } else {
+                                    // Calculate first and second digits and add them to the output.
+                                    var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
+                                    var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
+                                    chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
+                                }
+                            }
+
+                            return chartData;
+                        }
+
+                        let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=000000"
+                        let low = res.Data[0].close;
+                        let high = res.Data[0].close;
+                        let x_data = [];
+                        let y_data = [];
+
+                        let curHour = moment.tz(res.Data[0].time * 1000, "America/New_York").hour();
+                        let hour_string = [];
+                        let time_string = [];
+                        for (let i = 0; i < res.Data.length; i++) {
+                            if (res.Data[i].close < low) low = res.Data[i].close;
+                            if (res.Data[i].close > high) high = res.Data[i].close;
+                            x_data.push(res.Data[i].time);
+                            y_data.push(res.Data[i].close);
+                            let thisMoment = moment.tz(res.Data[i].time * 1000, "America/New_York");
+                            let thisHour = thisMoment.hour();
+                            if (parseInt(thisHour / 3) != parseInt(curHour / 3)) {
+                                curHour = thisHour;
+                                if (thisHour != 0) {
+                                    hour_string.push(encodeURIComponent(thisMoment.format("h:mm a")));
+                                } else {
+                                    hour_string.push(encodeURIComponent(thisMoment.format("dddd")));
+                                }
+                                time_string.push(res.Data[i].time);
+                            }
+                        }
+                        chart_url += "&chd=e:" + extendedEncode(x_data, res.Data[0].time, res.Data[res.Data.length - 1].time) + "," + extendedEncode(y_data, low, high);
+                        chart_url += "&chxr=0," + res.Data[0].time + "," + res.Data[res.Data.length - 1].time + "|1," + low + "," + high;
+                        chart_url += "&chxl=0:|" + hour_string.join("|");
+                        chart_url += "&chxp=0," + time_string.join(",");
+                        //add y ticks
+                        chart_url += "&chxs=0,,10,0,lt";
+                        return [null,chart_url];
+                    } catch (e) {
+                        err(e);
+                    }
+                })
+
+                let ratepromise = requestpromise(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${encodeURIComponent(from)}&tsyms=${encodeURIComponent(to)}`).then(body => {
+                    try {
+                        let res = JSON.parse(body);
+                        if (res.Response && res.Response === "Error") {
+                            let msg = res.Message;
+                            return ["`"+msg+"`"];
+                        }
+                        //let to_amt = amt * parseFloat(res[to]);
+                        let fromsym = res.DISPLAY[from][to].FROMSYMBOL;
+                        if (fromsym == from) fromsym = "";
+                        let tosym = res.DISPLAY[from][to].TOSYMBOL;
+                        if (tosym == to) tosym = "";
+                        let to_amt = amt * res.RAW[from][to].PRICE;
+                        let pctchange = Math.abs(res.DISPLAY[from][to].CHANGEPCT24HOUR);
+                        let updown = "";
+                        if (res.DISPLAY[from][to].CHANGEPCT24HOUR > 0) updown = "▲";
+                        else if (res.DISPLAY[from][to].CHANGEPCT24HOUR < 0) updown = "▼";
+                        let rich = new Discord.RichEmbed();
+                        let image = "";
+                        if (coin && coin.Data[from]) {
+                            image = "https://www.cryptocompare.com" + coin.Data[from].ImageUrl
+                            from += ` (${coin.Data[from].CoinName})`;
+                        }
+                        if (coin && coin.Data[to]) to += ` (${coin.Data[to].CoinName})`;
+                        let msg = `${fromsym} ${amt} ${from} = ${tosym} ${to_amt} ${to} (${updown}${pctchange}%)`;
+                        //rich.setDescription(msg)
+                        //rich.setFooter(msg,image)
+                        rich.setAuthor(msg, image);
+                        rich.setFooter("Time is in EDT, the only relevant timezone.");
+                        return [null, rich];
+                    } catch (e) {
+                        err(e);
+                    }
+                })
+                let chart = await chartpromise;
+                let rich = await ratepromise;
+                if (!chart[0] && !rich[0]) return ["",rich[1].setImage(chart[1])];
+                else return [rich[0] || chart[0]];
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    function playSound(channel, URL, setvolume, setstart, setduration) {
+        try {
+            //todo serverVol
+            setvolume = setvolume || /*(serverVol ? serverVol[channel.guild] / 100:false) || */.2;
+            setstart = setstart || 0;
+
+            function leave() {
+                channel.leave();
+            }
+            if (channel.guild.voiceConnection != null && channel.guild.voiceConnection.player != null) {
+                //if in the same voice channel
+                if (channel.guild.voiceConnection.channel.equals(channel)) {
+                    let thisDispatch = channel.guild.voiceConnection.dispatcher;
+                    //if playing sound
+                    if (thisDispatch) {
+                        thisDispatch.removeAllListeners('end');
+                        thisDispatch.on('end', () => {
+                            const dispatcher = channel.guild.voiceConnection.playStream(URL, {
+                                seek: setstart,
+                                volume: setvolume
+                            }).on('end', leave);
+                        });
+                        thisDispatch.end();
+                        //sitting in channel without playing sound
+                    } else {
+                        channel.guild.voiceConnection.playStream(URL, {
+                            seek: setstart,
+                            volume: setvolume
+                        }).on('end', leave);
+                    }
+                    //if in another voice channel
+                } else {
+                    channel.guild.voiceConnection.dispatcher.removeAllListeners('end');
+                    channel.guild.voiceConnection.dispatcher.end();
+                    channel.join().then(connnection => {
+                        const dispatcher = connnection.playStream(URL, {
+                            seek: setstart,
+                            volume: setvolume
+                        }).on('end', leave);
+                    }).catch(err);
+                }
+                //not in a voice channel
+            } else {
+                channel.join().then(connnection => {
+                    const dispatcher = connnection.playStream(URL, {
+                        seek: setstart,
+                        volume: setvolume
+                    }).on('end', leave);
+                }).catch(err)
+            }
+        } catch (e) {
+            console.log(e);
+            throw e;
+        }
+    }
+
+    commands.push(new Command({
+        name: "yt",
+        regex: /^yt (?:([a-zA-Z0-9_-]{11})|(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i,
+        prefix: ".",
+        testString: ".yt DN9YncMIr60",
+        hidden: false,
+        requirePrefix: true,
+        shortDesc: "plays audio from a YouTube link in a voice channel",
+        longDesc: `.yt (youtube_id)
+plays audio from a YouTube link in a voice channel
+youtube_id - can either be the full YouTube URL or the unique 11 characters at the end of the URL`,
+        func: (message, args) =>{
+            (async()=>{
+                let voiceChannel = message.member.voiceChannel;
+                if (!voiceChannel) {
+                    return message.reply(`get in a voice channel`).catch(err);
+                }
+                let stream = ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
+                    filter: 'audioonly',
+                    quality: 'highestaudio'
+                });
+                playSound(voiceChannel, stream);
+            })().catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "yts",
+        regex: /^yts ([^\n\r]+?)(?: ([\d]{1,2}))?$/i,
+        prefix: ".",
+        testString: ".yts blood drain again",
+        hidden: false,
+        requirePrefix: true,
+        hardAsserts: ()=>{return config.api.youtube;},
+        shortDesc: "returns list of YouTube videos based on the search term",
+        longDesc: `.yts (search_turn) [number_of_results]
+returns list of YouTube videos based on the search term
+number_of_results - the number of results to return. Default is 6.`,
+        func: (message, args) =>{
+            (async()=>{
+                args[1] = encodeURIComponent(args[1]);
+                var max = 6;
+                if (args[2] && parseInt(args[2]) > 0 && parseInt(args[2]) < 51) max = parseInt(args[2]);
+                let urlpromise = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=' + max + '&q=' + args[1])
+                let loadingtask = message.channel.send("`Loading...`")
+                let body = await urlpromise;
+
+                let data = JSON.parse(body);
+                let msg = "";
+                let rich = new Discord.RichEmbed();
+                rich.setTitle("YouTube results");
+                rich.setURL("https://www.youtube.com/results?search_query=" + args[1])
+                for (var i = 0; i < data.items.length; i++) {
+                    rich.addField(i + 1, `[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})`, false);
+                    msg += `${i + 1} <https://youtu.be/${data.items[i].id.videoId}> ${data.items[i].snippet.title}\n`;
+                }
+                let loadingMessage = await loadingtask;
+                //loadingMessage.edit(msg).catch(err);
+                loadingMessage.edit(message.author, {
+                    embed: rich
+                }).catch(err);
+                extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, function (message) {
+                    var num = parseInt(message.content);
+                    if (num < data.items.length + 1 && num > 0) {
+                        try {
+                            const voiceChannel = message.member.voiceChannel;
+                            if (!voiceChannel) {
+                                message.reply(`get in a voice channel`).catch(err);
+                                return false;
+                            }
+                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {                                    
+                                filter: 'audioonly',
+                                quality: 'highestaudio'                         
+                            });
+                            playSound(voiceChannel, stream);
+                            return true;
+                        } catch (e) {
+                            err(e);
+                            message.channel.send("`Error`").catch(err);
+                        }
+                    }
+                    return false;
+                })
+            })().catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "quote",
+        regex: /^quote (\d+)$/i,
+        prefix: ".",
+        testString: ".quote 508747221588639754",
+        hidden: false,
+        requirePrefix: true,
+        shortDesc: "returns a link to and a quote of a past message",
+        longDesc: `.quote (message_id or previous_nth_message)
+returns a link to and a quote of a past message
+message_id - get the id by selecting "copy id" from the settings of the message
+previous_nth_message - the number of messages to go back to reach the message you want to quote. 1 is the last message, 2 is the one before, etc`,
+        func: (message, args) =>{
+            (async()=>{
+                if (parseInt(args[1]) < 200) {
+                    let num = parseInt(args[1]);
+                    return await message.channel.fetchMessages({
+                        limit: num + 1
+                    }).then(messages => {
+                        return [messages.array()[num].url, {
+                            embed: richQuote(messages.array()[num])
+                        }]
+                    }).catch(e => {
+                        ["`Message not found.`"]
+                        //err(e);
+                    })
+                } else {
+                    return await message.channel.fetchMessage(args[1]).then(message2 => {
+                        return [message2.url, {
+                            embed: richQuote(message2)
+                        }]
+                    }).catch(e => {
+                        return ["`Message not found.`"];
+                        //err(e);
+                    })
+                }
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "eval",
+        regex: /^eval ([\s\S]+)$/i,
+        prefix: ".",
+        testString: ".eval 1+1",
         hidden: true,
+        requirePrefix: true,
+        shortDesc: "",
+        longDesc: ``,
+        func: (message, args) =>{
+            if (message.author.id !== adminID) return false;
+            (async()=>{
+                let output = eval(a[1]);
+                if (output.length<0) output = "`No output`"
+                return [output];
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "weather",
+        regex: /^weather (\S.*)$/i,
+        prefix: ".",
+        testString: ".weather nyc",
+        hidden: false,
+        requirePrefix: true,
+        hardAsserts: ()=>{return config.api.darksky;},
+        shortDesc: "returns the 8 day forecast and a chart of the temperature for the next 2 days",
+        longDesc: `.weather (location)
+returns the 8 day forecast and a chart of the temperature for the next 2 days
+location - can be several things like the name of a city or a zip code`,
+        func: (message, args) =>{
+            (async()=>{
+                //todo
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "nothing",
+        regex: /^nothing$/i,
+        prefix: ".",
+        testString: "",
+        hidden: true,
+        requirePrefix: true,
+        hardAsserts: ()=>{return;},
+        shortDesc: "",
+        longDesc: ``,
+        func: (message, args) =>{
+            (async()=>{
+                //todo
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    commands.push(new Command({
+        name: "test2",
+        regex: /^test2$/i,
+        prefix: "",
+        testString: "test2",
+        hidden: true,
+        requirePrefix: true,
         func: (message) =>{
             (async()=>{
                 return message.channel.send("`Loading`");
@@ -755,12 +1307,12 @@ returns a list of commands. respond with the number for details on a specific co
         }
     }))
     commands.push(new Command({
-        name: "runtest",
-        regex: /^runtest$/i,
+        name: "test",
+        regex: /^test$/i,
         requirePrefix: true,
         hidden: true,
         shortDesc: "tests commands",
-        longDesc: `.runtest
+        longDesc: `.test
 returns a list of commands. respond with the number to test that command`,
         func: (message, args)=>{
             if (message.author.id != config.adminID) return false;

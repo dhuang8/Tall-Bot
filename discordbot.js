@@ -2,28 +2,18 @@
 const Discord = require('discord.js');
 const request = require('request');
 const fs = require('fs');
-const moment = require('moment-timezone');
-//const cloudscraper = require('cloudscraper');
-const ytdl = require('ytdl-core');
-const cheerio = require('cheerio');
 const execFile = require('child_process').execFile;
 const testclass = require('./utils/addcommands');
-
-const config = JSON.parse(fs.readFileSync("./config.json"));
-const adminID = config.adminID;
-const botChannelID = config.botChannelID;
-const errorChannelID = config.errorChannelID;
-const secretChannelID = config.secretChannelID;
-const apikey = config.api;
-const token = config.token;
-const botlink = config.botlink;
+const moment = require('moment-timezone');
 
 let lastPresenceMsg = "";
-moment.tz.setDefault("America/New_York");
 
 const bot = new Discord.Client({
     apiRequestMethod: "burst"
 });
+
+//create file if it does not exist
+//setTimeout(()=>{
 
 let timeouts = [];
 
@@ -109,11 +99,6 @@ Discord.RichEmbed = function (data) {
     return rich.setColor("RANDOM"); //parseInt(Math.random() * 16777216));
 }
 
-bot.on('ready', () => {
-    console.log('ready');
-    bot.channels.get(errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
-});
-
 function err(error, loadingMessage, content) {
     bot.channels.get(errorChannelID).send(error.stack, {
         code: true,
@@ -179,10 +164,6 @@ var requestpromiseheader = function (link) {
     })
 }
 
-var datetimeparser = function (string) {
-
-}
-
 bot.on('presenceUpdate', function (oldUser, newUser) {
     try {
         //if (oldUser.presence.equals(newUser.presence)) return;
@@ -216,17 +197,18 @@ bot.on('presenceUpdate', function (oldUser, newUser) {
 
         msg = moment().format('h:mma') + " " + newUser.user.username + " (" + newUser.id + ")" + msg;
 
-        if (lastPresenceMsg !== msg) bot.channels.get(botChannelID).send(`\`${msg}\``).catch(err);
-        lastPresenceMsg = msg
+        if (lastPresenceMsg !== msg) bot.channels.get(config.botChannelID).send(`\`${msg}\``).catch(err);
+        lastPresenceMsg = msg;
     } catch (e) {
-        err(e)
+        console.error(e);
+        //err(e)
     }
 });
 
 bot.on('guildCreate', (guild) => {
     try {
         let msg = `${moment().format('h:mma')} ${guild.name} (${guild.id}) guild joined.`;
-        bot.channels.get(botChannelID).send(`\`${msg}\``).catch(err);
+        bot.channels.get(config.botChannelID).send(`\`${msg}\``).catch(err);
     } catch (e) {
         err(e)
     }
@@ -351,4 +333,3 @@ bot.on('message', (message) => {
         return v.run(message)
     })) return;
 });
-bot.login(token);

@@ -107,6 +107,25 @@ exports.getCommands = (bot) => {
         return false;
     }
 
+    //data_array is in the format [[title1,return_data1],[title2,return_data2]]
+    function createCustomNumCommand (message, data_array) {
+        let mes = "```";
+        mes += data_array.map((cur, index)=>{
+            return `${index+1}. ${cur[0]}`;
+        }).join("\n");
+        mes += "```";
+        extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+            var num = parseInt(message.content) - 1;
+            if (num < data_array.length && num > -1) {
+                console.log(123,data_array[num])
+                message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
+                return true;
+            }
+            return false;
+        })
+        return mes;
+    }
+
     let config = {
         adminID: null,
         botChannelID: null,
@@ -134,7 +153,7 @@ bot.on('ready', () => {
     console.log('ready');
     bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
 });
-            bot.login(config.token);
+            bot.login(config.token).catch(console.error);
         }
     })
     //},1000*10)
@@ -538,10 +557,31 @@ returns hearthstone card data`,
         regex: /^t7 (\S+) ([^\n\r]+?)$/i,
         requirePrefix: true,
         hardAsserts: ()=>{return t7;},
-        testString: ".t7 ali b24",
+        testString: ".t7 ak block=1",
         shortDesc: "returns information about a tekken 7 character's move",
-        longDesc: `.t7 (character_name) (move)
-returns information about a tekken 7 character's move`,
+        longDesc: `.t7 (character_name) (condtion1&condition2&condition3...)
+returns information about a tekken 7 character's move
+character_name - full or part of a character's name
+condition - several formats
+    fieldname>fieldvalue - the value of fieldname begins with fieldvalue
+        ex: .t7 akuma hit level>m - returns moves that begin with a hit level of "m"
+    fieldname<fieldvalue - the value of fieldname end with fieldvalue
+        ex: .t7 akuma hit level<m - returns moves that end with a hit level of "m"
+    fieldname:fieldvalue - the value of fieldname begins with fieldvalue
+        ex: .t7 akuma name:hadoken - returns moves where the name contains "hadoken"
+    fieldname=fieldvalue - value of fieldname is exactly the fieldvalue
+        ex: .t7 akuma name=gohadoken - returns moves where the name is exactly gohadoken
+    fieldname>num - the value of fieldname is greater than num
+        ex: .t7 akuma startup<12 - returns moves that have a startup less than 12 frames
+    fieldname<num - the value of fieldname is less than num
+    fieldname=num - the value of fieldname is equal to num
+    i(num) - same as startup:num
+        ex: .t7 akuma i13 - returns moves that have a startup of 10
+    commandstring or movename - returns moves which contain the commandstring or movename. same as command:commandstring or name:movename
+        ex: .t7 akuma 11 - returns data on Akuma's 1,1
+        ex: .t7 akuma gohadoken - returns data on Akuma's Gohadoken
+multiple conditions can be linked together using condition1&condition2&condition3...
+    ex: .t7 akuma startup<15&block>-10&hitlevel>m - returns moves where the startup>15, block>-10, and begins with a mid`,
         func: (message, args)=>{
             (async ()=>{
 
@@ -605,18 +645,22 @@ returns information about a tekken 7 character's move`,
                     } else {
                         let conditionstring = move.split("&");
                         //returns a function that returns true if given field matches current field and satisfies value comparison
-                        function parseConditionArgs(fieldname, comparison, valuestring) {
-                            let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed","damage"]
+                        function parseConditionArgs(userfield, comparison, uservalue) {
 
                             //compares the field value to the given value
                             function comparefunc(value,comparison,valuestring,isnumfield) {
-                                if (comparison=="<" && isnumfield && !isNaN(valuestring)) {
-                                    return parseInt(value) < parseInt(valuestring);
-                                } else if (comparison==">" && isnumfield && !isNaN(valuestring)){
-                                    return parseInt(value) > parseInt(valuestring);
-                                } else if (comparison=="=" && isnumfield && !isNaN(valuestring)){
-                                    return parseInt(value) = parseInt(valuestring);
-                                } else if (comparison=="<"){
+                                if (isnumfield) {
+                                    if (comparison=="<") {
+                                        return value < valuestring;
+                                    } else if (comparison==">"){
+                                        return value > valuestring;
+                                    } else if (comparison=="=" || comparison==":"){
+                                        return value == valuestring;
+                                    }
+                                    return false;
+                                }
+                                
+                                if (comparison=="<"){
                                     return value.endsWith(valuestring);
                                 } else if (comparison=="="){
                                     return value == valuestring;
@@ -626,44 +670,59 @@ returns information about a tekken 7 character's move`,
                                     return value.indexOf(valuestring) > -1;
                                 }
                             }
-                            return (field, value) => {
+
+                            return (thisfield, thisvalue) => {
+                                thisfield = simplifyfield(thisfield);
+                                userfield = simplifyfield(userfield);
+                                if (thisfield.indexOf(userfield) < 0) return false; 
+                                let numfields = ["damage","startupframes","blockframe","hitframe","counterhitframe","post-techframes","speed"];
                                 let isnumfield = false;
-                                if (numfields.indexOf(field) > -1) {
-                                    if (isNaN(valuestring)) return false;
+                                if (numfields.indexOf(thisfield) > -1 && !isNaN(uservalue)) {
                                     isnumfield = true;
+                                    thisvalue = parseInt(thisvalue);
+                                    uservalue = parseInt(uservalue);
+                                } else {
+                                    if (thisfield.indexOf("Command")== 0) {
+                                        thisvalue = simplifyMove(thisvalue);
+                                        uservalue = simplifyMove(uservalue);
+                                    } else {
+                                        thisvalue = simplifyfield(thisvalue);
+                                        uservalue = simplifyfield(uservalue);
+                                    }
                                 }
-                                if (field.indexOf(fieldname)>-1 && comparefunc(value,comparison,valuestring,isnumfield)) {
+                                if (comparefunc(thisvalue,comparison,uservalue,isnumfield)) {
                                     return true;
                                 }
                                 return false;
                             }
                         }
 
-                        let conditions = [];
+//                        let conditions = [];
 
                         let conditions = conditionstring.map((cur)=>{
                             let b;
-                            if (b = /(.+)([:=<>])(.+)/i.exec(cur)) {
-                                b[1] = simplifyfield(b[1]);
-                                b[3] = simplifyfield(b[3]);
+                            console.log(cur)
+                            if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
                                 return parseConditionArgs(b[1],b[2],b[3]);
-                            } else if (b = /i(\d+)/i.exec(cur)) {
-                                b[1] = parseInt(b[1]);
-                                return (field, value) => {
-                                    if (field.indexOf("startup")>-1 && parseInt(value) === b[1]) {
-                                        return true;
-                                    }
-                                    return false;
-                                }
+                            } else if (b = /^i(\d+)$/i.exec(cur)) {
+                                return parseConditionArgs("startupframe",":",b[1]);
                             } else {
-                                return ()=>{return false}
+                                return parseConditionArgs("command",":",cur) || parseConditionArgs("name",":",cur);
                             }
                         })
+
+                        //for each {moveshorthand:[array of moves]}
                         Object.entries(char.moves).forEach((entry)=>{
+                            //for each move {command, name, etc}
                             entry[1].forEach((moveobj) => {
+                                //check if move satisfies all contitons
                                 let match = conditions.every((cur)=>{
+                                    //condition has to return true for at least 1 field:value
                                     return Object.entries(moveobj).some((field)=>{
-                                        return cur(simplifyfield(field[0]), simplifyfield(field[1]))
+                                        if (field[0]!=="gfycat") {
+                                            return cur(field[0], field[1]);
+                                        }
+                                        return false;
                                     })
 
                                 })
@@ -680,6 +739,11 @@ returns information about a tekken 7 character's move`,
                     if (poslist.length === 1) {
                         return [createMoveMessage(char, poslist[0])];
                     } else if (poslist.length > 1) {
+                        let data_array = poslist.map((v, i) => {
+                            return [v.Command, [createMoveMessage(char, v)]]
+                        })
+                        return [createCustomNumCommand(message, data_array)];
+                        /*
                         let msg = "```" + poslist.map((v, i) => {
                             return `${i + 1}. ${v.Command}`
                         }).join("\n") + "```";
@@ -693,6 +757,7 @@ returns information about a tekken 7 character's move`,
                             return false;
                         })
                         return [msg];
+                        */
                     } else {
                         return ["`Move not found`"];
                     }

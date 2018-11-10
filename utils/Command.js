@@ -1,5 +1,5 @@
 "use strict";
-const assert = require('assert');
+const Discord = require('discord.js');
 
 class Command {
     constructor(options) {
@@ -59,8 +59,18 @@ class Command {
         let messageString = message.content;
         if (this.requirePrefix && messageString[0] !== this.prefix) return false;
         else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
-        if (this._testHardRequirements() && this._testSoftRequirements() && (this.regex == null || (args = this.regex.exec(messageString)))) {
-            return this.func(message, args);
+        if (this._testHardRequirements() && this._testSoftRequirements()) {
+            if (this.regex == null || (args = this.regex.exec(messageString))) {
+                return this.func(message, args);
+            }
+            else if (!this.hidden && this.name===messageString.toLowerCase()) {
+                if (typeof this.getLongDesc() == "string"){
+                    message.channel.send("```" + this.getLongDesc() + "```");
+                } else {
+                    message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+                }
+                return true;
+            }
         }
         return false;
     }
@@ -75,7 +85,7 @@ class Command {
     }
 
     getLongDesc() {
-        return `${this.longDesc}`;
+        return this.longDesc;
     }
 
     toString() {

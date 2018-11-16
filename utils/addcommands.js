@@ -999,13 +999,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                 name: "Examples",
                 value: `**.sc6 tal aaba** - returns information on Talim's AABA
 **.sc6 ivy ivy** - returns Ivy moves where the name contains "ivy"
-**.sc6 ak hit level>m** - returns moves that begin with a mid
-**.sc6 ak hit level<m** - returns moves that end with a mid
-**.sc6 ak name=gohadoken** - returns moves where the name is exactly gohadoken
-**.sc6 ak i13** - returns moves that have a startup of 13
-**.sc6 ak startup<12** - returns moves that have a startup < 12
-**.sc6 ak notes:special cancel** - returns moves that say special cancel in the notes
-**.sc6 ak block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid`
+**.sc6 nigh imp<15** - returns Nightmare moves that are faster than 15 frames
+**.sc6 nigh hit level<m&hit level>h** - returns Nightmare moves that begin with a mid and end with a low`
             }]
         },
         func: (message, args) =>{

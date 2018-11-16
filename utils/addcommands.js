@@ -1662,7 +1662,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
         func: (message, args) =>{
             if (message.author.id !== config.adminID) return false;
             (async()=>{
-                let output = eval(a[1]);
+                let output = eval(args[1]);
                 if (output.length<0) output = "`No output`"
                 return [output];
             })().then(params=>{

@@ -1,2 +1,0 @@
-# personaldiscordbot
-to do

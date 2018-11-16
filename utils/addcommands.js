@@ -254,6 +254,7 @@ let lastPresenceMsg = "";
 
 bot.on('ready', () => {
     console.log('ready');
+    bot.user.setGame('.help for list of commands')
     bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
 });
             bot.login(config.token).catch(console.error);

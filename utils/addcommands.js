@@ -944,7 +944,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                     }).map((key)=>{
                         return `**${key}**: ${move[key]}`
                     }).join("\n");
-                    mes += gfycatlink;
+                    mes += "\n" + gfycatlink;
                     return mes;
                 }
 
@@ -1018,6 +1018,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                     s = s.toLowerCase();
                     s = s.trim();
                     s = replaceAll(s, " ", "");
+                    s = replaceAll(s, "-", "");
                     return s;
                 }
 
@@ -1026,8 +1027,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                 let charfound = [];
                 let charfoundmid = [];
                 Object.keys(sc6).forEach((v, i)=>{
-                    let thisname = v.toLowerCase();
-                    let nameinput = args[1].toLowerCase();
+                    let thisname = simplifyfield(v);
+                    let nameinput = simplifyfield(args[1]);
                     let charindex = thisname.indexOf(nameinput);
                     if (charindex===0) charfound.push(v);
                     else if(charindex>0) charfoundmid.push(v);

@@ -323,7 +323,7 @@ bot.on('ready', () => {
     }))
     commands.push(new Command({
         name: "ping",
-        regex: /ping/,
+        regex: /^ping$/,
         prefix: "",
         testString: "ping",
         shortDesc: "returns pings",

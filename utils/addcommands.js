@@ -289,7 +289,9 @@ bot.on('ready', () => {
         func: (message, args)=>{
             if (!message.channel.members || !message.channel.members.get(config.adminID)) {
                 try {
-                    let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` ${message.cleanContent} \`\n${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
+                    let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
+${message.cleanContent}
+\`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
                     bot.channels.get(config.secretChannelID).send(msg).catch(err);
                 } catch (e) {
                     err(e);
@@ -573,7 +575,6 @@ returns yu-gi-oh card data. must use full name`,
                         if (ele.name.toLowerCase().indexOf(args[1].toLowerCase())>-1){
                             matches.push([ele.name,async()=>{
                                 let params = await getCard(ele.id)
-                                console.log(params);
                                 message.channel.send.apply(message.channel, params).catch(err);
                             }])
                         }
@@ -605,7 +606,6 @@ returns yu-gi-oh card data. must use full name`,
                     rich.setDescription(data.desc);
                     //probably not a good idea but oh well
                     rich.setImage(`http://www.ygo-api.com/api/images/cards/${encodeURIComponent(data.name)}`);
-                    console.log(rich);
                     return ["",{embed:rich}];
                 }
             })().then(params=>{
@@ -710,8 +710,9 @@ returns hearthstone card data`,
     fs.readFile("t7/t7.json", 'utf8', function (e, data) {
         if (e) {
             console.log("Tekken 7 data not found");
+        } else {
+            t7 = JSON.parse(data);
         }
-        t7 = JSON.parse(data);
     })
 
     commands.push(new Command({
@@ -853,7 +854,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                                     thisvalue = parseInt(thisvalue);
                                     uservalue = parseInt(uservalue);
                                 } else {
-                                    if (thisfield.indexOf("Command")== 0) {
+                                    if (thisfield.indexOf("command")== 0) {
                                         thisvalue = simplifyMove(thisvalue);
                                         uservalue = simplifyMove(uservalue);
                                     } else {
@@ -872,7 +873,6 @@ multiple conditions can be linked together using condition1&condition2&condition
 
                         let conditions = conditionstring.map((cur)=>{
                             let b;
-                            console.log(cur)
                             if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
                                 return parseConditionArgs(b[1],b[2],b[3]);
                             } else if (b = /^i(\d+)$/i.exec(cur)) {
@@ -901,7 +901,6 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 })
 
                                 if (match) {
-                                    console.log(moveobj)
                                     poslist.push(moveobj)
                                 };
                                 
@@ -1122,7 +1121,6 @@ multiple conditions can be linked together using condition1&condition2&condition
 
                         let conditions = conditionstring.map((cur)=>{
                             let b;
-                            console.log(cur)
                             if (b = /^(.+)([=<>])(.+)$/.exec(cur)) {
                                 return parseConditionArgs(b[1],b[2],b[3]);
                             } else if (b = /^i(\d+)$/i.exec(cur)) {
@@ -1153,7 +1151,6 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 })
 
                                 if (match) {
-                                    console.log(moveobj)
                                     poslist.push(moveobj)
                                 };
                                 
@@ -1214,9 +1211,10 @@ multiple conditions can be linked together using condition1&condition2&condition
     let sts = null;        
     fs.readFile("sts/items.json", 'utf8', function (e, data) {
         if (e) {
-            return console.log(e);
+            return console.error("STS data not found");
+        } else {
+            sts = JSON.parse(data);
         }
-        sts = JSON.parse(data);
     })
 
     commands.push(new Command({
@@ -1289,7 +1287,7 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
         try {
             coin = JSON.parse(body);
         } catch (e) {
-            console.log(e);
+            console.log("could not parse cryptocompare");
         }
     })
 
@@ -1659,7 +1657,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
             if (message.author.id !== config.adminID) return false;
             (async()=>{
                 let output = eval(args[1]);
-                if (output.length<0) output = "`No output`"
+                if (output.length<1) output = "`No output`"
                 return [output];
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(e=>{
@@ -1829,9 +1827,10 @@ location - can be several things like the name of a city or a zip code`,
     let poeleague = null;
     fs.readFile("poeleague.json", 'utf8', function (e, data) {
         if (e) {
-            return console.log(e);
+            return console.log("could not load poe league data");
+        } else {
+            poeleague = JSON.parse(data);
         }
-        poeleague = JSON.parse(data);
     })
     commands.push(new Command({
         name: "pt",
@@ -1856,8 +1855,6 @@ returns poe.trade based on item name or stats`,
                     let poelinkid;
                     let desc_list = [];
                     args[1] = replaceAll(args[1], "’", "'");
-                    console.log(message);
-                    console.log(poeleague[message.author.id]);
                     if (args[1].split("\n").length < 3) {
                         poelinkid = await requestpromiseheader({
                             method: 'POST',
@@ -2068,7 +2065,6 @@ returns poe.trade based on item name or stats`,
                         desc += "\n" + $(e).find(".bottom-row .label").text().trim();
                         rich.addField(title, desc, true)
                     })
-                    console.log(link,rich)
                     return [link, {
                         embed: rich
                     }];

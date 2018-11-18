@@ -740,15 +740,23 @@ returns hearthstone card data`,
                     let card = art[key]
                     let cardsimplename = simplifyname(card.card_name);
                     let searchsimple = simplifyname(args[1]);
-                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name,()=>{return createMessage(card)}]);
-                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push(card);
+                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name,()=>{
+                        message.channel.send.apply(message.channel, createMessage(card))
+                    }]);
+                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,()=>{
+                        message.channel.send.apply(message.channel, createMessage(card))
+                    }]);
                 })
 
                 function parselist(list) {
                     if (list.length == 1) {
                         return list[0][1]();
                     } else if (list.length > 1) {
-                        return createCustomNumCommand2("Multiple cards found",list)
+                        let rich = new Discord.RichEmbed({
+                            title: "Multiple cards found",
+                            description: createCustomNumCommand2(message,list)
+                        })
+                        return ["",{embed:rich}]
                     } else {
                         return false;
                     }
@@ -757,7 +765,11 @@ returns hearthstone card data`,
                 function createMessage(card) {
                     let rich = new Discord.RichEmbed();
                     rich.setTitle(card.card_name)
-                    rich.addField(card.card_type, card.card_text || "")
+                    if (card.card_text) {
+                        rich.addField(card.card_type, card.card_text)
+                    } else {
+                        rich.setDescription(card.card_type)
+                    }
                     rich.setImage(card.image)
                     return ["",{embed:rich}]
                 }

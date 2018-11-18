@@ -6,6 +6,7 @@ const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
+const execFile = require('child_process').execFile;
 
 exports.getCommands = (bot) => {
 
@@ -254,7 +255,7 @@ let lastPresenceMsg = "";
 
 bot.on('ready', () => {
     console.log('ready');
-    bot.user.setGame('.help for list of commands')
+    bot.user.setActivity('.help for list of commands',{type: "Watching"})
     bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
 });
             bot.login(config.token).catch(console.error);
@@ -701,6 +702,79 @@ returns hearthstone card data`,
             })().catch(e=>{
                 message.channel.send("`Error`").catch(err);
                 err(e);
+            })
+            return true;
+        }
+    }))
+
+    let art = null;        
+    fs.readFile("art/artifact.json", 'utf8', function (e, data) {
+        if (e) {
+            console.log("Artifact card data not found");
+        } else {
+            art = JSON.parse(data);
+        }
+    })
+
+    commands.push(new Command({
+        name: "art",
+        regex: /^art (.+)$/i,
+        prefix: ".",
+        testString: ".art meepo",
+        hidden: false,
+        requirePrefix: true,
+        hardAsserts: ()=>{return art;},
+        shortDesc: "",
+        longDesc: ``,
+        func: (message, args) =>{
+            (async()=>{
+                function simplifyname(s){
+                    s = replaceAll(s," ","");
+                    s = replaceAll(s,"-","");
+                    s = s.toLowerCase()
+                    return s;
+                }
+                let perfectmatch = [];
+                let goodmatch = [];
+                Object.keys(art).forEach((key)=>{
+                    let card = art[key]
+                    let cardsimplename = simplifyname(card.card_name);
+                    let searchsimple = simplifyname(args[1]);
+                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name,()=>{return createMessage(card)}]);
+                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push(card);
+                })
+
+                function parselist(list) {
+                    if (list.length == 1) {
+                        return list[0][1]();
+                    } else if (list.length > 1) {
+                        return createCustomNumCommand2("Multiple cards found",list)
+                    } else {
+                        return false;
+                    }
+                }
+
+                function createMessage(card) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(card.card_name)
+                    rich.addField(card.card_type, card.card_text || "")
+                    rich.setImage(card.image)
+                    return ["",{embed:rich}]
+                }
+
+                return parselist(perfectmatch) || parselist(goodmatch) || ["`No cards found`"]
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
             })
             return true;
         }
@@ -2510,7 +2584,7 @@ can be anywhere in a message`,
             return true;
         }
     }))
-
+/*
     commands.push(new Command({
         name: "nothing",
         regex: /^nothing$/i,
@@ -2540,7 +2614,7 @@ can be anywhere in a message`,
             return true;
         }
     }))
-
+*/
     commands.push(new Command({
         name: "test2",
         regex: /^test2$/i,
@@ -2603,10 +2677,53 @@ returns a list of commands. respond with the number for details on a specific co
         }
     }))
     commands.push(new Command({
+        name: "update",
+        regex: /^update$/i,
+        requirePrefix: true,
+        hidden: true,
+        hardAsserts: ()=>{return config.adminID;},
+        shortDesc: "update script",
+        longDesc: `.update
+updates script`,
+        func: (message, args) =>{
+            if (message.author.id != config.adminID) return false;
+            (async()=>{
+                execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
+                    if (e) {
+                        message.channel.send("`Error`")
+                        err(e)
+                    } else {
+                        fs.readFile("t7/t7.json", 'utf8', function (e, data) {
+                            if (e) {
+                                return console.log(e);
+                            }
+                            t7 = JSON.parse(data);
+                        })
+                        message.channel.send(`\`${stdout} ${stderr}\``)
+                    }
+                })
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+    commands.push(new Command({
         name: "test",
         regex: /^test$/i,
         requirePrefix: true,
         hidden: true,
+        hardAsserts: ()=>{return config.adminID;},
         shortDesc: "tests commands",
         longDesc: `.test
 returns a list of commands. respond with the number to test that command`,

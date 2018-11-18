@@ -3,7 +3,7 @@ const Discord = require('discord.js');
 const testclass = require('./utils/addcommands');
 
 const bot = new Discord.Client({
-    apiRequestMethod: "burst"
+//    apiRequestMethod: "burst"
 });
 
 //create file if it does not exist

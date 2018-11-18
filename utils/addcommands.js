@@ -230,6 +230,37 @@ let lastPresenceMsg = "";
         return mes;
     }
 
+    //data_array is in the format [[title1,return_data1],[title2,return_data2]]
+    function createCustomNumCommand3 (message, data_array) {
+        let mes = data_array.map((cur, index)=>{
+            return `**${index+1}**. ${cur[0]}`;
+        }).join("\n");
+        extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+            var num = parseInt(message.content) - 1;
+            if (num < data_array.length && num > -1) {
+                if (typeof data_array[num][1] == "function"){
+                    (async()=>{
+                        return await data_array[num][1](message);
+                    })().then(params=>{
+                        message.channel.send.apply(message.channel, params).catch(e=>{
+                            if (e.code == 50035) {
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    })
+                } else {
+                    message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
+                }
+                return true;
+            }
+            return false;
+        })
+        return mes;
+    }
+
     let config = {
         adminID: null,
         botChannelID: null,
@@ -575,17 +606,19 @@ returns yu-gi-oh card data. must use full name`,
                     } else {
                         if (ele.name.toLowerCase().indexOf(args[1].toLowerCase())>-1){
                             matches.push([ele.name,async()=>{
-                                let params = await getCard(ele.id)
-                                message.channel.send.apply(message.channel, params).catch(err);
+                                return await getCard(ele.id)
                             }])
                         }
                     }
                 }
 
                 if (matches.length==1) {
-                    return [await matches[0][1]()];
+                    return await matches[0][1]();
                 } else if (matches.length>1){
-                    return [createCustomNumCommand(message,matches)];
+                    return ["", new Discord.RichEmbed({
+                        title:"Multiple cards found",
+                        description: createCustomNumCommand3(message,matches)
+                    })];
                 } else {
                     return ["No cards found."];
                 }
@@ -740,21 +773,17 @@ returns hearthstone card data`,
                     let card = art[key]
                     let cardsimplename = simplifyname(card.card_name);
                     let searchsimple = simplifyname(args[1]);
-                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name,()=>{
-                        message.channel.send.apply(message.channel, createMessage(card))
-                    }]);
-                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,()=>{
-                        message.channel.send.apply(message.channel, createMessage(card))
-                    }]);
+                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, createMessage(card)]);
+                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,createMessage(card)]);
                 })
 
                 function parselist(list) {
                     if (list.length == 1) {
-                        return list[0][1]();
+                        return list[0][1];
                     } else if (list.length > 1) {
                         let rich = new Discord.RichEmbed({
                             title: "Multiple cards found",
-                            description: createCustomNumCommand2(message,list)
+                            description: createCustomNumCommand3(message,list)
                         })
                         return ["",{embed:rich}]
                     } else {
@@ -876,7 +905,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                 })
 
                 function parseCharList(charfound) {
-                    if (charfound.length ==1) return [getMove(charfound[0], args[2])];
+                    if (charfound.length ==1) return getMove(charfound[0], args[2]);
                     else if (charfound.length>1) {
                         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
                             var num = parseInt(message.content) - 1;
@@ -955,8 +984,6 @@ multiple conditions can be linked together using condition1&condition2&condition
                             }
                         }
 
-//                        let conditions = [];
-
                         let conditions = conditionstring.map((cur)=>{
                             let b;
                             if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
@@ -1000,7 +1027,12 @@ multiple conditions can be linked together using condition1&condition2&condition
                         let data_array = poslist.map((v, i) => {
                             return [v.Command, [createMoveMessage(char, v)]]
                         })
-                        return [createCustomNumCommand(message, data_array)];
+                        let rich = new Discord.RichEmbed({
+                            title: "Multiple cards found",
+                            description: createCustomNumCommand3(message,data_array)
+                        })
+                        console.log (rich);
+                        return ["", {embed: rich}]
                         /*
                         let msg = "```" + poslist.map((v, i) => {
                             return `${i + 1}. ${v.Command}`
@@ -1033,8 +1065,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                     return mes;
                 }
 
-                let msg = parseCharList(charfound) || parseCharList(charfoundmid) || "`Character not found`"
-                return [msg];
+                let msg = parseCharList(charfound) || parseCharList(charfoundmid) || ["`Character not found`"]
+                return msg;
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(err);
             }).catch(e=>{

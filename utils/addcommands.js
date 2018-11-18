@@ -2705,12 +2705,6 @@ updates script`,
                         message.channel.send("`Error`")
                         err(e)
                     } else {
-                        fs.readFile("t7/t7.json", 'utf8', function (e, data) {
-                            if (e) {
-                                return console.log(e);
-                            }
-                            t7 = JSON.parse(data);
-                        })
                         message.channel.send(`\`${stdout} ${stderr}\``)
                     }
                 })

@@ -1028,7 +1028,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                             return [v.Command, [createMoveMessage(char, v)]]
                         })
                         let rich = new Discord.RichEmbed({
-                            title: "Multiple cards found",
+                            title: "Multiple moves found",
                             description: createCustomNumCommand3(message,data_array)
                         })
                         console.log (rich);

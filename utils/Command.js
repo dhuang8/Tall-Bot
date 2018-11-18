@@ -7,7 +7,7 @@ class Command {
         this.name = options.name;
         this.prefix = (typeof options.prefix=="string")? options.prefix:".";
         //require prefix
-        this.requirePrefix = options.require || false;
+        this.requirePrefix = options.requirePrefix || false;
         this.shortDesc = options.shortDesc || "";
         this.longDesc = options.longDesc || "";
         this.testString = options.testString || ""

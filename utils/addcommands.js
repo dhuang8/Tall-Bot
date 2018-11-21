@@ -962,7 +962,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 thisfield = simplifyfield(thisfield);
                                 userfield = simplifyfield(userfield);
                                 if (thisfield.indexOf(userfield) < 0) return false; 
-                                let numfields = ["damage","startupframes","blockframe","hitframe","counterhitframe","post-techframes","speed"];
+                                let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed"];
                                 let isnumfield = false;
                                 if (numfields.indexOf(thisfield) > -1 && !isNaN(uservalue)) {
                                     isnumfield = true;

@@ -757,8 +757,9 @@ returns hearthstone card data`,
         hidden: false,
         requirePrefix: true,
         hardAsserts: ()=>{return art;},
-        shortDesc: "",
-        longDesc: ``,
+        shortDesc: "return artifact cards",
+        longDesc: `.art (search_term)
+return artifact cards`,
         func: (message, args) =>{
             (async()=>{
                 function simplifyname(s){
@@ -804,6 +805,87 @@ returns hearthstone card data`,
                 }
 
                 return parselist(perfectmatch) || parselist(goodmatch) || ["`No cards found`"]
+            })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+
+    let gundam = null;        
+    fs.readFile("gundam/gundam.json", 'utf8', function (e, data) {
+        if (e) {
+            console.log("gundam data not found");
+        } else {
+            gundam = JSON.parse(data);
+        }
+    })
+
+    commands.push(new Command({
+        name: "gundam",
+        regex: /^gundam (.+)$/i,
+        prefix: ".",
+        testString: ".gundam rx",
+        hidden: false,
+        requirePrefix: true,
+        hardAsserts: ()=>{return gundam;},
+        shortDesc: "you get gundam stuff back",
+        longDesc: `.gundam (search)`,
+        func: (message, args) =>{
+            (async()=>{
+                function simplifyname(s){
+                    s = replaceAll(s," ","");
+                    s = replaceAll(s,"-","");
+                    s = s.toLowerCase()
+                    return s;
+                }
+                let perfectmatch = [];
+                let goodmatch = [];
+                Object.keys(gundam).forEach((key)=>{
+                    let thisgundam = gundam[key]
+                    let simplename = simplifyname(thisgundam.Model);
+                    let searchsimple = simplifyname(args[1]);
+                    if (simplename === searchsimple) perfectmatch.push([thisgundam.Model, createMessage(thisgundam)]);
+                    else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([thisgundam.Model,createMessage(thisgundam)]);
+                })
+
+                function parselist(list) {
+                    if (list.length == 1) {
+                        return list[0][1];
+                    } else if (list.length > 1) {
+                        let rich = new Discord.RichEmbed({
+                            title: "Multiple gundams found",
+                            description: createCustomNumCommand3(message,list)
+                        })
+                        return ["",{embed:rich}]
+                    } else {
+                        return false;
+                    }
+                }
+
+                function createMessage(thisgundam) {
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(thisgundam.Model)
+                    rich.addField("MG", thisgundam.MG)
+                    rich.addField("Series", thisgundam.Series)
+                    rich.addField("Price", thisgundam.Price)
+                    rich.addField("Release Date", thisgundam["Release Date"])
+                    rich.addField("Notes", thisgundam.Notes)
+                    rich.setImage(thisgundam.image)
+                    return ["",{embed:rich}]
+                }
+
+                return parselist(perfectmatch) || parselist(goodmatch) || ["`Gundam not found`"]
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(e=>{
                     if (e.code == 50035) {
@@ -910,7 +992,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
                             var num = parseInt(message.content) - 1;
                             if (num < charfound.length && num > -1) {
-                                message.channel.send(getMove(charfound[num], args[2]));
+                                message.channel.send.apply(message.channel, getMove(charfound[num], args[2])).catch(err);
                                 return true;
                             }
                             return false;
@@ -2282,7 +2364,7 @@ returns poe.trade based on item name or stats`,
                 value: `**.roll 6** - rolls a die between 1 to 6 inclusive
 **.roll d6** - same as .roll d6
 **.roll 10d6** - rolls 10 6-sided dice and adds them together
-**.roll 10d123+10** - rolls 10 6-sided dice and adds 10`
+**.roll 10d6+10** - rolls 10 6-sided dice and then adds 10 to the total`
             }]
         },
         func: (message, args) =>{

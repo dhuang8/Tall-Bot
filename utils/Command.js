@@ -57,6 +57,10 @@ class Command {
     run(message) {
         let args;
         let messageString = message.content;
+        let curlybracket;
+        if (curlybracket=/{(.+)}/.exec(messageString)) {
+            messageString = curlybracket[1];
+        }
         if (this.requirePrefix && messageString[0] !== this.prefix) return false;
         else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
         if (this._testHardRequirements() && this._testSoftRequirements()) {

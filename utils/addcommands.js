@@ -1370,7 +1370,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                         })
                         return ["",{embed:rich}];
                     } else {
-                        return ["`Move not found`"];
+                        return ["Move not found\n" + char.link];
                     }
                 }
 

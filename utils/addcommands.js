@@ -381,7 +381,7 @@ ${message.cleanContent}
     }))
     commands.push(new Command({
         name: "k",
-        regex: /^k$/,
+        regex: /^k$/i,
         testString: "k",
         shortDesc: "responds with some long message",
         longDesc: "responds with \"You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside\"",
@@ -395,7 +395,7 @@ ${message.cleanContent}
     }))
     commands.push(new Command({
         name: "time",
-        regex: /^time$/,
+        regex: /^time$/i,
         testString: "time",
         prefix: ".",
         requirePrefix: false,
@@ -792,14 +792,33 @@ return artifact cards`,
                     }
                 }
 
-                function createMessage(card) {
+                async function createMessage(card) {
                     let rich = new Discord.RichEmbed();
+                    let price;
+                    try {
+                        let pricebody = await requestpromise("https://steamcommunity.com/market/priceoverview/?appid=583950&currency=1&market_hash_name=1" + card.card_id)
+                        let pricedata = JSON.parse(pricebody);
+                        if (pricedata.success) {
+                            price = pricedata.median_price;
+                        }
+                    } catch (e) {
+
+                    }
                     rich.setTitle(card.card_name)
                     if (card.card_text) {
                         rich.addField(card.card_type, card.card_text)
                     } else {
-                        rich.setDescription(card.card_type)
+                        rich.setDescription("**"+card.card_type+"**");
                     }
+                    if (card.rarity) rich.addField("Rarity", card.rarity)
+                    if (card.set) rich.addField("Set", card.set)
+                    if (card.references.length>0) {
+                        let reflist = card.references.map((ref)=>{
+                            return art[ref.card_id].card_name;
+                        }).join("\n");
+                        rich.addField("Includes", reflist)
+                    }
+                    if (price) rich.addField("Price", price)
                     rich.setImage(card.image)
                     return ["",{embed:rich}]
                 }

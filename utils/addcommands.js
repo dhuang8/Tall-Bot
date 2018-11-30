@@ -799,8 +799,8 @@ return artifact cards`,
                     let card = art[key]
                     let cardsimplename = simplifyname(card.card_name);
                     let searchsimple = simplifyname(args[1]);
-                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, createMessage(card)]);
-                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,createMessage(card)]);
+                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, async()=>await createMessage(card)]);
+                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,async()=>await createMessage(card)]);
                 })
 
                 function parselist(list) {

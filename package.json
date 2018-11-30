@@ -10,6 +10,7 @@
   "dependencies": {
     "bufferutil": "^3.0.3",
     "cheerio": "^1.0.0-rc.2",
+    "cron": "^1.5.0",
     "discord": "^0.8.2",
     "discord.js": "^11.3.2",
     "erlpack": "github:discordapp/erlpack",

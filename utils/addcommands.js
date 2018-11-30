@@ -7,6 +7,7 @@ const moment = require('moment-timezone');
 const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
+const CronJob = require('cron').CronJob;
 
 exports.getCommands = (bot) => {
 
@@ -266,6 +267,7 @@ let lastPresenceMsg = "";
         botChannelID: null,
         errorChannelID: null,
         secretChannelID: null,
+        weatherChannelID: null,
         api: {
             youtube:null,
             darksky:null,
@@ -284,11 +286,34 @@ let lastPresenceMsg = "";
         } else {
             config = JSON.parse(data);
 
-bot.on('ready', () => {
-    console.log('ready');
-    bot.user.setActivity('.help for list of commands',{type: "Watching"})
-    bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
-});
+            bot.on('ready', () => {
+                console.log('ready');
+                bot.user.setActivity('.help for list of commands',{type: "Watching"})
+                bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+    
+
+                
+                if (config.weatherChannelID) {
+                    new CronJob('0 0 8 * * *', function() {
+                        (async ()=>{
+                            return await weather("nyc");
+                        })().then(params=>{
+                            bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
+                                if (e.code == 50035) {
+                                    message.channel.send("`Message too large`").catch(err);
+                                } else {
+                                    err(e);
+                                    message.channel.send("`Error`").catch(err);
+                                }
+                            });
+                        }).catch(e=>{
+                            err(e);
+                            message.channel.send("`Error`").catch(err);
+                        })
+                    }, null, true, 'America/New_York');
+                }
+                
+            });
             bot.login(config.token).catch(console.error);
         }
     })
@@ -1895,6 +1920,126 @@ previous_nth_message - the number of messages to go back to reach the message yo
         }
     }))
 
+    async function weather(location_name){
+        let body = await requestpromise(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
+        let data = JSON.parse(body);
+        for (var i = 0; i < data.RESULTS.length; i++) {
+            if (data.RESULTS[i].lat != "-9999.000000") break;
+        }
+        if (i == data.RESULTS.length) return ["`Location not found`"];
+        let locName = data.RESULTS[i].name;
+        let lat = data.RESULTS[i].lat;
+        let lon = data.RESULTS[i].lon;
+        body =await requestpromise(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
+        data = JSON.parse(body);
+        let tM;
+        (data.flags.units == "us") ? tM = "°F": tM = "°C";
+        let iconNames = ["clear-day", "clear-night", "rain", "snow", "sleet", "wind", "fog", "cloudy", "partly-cloudy-day", "partly-cloudy-night"];
+        let iconEmote = [":sunny:", ":crescent_moon:", ":cloud_rain:", ":cloud_snow:", ":cloud_snow:", ":wind_blowing_face:", ":fog:", ":cloud:", ":partly_sunny:", ":cloud:"];
+        let rich = new Discord.RichEmbed();
+        rich.setTitle("Powered by Dark Sky");
+        rich.setDescription(data.daily.summary);
+        rich.setURL("https://darksky.net/poweredby/");
+        rich.setAuthor(locName, "", `https://darksky.net/forecast/${lat},${lon}`);
+        let iconIndex;
+        let curTime = moment.tz(data.currently.time * 1000, data.timezone).format('h:ma');
+        rich.addField(`${(iconIndex = iconNames.indexOf(data.currently.icon)) > -1 ? iconEmote[iconIndex] : ""}Now`, `${curTime}\n**${data.currently.temperature}${tM}**\nFeels like **${data.currently.apparentTemperature}${tM}**\n${data.currently.summary}`, true)
+        for (let i = 0; i < data.daily.data.length; i++) {
+            let dayIcon = (iconIndex = iconNames.indexOf(data.daily.data[i].icon)) > -1 ? iconEmote[iconIndex] : "";
+            let dayName = moment.tz(data.daily.data[i].time * 1000, data.daily.data[i].timezone).format('dddd');
+
+            let timeLow = moment.tz(data.daily.data[i].temperatureMinTime * 1000, data.timezone).format('h:mma');
+            let timeHigh = moment.tz(data.daily.data[i].temperatureMaxTime * 1000, data.timezone).format('h:mma');
+
+            let dayDesc = `\n**${data.daily.data[i].temperatureMin}${tM}**/**${data.daily.data[i].temperatureMax}${tM}**`;
+            dayDesc += `\nFeels like **${data.daily.data[i].apparentTemperatureMin}${tM}**/**${data.daily.data[i].apparentTemperatureMax}${tM}**`;
+            dayDesc += `\n${data.daily.data[i].summary}`;
+            rich.addField(`${dayIcon}${dayName}`, dayDesc, true)
+        }
+
+        function getImg() {
+            let res = JSON.parse(body);
+            if (res.Response && res.Response === "Error") {
+                return
+            }
+            var EXTENDED_MAP =
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
+            var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
+
+            function extendedEncode(arrVals, minVal, maxVal) {
+                var chartData = '';
+
+                for (let i = 0, len = arrVals.length; i < len; i++) {
+                    // In case the array vals were translated to strings.
+                    var numericVal = new Number(arrVals[i]);
+                    // Scale the value to maxVal.
+                    var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
+                        EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
+
+                    if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
+                        chartData += "..";
+                    } else if (scaledVal < 0) {
+                        chartData += '__';
+                    } else {
+                        // Calculate first and second digits and add them to the output.
+                        var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
+                        var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
+                        chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
+                    }
+                }
+
+                return chartData;
+            }
+
+
+            let hourdata = data.hourly.data;
+            let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=FF0000,00FF00&chdl=Temp|Apparent%20temp&chdlp=t"
+            let low = hourdata[0].temperature;
+            let high = hourdata[0].temperature;
+            let x_data = [];
+            let y_data = [];
+            let y2_data = [];
+
+            let curHour = moment.tz(hourdata[0].time * 1000, data.timezone).hour();
+            let hour_string = [];
+            let time_string = [];
+            let length = hourdata.length;
+            for (let i = 0; i < length; i++) {
+                if (hourdata[i].temperature < low) low = hourdata[i].temperature;
+                else if (hourdata[i].temperature > high) high = hourdata[i].temperature;
+                if (hourdata[i].apparentTemperature < low) low = hourdata[i].apparentTemperature;
+                else if (hourdata[i].apparentTemperature > high) high = hourdata[i].apparentTemperature;
+                x_data.push(hourdata[i].time);
+                y_data.push(hourdata[i].temperature);
+                y2_data.push(hourdata[i].apparentTemperature);
+                let thisMoment = moment.tz(hourdata[i].time * 1000, data.timezone);
+                let thisHour = thisMoment.hour();
+                if (parseInt(thisHour / 3) != parseInt(curHour / 3)) {
+                    curHour = thisHour;
+                    if (thisHour != 0) {
+                        hour_string.push(encodeURIComponent(thisMoment.format("h:mm a")));
+                    } else {
+                        hour_string.push(encodeURIComponent(thisMoment.format("dddd")));
+                    }
+                    time_string.push(hourdata[i].time);
+                    //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
+                }
+            }
+            chart_url += "&chd=e:" + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y_data, low, high);
+            chart_url += "," + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y2_data, low, high);
+            chart_url += "&chxr=0," + hourdata[0].time + "," + hourdata[length - 1].time + "|1," + low + "," + high;
+            chart_url += "&chxl=0:|" + hour_string.join("|");
+            chart_url += "&chxp=0," + time_string.join(",");
+
+            //add y ticks
+            chart_url += "&chxs=0,,10,0,lt";
+            return chart_url;
+        }
+
+        rich.setImage(getImg());
+        return ["",{embed:rich}];
+    }
+
     commands.push(new Command({
         name: "weather",
         regex: /^weather (\S.*)$/i,
@@ -1909,123 +2054,7 @@ returns the 8 day forecast and a chart of the temperature for the next 2 days
 location - can be several things like the name of a city or a zip code`,
         func: (message, args) =>{
             (async()=>{
-                let body = await requestpromise(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(args[1])}`)
-                let data = JSON.parse(body);
-                for (var i = 0; i < data.RESULTS.length; i++) {
-                    if (data.RESULTS[i].lat != "-9999.000000") break;
-                }
-                if (i == data.RESULTS.length) return ["`Location not found`"];
-                let locName = data.RESULTS[i].name;
-                let lat = data.RESULTS[i].lat;
-                let lon = data.RESULTS[i].lon;
-                body =await requestpromise(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
-                data = JSON.parse(body);
-                let tM;
-                (data.flags.units == "us") ? tM = "°F": tM = "°C";
-                let iconNames = ["clear-day", "clear-night", "rain", "snow", "sleet", "wind", "fog", "cloudy", "partly-cloudy-day", "partly-cloudy-night"];
-                let iconEmote = [":sunny:", ":crescent_moon:", ":cloud_rain:", ":cloud_snow:", ":cloud_snow:", ":wind_blowing_face:", ":fog:", ":cloud:", ":partly_sunny:", ":cloud:"];
-                let rich = new Discord.RichEmbed();
-                rich.setTitle("Powered by Dark Sky");
-                rich.setDescription(data.daily.summary);
-                rich.setURL("https://darksky.net/poweredby/");
-                rich.setAuthor(locName, "", `https://darksky.net/forecast/${lat},${lon}`);
-                let iconIndex;
-                let curTime = moment.tz(data.currently.time * 1000, data.timezone).format('h:ma');
-                rich.addField(`${(iconIndex = iconNames.indexOf(data.currently.icon)) > -1 ? iconEmote[iconIndex] : ""}Now`, `${curTime}\n**${data.currently.temperature}${tM}**\nFeels like **${data.currently.apparentTemperature}${tM}**\n${data.currently.summary}`, true)
-                for (let i = 0; i < data.daily.data.length; i++) {
-                    let dayIcon = (iconIndex = iconNames.indexOf(data.daily.data[i].icon)) > -1 ? iconEmote[iconIndex] : "";
-                    let dayName = moment.tz(data.daily.data[i].time * 1000, data.daily.data[i].timezone).format('dddd');
-
-                    let timeLow = moment.tz(data.daily.data[i].temperatureMinTime * 1000, data.timezone).format('h:mma');
-                    let timeHigh = moment.tz(data.daily.data[i].temperatureMaxTime * 1000, data.timezone).format('h:mma');
-
-                    let dayDesc = `\n**${data.daily.data[i].temperatureMin}${tM}**/**${data.daily.data[i].temperatureMax}${tM}**`;
-                    dayDesc += `\nFeels like **${data.daily.data[i].apparentTemperatureMin}${tM}**/**${data.daily.data[i].apparentTemperatureMax}${tM}**`;
-                    dayDesc += `\n${data.daily.data[i].summary}`;
-                    rich.addField(`${dayIcon}${dayName}`, dayDesc, true)
-                }
-
-                function getImg() {
-                    let res = JSON.parse(body);
-                    if (res.Response && res.Response === "Error") {
-                        return
-                    }
-                    var EXTENDED_MAP =
-                        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.';
-                    var EXTENDED_MAP_LENGTH = EXTENDED_MAP.length;
-
-                    function extendedEncode(arrVals, minVal, maxVal) {
-                        var chartData = '';
-
-                        for (let i = 0, len = arrVals.length; i < len; i++) {
-                            // In case the array vals were translated to strings.
-                            var numericVal = new Number(arrVals[i]);
-                            // Scale the value to maxVal.
-                            var scaledVal = Math.floor(EXTENDED_MAP_LENGTH *
-                                EXTENDED_MAP_LENGTH * (numericVal - minVal) / (maxVal - minVal));
-
-                            if (scaledVal > (EXTENDED_MAP_LENGTH * EXTENDED_MAP_LENGTH) - 1) {
-                                chartData += "..";
-                            } else if (scaledVal < 0) {
-                                chartData += '__';
-                            } else {
-                                // Calculate first and second digits and add them to the output.
-                                var quotient = Math.floor(scaledVal / EXTENDED_MAP_LENGTH);
-                                var remainder = scaledVal - EXTENDED_MAP_LENGTH * quotient;
-                                chartData += EXTENDED_MAP.charAt(quotient) + EXTENDED_MAP.charAt(remainder);
-                            }
-                        }
-
-                        return chartData;
-                    }
-
-
-                    let hourdata = data.hourly.data;
-                    let chart_url = "https://chart.googleapis.com/chart?cht=lxy&chs=729x410&chxt=x,y&chco=FF0000,00FF00&chdl=Temp|Apparent%20temp&chdlp=t"
-                    let low = hourdata[0].temperature;
-                    let high = hourdata[0].temperature;
-                    let x_data = [];
-                    let y_data = [];
-                    let y2_data = [];
-
-                    let curHour = moment.tz(hourdata[0].time * 1000, data.timezone).hour();
-                    let hour_string = [];
-                    let time_string = [];
-                    let length = hourdata.length;
-                    for (let i = 0; i < length; i++) {
-                        if (hourdata[i].temperature < low) low = hourdata[i].temperature;
-                        else if (hourdata[i].temperature > high) high = hourdata[i].temperature;
-                        if (hourdata[i].apparentTemperature < low) low = hourdata[i].apparentTemperature;
-                        else if (hourdata[i].apparentTemperature > high) high = hourdata[i].apparentTemperature;
-                        x_data.push(hourdata[i].time);
-                        y_data.push(hourdata[i].temperature);
-                        y2_data.push(hourdata[i].apparentTemperature);
-                        let thisMoment = moment.tz(hourdata[i].time * 1000, data.timezone);
-                        let thisHour = thisMoment.hour();
-                        if (parseInt(thisHour / 3) != parseInt(curHour / 3)) {
-                            curHour = thisHour;
-                            if (thisHour != 0) {
-                                hour_string.push(encodeURIComponent(thisMoment.format("h:mm a")));
-                            } else {
-                                hour_string.push(encodeURIComponent(thisMoment.format("dddd")));
-                            }
-                            time_string.push(hourdata[i].time);
-                            //time_string.push((res.Data[i].time-res.Data[0].time)/(res.Data[res.Data.length - 1].time-res.Data[0].time)*100);
-                        }
-                    }
-                    chart_url += "&chd=e:" + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y_data, low, high);
-                    chart_url += "," + extendedEncode(x_data, hourdata[0].time, hourdata[length - 1].time) + "," + extendedEncode(y2_data, low, high);
-                    chart_url += "&chxr=0," + hourdata[0].time + "," + hourdata[length - 1].time + "|1," + low + "," + high;
-                    chart_url += "&chxl=0:|" + hour_string.join("|");
-                    chart_url += "&chxp=0," + time_string.join(",");
-
-                    //add y ticks
-                    chart_url += "&chxs=0,,10,0,lt";
-                    return chart_url;
-                }
-
-                rich.setImage(getImg());
-                return ["",{embed:rich}];
+                return await weather(args[1]);
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(e=>{
                     if (e.code == 50035) {

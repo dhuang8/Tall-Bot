@@ -803,9 +803,9 @@ return artifact cards`,
                     else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,async()=>await createMessage(card)]);
                 })
 
-                function parselist(list) {
+                async function parselist(list) {
                     if (list.length == 1) {
-                        return list[0][1];
+                        return await list[0][1]();
                     } else if (list.length > 1) {
                         let rich = new Discord.RichEmbed({
                             title: "Multiple cards found",
@@ -848,7 +848,7 @@ return artifact cards`,
                     return ["",{embed:rich}]
                 }
 
-                return parselist(perfectmatch) || parselist(goodmatch) || ["`No cards found`"]
+                return await parselist(perfectmatch) || await parselist(goodmatch) || ["`No cards found`"]
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(e=>{
                     if (e.code == 50035) {

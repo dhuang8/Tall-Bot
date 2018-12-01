@@ -824,7 +824,7 @@ return artifact cards`,
                         let pricebody = await requestpromise("https://steamcommunity.com/market/priceoverview/?appid=583950&currency=1&market_hash_name=1" + card.card_id)
                         let pricedata = JSON.parse(pricebody);
                         if (pricedata.success) {
-                            price = pricedata.median_price;
+                            price = pricedata.lowest_price;
                         }
                     } catch (e) {
 

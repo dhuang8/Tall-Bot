@@ -1023,8 +1023,11 @@ multiple conditions can be linked together using condition1&condition2&condition
                 //find character
                 let charfound = [];
                 let charfoundmid = [];
+                let nameinput = args[1].toLowerCase();
+                if (nameinput=="dj") nameinput="devil"
+                else if (nameinput=="djin") nameinput="devil"
+                else if (nameinput=="panda") nameinput="kuma"
                 Object.keys(t7).forEach((v, i)=>{
-                    let nameinput = args[1].toLowerCase()
                     let charindex = v.indexOf(nameinput);
                     if (charindex===0) charfound.push(v);
                     else if(charindex>0) charfoundmid.push(v);
@@ -1942,7 +1945,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
         rich.setURL("https://darksky.net/poweredby/");
         rich.setAuthor(locName, "", `https://darksky.net/forecast/${lat},${lon}`);
         let iconIndex;
-        let curTime = moment.tz(data.currently.time * 1000, data.timezone).format('h:ma');
+        let curTime = moment.tz(data.currently.time * 1000, data.timezone).format('h:mma');
         rich.addField(`${(iconIndex = iconNames.indexOf(data.currently.icon)) > -1 ? iconEmote[iconIndex] : ""}Now`, `${curTime}\n**${data.currently.temperature}${tM}**\nFeels like **${data.currently.apparentTemperature}${tM}**\n${data.currently.summary}`, true)
         for (let i = 0; i < data.daily.data.length; i++) {
             let dayIcon = (iconIndex = iconNames.indexOf(data.daily.data[i].icon)) > -1 ? iconEmote[iconIndex] : "";

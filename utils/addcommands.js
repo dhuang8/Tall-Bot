@@ -262,6 +262,11 @@ let lastPresenceMsg = "";
         return mes;
     }
 
+    function wordWrap(str,length){
+        let regex = new RegExp(`(?=(.{1,${length}}(?: |$)))\\1`,"g");
+        return str.replace(regex,"$1\n");
+    }
+
     let config = {
         adminID: null,
         botChannelID: null,
@@ -1959,7 +1964,8 @@ previous_nth_message - the number of messages to go back to reach the message yo
 
             let dayDesc = `\n**${data.daily.data[i].temperatureMin}${tM}**/**${data.daily.data[i].temperatureMax}${tM}**`;
             dayDesc += `\nFeels like **${data.daily.data[i].apparentTemperatureMin}${tM}**/**${data.daily.data[i].apparentTemperatureMax}${tM}**`;
-            dayDesc += `\n${data.daily.data[i].summary}`;
+            if (i<data.daily.data.length-1) dayDesc += `\n${wordWrap(data.daily.data[i].summary,33)}`;
+            else dayDesc += `\n${data.daily.data[i].summary}`;
             rich.addField(`${dayIcon}${dayName}`, dayDesc, true)
         }
 

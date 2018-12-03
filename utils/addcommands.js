@@ -820,11 +820,13 @@ return artifact cards`,
                 async function createMessage(card) {
                     let rich = new Discord.RichEmbed();
                     let price;
+                    let link;
                     try {
                         let pricebody = await requestpromise("https://steamcommunity.com/market/priceoverview/?appid=583950&currency=1&market_hash_name=1" + card.card_id)
                         let pricedata = JSON.parse(pricebody);
                         if (pricedata.success) {
                             price = pricedata.lowest_price;
+                            link = "https://steamcommunity.com/market/listings/583950/1" + card.card_id
                         }
                     } catch (e) {
 
@@ -844,6 +846,7 @@ return artifact cards`,
                         rich.addField("Includes", reflist)
                     }
                     if (price) rich.addField("Price", price)
+                    if (link) rich.setURL(link)
                     rich.setImage(card.image)
                     return ["",{embed:rich}]
                 }

@@ -981,9 +981,9 @@ return artifact cards`,
                 name: `**condition**`,
                 value: `**__commandstring__ or __movename__** - returns moves which contain the commandstring or movename. same as command:commandstring or name:movename
 **__fieldname__>__searchstring__** - fieldname begins with searchstring
-**__fieldname__<__searchstring__** - the field end with fieldvalue
-**__fieldname__:__searchstring__** - the value of fieldname begins with fieldvalue
-**__fieldname__=__searchstring__** - value of fieldname is exactly the fieldvalue
+**__fieldname__<__searchstring__** - the field end with searchstring
+**__fieldname__:__searchstring__** - the value of fieldname begins with searchstring
+**__fieldname__=__searchstring__** - value of fieldname is exactly the searchstring
 **__fieldname__>__num__** - the value of fieldname is greater than num
 **__fieldname__<__num__** - the value of fieldname is less than num
 **__fieldname__=__num__** - the value of fieldname is equal to num

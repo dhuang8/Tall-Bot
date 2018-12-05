@@ -1037,7 +1037,6 @@ multiple conditions can be linked together using condition1&condition2&condition
                 else if (nameinput=="dvj") nameinput="devil"
                 else if (nameinput=="panda") nameinput="kuma"
                 else if (nameinput=="ak") nameinput="armor"
-                console.log(nameinput)
                 Object.keys(t7).forEach((v, i)=>{
                     let charindex = v.indexOf(nameinput);
                     if (charindex===0) charfound.push(v);

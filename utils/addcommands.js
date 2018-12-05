@@ -991,15 +991,15 @@ return artifact cards`,
 multiple conditions can be linked together using condition1&condition2&condition3...`
             },{
                 name: "Examples",
-                value: `**.t7 ak 11** - returns information on Akuma's 1,1
-**.t7 ak hadoken** - returns moves where the name contains "hadoken"
-**.t7 ak hit level>m** - returns moves that begin with a mid
-**.t7 ak hit level<m** - returns moves that end with a mid
-**.t7 ak name=gohadoken** - returns moves where the name is exactly gohadoken
-**.t7 ak i13** - returns moves that have a startup of 13
-**.t7 ak startup<12** - returns moves that have a startup < 12
-**.t7 ak notes:special cancel** - returns moves that say special cancel in the notes
-**.t7 ak block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid`
+                value: `**.t7 aku 11** - returns information on Akuma's 1,1
+**.t7 aku hadoken** - returns moves where the name contains "hadoken"
+**.t7 aku hit level>m** - returns moves that begin with a mid
+**.t7 aku hit level<m** - returns moves that end with a mid
+**.t7 aku name=gohadoken** - returns moves where the name is exactly gohadoken
+**.t7 aku i13** - returns moves that have a startup of 13
+**.t7 aku startup<12** - returns moves that have a startup < 12
+**.t7 aku notes:special cancel** - returns moves that say special cancel in the notes
+**.t7 aku block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid`
             }]
         },
         func: (message, args)=>{
@@ -1037,6 +1037,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                 else if (nameinput=="dvj") nameinput="devil"
                 else if (nameinput=="panda") nameinput="kuma"
                 else if (nameinput=="ak") nameinput="armor"
+                console.log(nameinput)
                 Object.keys(t7).forEach((v, i)=>{
                     let charindex = v.indexOf(nameinput);
                     if (charindex===0) charfound.push(v);

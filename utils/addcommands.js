@@ -690,7 +690,7 @@ returns yu-gi-oh card data. must use full name`,
     }))
     commands.push(new Command({
         name: "hs",
-        regex: /^hs (\S+)$/i,
+        regex: /^hs (.+)$/i,
         requirePrefix: true,
         prefix: ".",
         testString: ".hs open the waygate",
@@ -1034,7 +1034,9 @@ multiple conditions can be linked together using condition1&condition2&condition
                 let nameinput = args[1].toLowerCase();
                 if (nameinput=="dj") nameinput="devil"
                 else if (nameinput=="djin") nameinput="devil"
+                else if (nameinput=="dvj") nameinput="devil"
                 else if (nameinput=="panda") nameinput="kuma"
+                else if (nameinput=="ak") nameinput="armor"
                 Object.keys(t7).forEach((v, i)=>{
                     let charindex = v.indexOf(nameinput);
                     if (charindex===0) charfound.push(v);

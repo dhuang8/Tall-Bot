@@ -1170,7 +1170,6 @@ multiple conditions can be linked together using condition1&condition2&condition
                             title: "Multiple moves found",
                             description: createCustomNumCommand3(message,data_array)
                         })
-                        console.log (rich);
                         return ["", {embed: rich}]
                         /*
                         let msg = "```" + poslist.map((v, i) => {

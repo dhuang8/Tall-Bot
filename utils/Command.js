@@ -58,25 +58,29 @@ class Command {
         let args;
         let messageString = message.content;
         let curlybracket;
-        if (curlybracket=/{(.+)}/.exec(messageString)) {
-            messageString = curlybracket[1];
-        }
-        if (this.requirePrefix && messageString[0] !== this.prefix) return false;
-        else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
-        if (this._testHardRequirements() && this._testSoftRequirements()) {
-            if (this.regex == null || (args = this.regex.exec(messageString))) {
-                return this.func(message, args);
-            }
-            else if (!this.hidden && this.name===messageString.toLowerCase()) {
-                if (typeof this.getLongDesc() == "string"){
-                    message.channel.send("```" + this.getLongDesc() + "```");
-                } else {
-                    message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+        function parseMess(messageString){
+            if (this.requirePrefix && messageString[0] !== this.prefix) return false;
+            else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
+            if (this._testHardRequirements() && this._testSoftRequirements()) {
+                if (this.regex == null || (args = this.regex.exec(messageString))) {
+                    return this.func(message, args);
                 }
-                return true;
+                else if (!this.hidden && this.name===messageString.toLowerCase()) {
+                    if (typeof this.getLongDesc() == "string"){
+                        message.channel.send("```" + this.getLongDesc() + "```");
+                    } else {
+                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+                    }
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
+        if (curlybracket=/{(.+)}/.exec(messageString)) {
+            return parseMess.call(this,messageString) || parseMess.call(this,curlybracket[1]);
+        } else {
+            return parseMess.call(this,messageString);
+        }
     }
 
     getVisibility() {

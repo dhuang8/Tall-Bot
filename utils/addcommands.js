@@ -717,6 +717,13 @@ returns hearthstone card data`,
                     if (card.artist) desc += "**Artist: **" + card.artist + "\n";
                     if (card.collectible) desc += "**Collectible**" + "\n";
                     else desc += "**Uncollectible**" + "\n";
+                    if (card.cost) desc += `${card.cost} mana\n`;
+                    if (card.attack && card.health) desc += `${card.attack}/${card.health}\n`;
+                    if (card.text) {
+                        let $ = cheerio.load(card.text.replace(/<br\s*[\/]?>/gi, "\n").replace(/<\/?b>/gi, "**"))
+                        desc += `${$("body").text()}\n`;
+                    }
+                    /*
                     if (card.type == "Hero") {
                         let cardtext = card.text;
                         cardtext = replaceAll(cardtext, "\\*", "\\*");
@@ -727,6 +734,7 @@ returns hearthstone card data`,
                         cardtext = replaceAll(cardtext, "</b>", "**");
                         desc += "\n" + cardtext + "\n";
                     }
+                    */
                     if (card.flavor) {
                         let flavor = card.flavor;
                         flavor = replaceAll(flavor, "\\*", "\\*");
@@ -2756,6 +2764,52 @@ can be anywhere in a message`,
                 var msg = `${greeting}${args[1]}. ${response}`;
                 return [msg];
             })().then(params=>{
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }).catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
+    commands.push(new Command({
+        name: "alexa play",
+        regex: /alexa play (.+)$/i,
+        prefix: "",
+        testString: "blah blah alexa play despacito",
+        hidden: true,
+        requirePrefix: false,
+        hardAsserts: ()=>{return config.api.youtube;},
+        shortDesc: "",
+        longDesc: ``,
+        func: (message, args) =>{
+            (async()=>{
+                let search = encodeURIComponent(args[1]);
+                let urlpromise = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
+                let body = await urlpromise;
+
+                let data = JSON.parse(body);
+                if (data.items.length<1) return null;
+                const voiceChannel = message.member.voiceChannel;
+                if (!voiceChannel) {
+                    return [`${data.items[0].snippet.title}\nhttps://youtu.be/${data.items[0].id.videoId}`];
+                } else {
+                    let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {                                    
+                        filter: 'audioonly',
+                        quality: 'highestaudio'                         
+                    });
+                    playSound(voiceChannel, stream);
+                    return null;
+                }
+            })().then(params=>{
+                if (!params) return;
                 message.channel.send.apply(message.channel, params).catch(e=>{
                     if (e.code == 50035) {
                         message.channel.send("`Message too large`").catch(err);

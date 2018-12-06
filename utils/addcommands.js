@@ -2825,6 +2825,27 @@ can be anywhere in a message`,
             return true;
         }
     }))
+    commands.push(new Command({
+        name: "exit",
+        regex: /^exit$/i,
+        prefix: ".",
+        testString: "",
+        hidden: true,
+        requirePrefix: true,
+        hardAsserts: ()=>{return config.adminID;},
+        shortDesc: "",
+        longDesc: ``,
+        func: (message, args) =>{
+            (async()=>{
+                if (message.author.id != config.adminID) return false;
+                process.exit();
+            })().catch(e=>{
+                err(e);
+                message.channel.send("`Error`").catch(err);
+            })
+            return true;
+        }
+    }))
 /*
     commands.push(new Command({
         name: "nothing",
@@ -2937,16 +2958,7 @@ updates script`,
                         message.channel.send(`\`${stdout} ${stderr}\``)
                     }
                 })
-            })().then(params=>{
-                message.channel.send.apply(message.channel, params).catch(e=>{
-                    if (e.code == 50035) {
-                        message.channel.send("`Message too large`").catch(err);
-                    } else {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    }
-                });
-            }).catch(e=>{
+            })().catch(e=>{
                 err(e);
                 message.channel.send("`Error`").catch(err);
             })

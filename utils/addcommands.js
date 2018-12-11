@@ -2148,7 +2148,7 @@ returns poe.trade based on item name or stats`,
                             buyout: "x",
                             capquality: "x"
                         }
-                        let group = a[1].split("\n--------\n");
+                        let group = args[1].split("\n--------\n");
                         group.forEach((e, i, aa) => {
                             aa[i] = e.split("\n")
                         })
@@ -2283,7 +2283,8 @@ returns poe.trade based on item name or stats`,
                                 }
                             }
                         }
-                        rp3 = requestpromiseheader({
+                        
+                        poelinkid = await requestpromiseheader({
                             method: 'POST',
                             url: "http://poe.trade/search",
                             followRedirect: false,
@@ -2293,6 +2294,7 @@ returns poe.trade based on item name or stats`,
                             },
                             body: formstring
                         });
+                        
                     }
                     let link = poelinkid.headers.location;
                     let body;

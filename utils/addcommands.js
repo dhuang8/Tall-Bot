@@ -294,32 +294,28 @@ let lastPresenceMsg = "";
             bot.on('ready', () => {
                 console.log('ready');
                 bot.user.setActivity('.help for list of commands',{type: "Watching"})
-                bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
-    
-
-                
-                if (config.weatherChannelID) {
-                    new CronJob('0 0 8 * * *', function() {
-                        (async ()=>{
-                            return await weather("nyc");
-                        })().then(params=>{
-                            bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
-                                if (e.code == 50035) {
-                                    message.channel.send("`Message too large`").catch(err);
-                                } else {
-                                    err(e);
-                                    message.channel.send("`Error`").catch(err);
-                                }
-                            });
-                        }).catch(e=>{
-                            err(e);
-                            message.channel.send("`Error`").catch(err);
-                        })
-                    }, null, true, 'America/New_York');
-                }
-                
+                bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)                
             });
             bot.login(config.token).catch(console.error);
+            if (config.weatherChannelID) {
+            new CronJob('0 0 8 * * *', function() {
+                (async ()=>{
+                    return await weather("nyc");
+                })().then(params=>{
+                    bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
+                        if (e.code == 50035) {
+                            message.channel.send("`Message too large`").catch(err);
+                        } else {
+                            err(e);
+                            message.channel.send("`Error`").catch(err);
+                        }
+                    });
+                }).catch(e=>{
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                })
+            }, null, true, 'America/New_York');
+        }
         }
     })
     //},1000*10)
@@ -1075,7 +1071,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                     char = t7[char];
                     let simplifiedinput = simplifyMove(move);
                     if (char.moves[simplifiedinput]) {
-                        poslist = char.moves[simplifiedinput];
+                        //poslist = char.moves[simplifiedinput];
                     } else {
                         let conditionstring = move.split("&");
                         //returns a function that returns true if given field matches current field and satisfies value comparison
@@ -1105,9 +1101,36 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 }
                             }
 
+                            function checkregex(thisvalue,comparison,uservalue) {
+                                if (comparison=="<"){
+                                    let reg = new RegExp(thisvalue+"$");
+                                    if (reg.exec(uservalue)) return true;
+                                    return false
+                                } else if (comparison=="="){
+                                    let reg = new RegExp("^"+thisvalue+"$");
+                                    if (reg.exec(uservalue)) return true;
+                                    return false
+                                } else if (comparison==">"){
+                                    let reg = new RegExp("^"+thisvalue);
+                                    if (reg.exec(uservalue)) return true;
+                                    return false
+                                } else if (comparison==":"){
+                                    let reg = new RegExp(thisvalue);
+                                    if (reg.exec(uservalue)) return true;
+                                    return false
+                                }
+                            }
+
                             return (thisfield, thisvalue) => {
                                 thisfield = simplifyfield(thisfield);
                                 userfield = simplifyfield(userfield);
+                                //special case of comparing a command value to the regexp value of the move
+                                
+                                if (thisfield == "regexp" && "command".indexOf(userfield) > -1) {
+                                    uservalue = simplifyMove(uservalue);
+                                    return checkregex(thisvalue,comparison,uservalue);
+                                }
+                                
                                 if (thisfield.indexOf(userfield) < 0) return false; 
                                 let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed"];
                                 let isnumfield = false;
@@ -1139,7 +1162,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 return parseConditionArgs("startupframe",":",b[1]);
                             } else {
                                 return (arg1, arg2)=>{
-                                    return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
+                                    return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);// || parseConditionArgs("notes",":",cur)(arg1, arg2);
+                                    //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
                                 }
                             }
                         })
@@ -1148,10 +1172,11 @@ multiple conditions can be linked together using condition1&condition2&condition
                         Object.entries(char.moves).forEach((entry)=>{
                             //for each move {command, name, etc}
                             entry[1].forEach((moveobj) => {
-                                //check if move satisfies all contitons
+                                //check if move satisfies all conditions
                                 let match = conditions.every((cur)=>{
                                     //condition has to return true for at least 1 field:value
                                     return Object.entries(moveobj).some((field)=>{
+                                        //field[0] is the field name and field[1] is the field value
                                         if (field[0]!=="gfycat") {
                                             return cur(field[0], field[1]);
                                         }
@@ -2313,7 +2338,7 @@ returns poe.trade based on item name or stats`,
                             }
                         })
                     } catch (e) {
-                        console.error(e);
+                        //console.error(e);
                         return setLeague("Update your league", null, message);
                     }
                     let $ = cheerio.load(body);

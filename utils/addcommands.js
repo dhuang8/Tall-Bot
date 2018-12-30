@@ -1071,7 +1071,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                     char = t7[char];
                     let simplifiedinput = simplifyMove(move);
                     if (char.moves[simplifiedinput]) {
-                        //poslist = char.moves[simplifiedinput];
+                        poslist = char.moves[simplifiedinput];
                     } else {
                         let conditionstring = move.split("&");
                         //returns a function that returns true if given field matches current field and satisfies value comparison
@@ -1130,6 +1130,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                                     uservalue = simplifyMove(uservalue);
                                     return checkregex(thisvalue,comparison,uservalue);
                                 }
+                                
                                 
                                 if (thisfield.indexOf(userfield) < 0) return false; 
                                 let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed"];

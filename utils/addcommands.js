@@ -360,13 +360,7 @@ let lastPresenceMsg = "";
                             guildchan = await bot.guilds.get(config.guildID).createChannel(msgchannel,"text");
                             guildchan.setParent(guildcat);
                         }
-                        guildchan.send(message.author + ": " + message.content);
-                        /*
-                        let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
-    ${message.cleanContent}
-    \`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
-                        bot.channels.get(config.secretChannelID).send(msg).catch(err);
-                        */
+                        guildchan.send("`" + message.author.tag + ":` " + message.content);
                     } catch (e) {
                         err(e);
                     } finally {

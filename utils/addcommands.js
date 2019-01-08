@@ -302,7 +302,7 @@ let lastPresenceMsg = "";
                 if (config.gameUpdatesChannelID) {                    
                     //let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://www.guildwars2.com/en/feed/");
                     let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://en-forum.guildwars2.com/categories/game-release-notes/feed.rss");
-                    sub.test();
+                    //sub.test();
                 }
             })
             bot.login(config.token).catch(console.error);

@@ -360,7 +360,7 @@ let lastPresenceMsg = "";
                             guildchan = await bot.guilds.get(config.guildID).createChannel(msgchannel,"text");
                             guildchan.setParent(guildcat);
                         }
-                        guildchan.send(message.content);
+                        guildchan.send(message.author + ": " + message.content);
                         /*
                         let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
     ${message.cleanContent}

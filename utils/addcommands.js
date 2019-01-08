@@ -273,6 +273,7 @@ let lastPresenceMsg = "";
         errorChannelID: null,
         secretChannelID: null,
         weatherChannelID: null,
+        guildID: null,
         api: {
             youtube:null,
             darksky:null,
@@ -343,19 +344,59 @@ let lastPresenceMsg = "";
     commands.push(new Command({
         name: "log outside messages",
         hidden: true,
-        hardAsserts: ()=>{return config.adminID && config.secretChannelID},
+        hardAsserts: ()=>{return config.adminID && config.guildID},
         func: (message, args)=>{
             if (!message.channel.members || !message.channel.members.get(config.adminID)) {
-                try {
-                    let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
-${message.cleanContent}
-\`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
-                    bot.channels.get(config.secretChannelID).send(msg).catch(err);
-                } catch (e) {
+                (async()=>{
+                    try {
+                        let msgguild = message.guild.id;
+                        let msgchannel = message.channel.id;
+                        let guildcat = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgguild && chan.type=="category");
+                        if (!guildcat) {
+                            guildcat = await bot.guilds.get(config.guildID).createChannel(msgguild,"category");
+                        }
+                        let guildchan = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgchannel && chan.type=="text");
+                        if (!guildchan) {
+                            guildchan = await bot.guilds.get(config.guildID).createChannel(msgchannel,"text");
+                            guildchan.setParent(guildcat);
+                        }
+                        guildchan.send(message.content);
+                        /*
+                        let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
+    ${message.cleanContent}
+    \`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
+                        bot.channels.get(config.secretChannelID).send(msg).catch(err);
+                        */
+                    } catch (e) {
+                        err(e);
+                    } finally {
+                    }
+                })().catch(e=>{
+                    console.log(e);
                     err(e);
-                } finally {
-                    return false;
-                }
+                })
+            }
+            return false;
+        }
+    }))
+    commands.push(new Command({
+        name: "send bot messages",
+        hidden: true,
+        hardAsserts: ()=>{return config.adminID && config.guildID},
+        func: (message, args)=>{
+            if (message.channel.guild.id == config.guildID && message.author.id == config.adminID) {
+                (async()=>{
+                    try {
+                        bot.channels.get(message.channel.name).send(message.content);
+                    } catch (e) {
+                        err(e);
+                    } finally {
+                    }
+                })().catch(e=>{
+                    console.log(e);
+                    err(e);
+                })
+                return true;
             }
         }
     }))
@@ -377,8 +418,8 @@ ${message.cleanContent}
         prefix: "",
         func: (message, args)=>{
             if (extraCommand[message.channel.id] != null) {
-            return extraCommand[message.channel.id].onMessage(message);
-        }
+                return extraCommand[message.channel.id].onMessage(message);
+            }
         }
     }))
     commands.push(new Command({
@@ -1163,7 +1204,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 return parseConditionArgs("startupframe",":",b[1]);
                             } else {
                                 return (arg1, arg2)=>{
-                                    return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);// || parseConditionArgs("notes",":",cur)(arg1, arg2);
+                                    return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2);
                                     //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
                                 }
                             }
@@ -2627,7 +2668,7 @@ can be anywhere in a message`,
                     before: message.id
                 })
                 let thismsg = thismsgs.first();
-                if (thismsg.content !== "") return ["shut up"]
+                if (thismsg.content == "") return ["shut up"]
                 else if (thismsg.author.id === message.author.id)  return ["you know what you said"]
                 else return [thismsg.content.toUpperCase()];
             })().then(params=>{

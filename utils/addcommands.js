@@ -1,5 +1,6 @@
 "use strict";
 const Command = require('./Command');
+const SubscribeRSS = require('./SubscribeRSS');
 const Discord = require('discord.js');
 const request = require('request');
 const fs = require('fs');
@@ -274,6 +275,7 @@ let lastPresenceMsg = "";
         secretChannelID: null,
         weatherChannelID: null,
         guildID: null,
+        gameUpdatesChannelID: null,
         api: {
             youtube:null,
             darksky:null,
@@ -291,32 +293,38 @@ let lastPresenceMsg = "";
             console.error("paste discord token in config.json and restart");
         } else {
             config = JSON.parse(data);
-
             bot.on('ready', () => {
                 console.log('ready');
                 bot.user.setActivity('.help for list of commands',{type: "Watching"})
                 bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)                
             });
+            bot.once("ready", ()=>{
+                if (config.gameUpdatesChannelID) {                    
+                    //let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://www.guildwars2.com/en/feed/");
+                    let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://en-forum.guildwars2.com/categories/game-release-notes/feed.rss");
+                    sub.test();
+                }
+            })
             bot.login(config.token).catch(console.error);
             if (config.weatherChannelID) {
-            new CronJob('0 0 8 * * *', function() {
-                (async ()=>{
-                    return await weather("nyc");
-                })().then(params=>{
-                    bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
-                        if (e.code == 50035) {
-                            message.channel.send("`Message too large`").catch(err);
-                        } else {
-                            err(e);
-                            message.channel.send("`Error`").catch(err);
-                        }
-                    });
-                }).catch(e=>{
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                })
-            }, null, true, 'America/New_York');
-        }
+                new CronJob('0 0 8 * * *', function() {
+                    (async ()=>{
+                        return await weather("nyc");
+                    })().then(params=>{
+                        bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
+                            if (e.code == 50035) {
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    }).catch(e=>{
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    })
+                }, null, true, 'America/New_York');
+            }
         }
     })
     //},1000*10)
@@ -361,6 +369,14 @@ let lastPresenceMsg = "";
                             guildchan.setParent(guildcat);
                         }
                         guildchan.send("`" + message.author.tag + ":` " + message.content);
+                        
+                        //in case something goes wrong
+                        /*
+                        let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
+    ${message.cleanContent}
+    \`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
+                        bot.channels.get(config.secretChannelID).send(msg).catch(err);
+                        */
                     } catch (e) {
                         err(e);
                     } finally {
@@ -1873,14 +1889,15 @@ number_of_results - the number of results to return. Default is 6.`,
                 let body = await urlpromise;
 
                 let data = JSON.parse(body);
-                let msg = "";
                 let rich = new Discord.RichEmbed();
                 rich.setTitle("YouTube results");
                 rich.setURL("https://www.youtube.com/results?search_query=" + args[1])
+                let msg = "";
                 for (var i = 0; i < data.items.length; i++) {
-                    rich.addField(i + 1, `[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})`, false);
-                    msg += `${i + 1} <https://youtu.be/${data.items[i].id.videoId}> ${data.items[i].snippet.title}\n`;
+                    //rich.addField(i + 1, `[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})`, false);
+                    msg += `**${i + 1}**. [${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})\n`;
                 }
+                rich.setDescription(msg);
                 let loadingMessage = await loadingtask;
                 //loadingMessage.edit(msg).catch(err);
                 loadingMessage.edit(message.author, {

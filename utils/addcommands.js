@@ -2451,6 +2451,14 @@ returns poe.trade based on item name or stats`,
                             if (thismess.author.id !== message.author.id) return false;
                             (async ()=>{
                                 poeleague[message.author.id] = leag.id;
+                                fs.writeFile("./poeleague.json", JSON.stringify(poeleague, null, 4), (e) => {
+                                    if (e) {
+                                        err(e);
+                                        message.channel.send("`Error`").catch(err);
+                                        return;
+                                    }
+                                })
+
                                 let itemsearch = await poesearch(thismess,args)
                                 thismess.channel.send.apply(thismess.channel, itemsearch).catch(e=>{
                                     if (e.code == 50035) {

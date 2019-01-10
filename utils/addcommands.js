@@ -1912,9 +1912,8 @@ number_of_results - the number of results to return. Default is 6.`,
                                 message.reply(`get in a voice channel`).catch(err);
                                 return false;
                             }
-                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {                                    
-                                filter: 'audioonly',
-                                quality: 'highestaudio'                         
+                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
+                                quality: 'highestaudio'
                             });
                             playSound(voiceChannel, stream);
                             return true;

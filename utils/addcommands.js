@@ -2913,6 +2913,25 @@ can be anywhere in a message`,
             return true;
         }
     }))
+    
+    commands.push(new Command({
+        name: "stop",
+        regex: /^stop$/i,
+        prefix: "",
+        testString: "",
+        hidden: false,
+        requirePrefix: false,
+        shortDesc: "stops the current song playing",
+        longDesc: `stops the current song playing`,
+        func: (message, args) =>{
+            let server = message.channel.guild;
+            if (server.voiceConnection != null) {
+                server.voiceConnection.disconnect();
+                return true;
+            }
+        }
+    }))
+
     commands.push(new Command({
         name: "exit",
         regex: /^exit$/i,

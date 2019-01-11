@@ -1109,10 +1109,13 @@ multiple conditions can be linked together using condition1&condition2&condition
                             }
                             return false;
                         })
-                        let msg = "```" + charfound.map((e, i)=>{
-                            return `${i+1}. ${t7[e].name}`
-                        }).join("\n") + "```";;
-                        return [msg];
+                        let msg = charfound.map((e, i)=>{
+                            return `**${i+1}**. ${t7[e].name}`
+                        }).join("\n");
+                        let rich = new Discord.RichEmbed();
+                        rich.setDescription(msg);
+                        rich.setTitle("Choose your fighter")
+                        return ["",rich];
                     }
                     return false;
                 }

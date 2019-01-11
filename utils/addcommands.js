@@ -1124,7 +1124,34 @@ multiple conditions can be linked together using condition1&condition2&condition
                     if (char.moves[simplifiedinput]) {
                         poslist = char.moves[simplifiedinput];
                     } else {
-                        let conditionstring = move.split("&");
+                        function getMoveList(conditions) {
+                            let movelist = []
+                            //for each {moveshorthand:[array of moves]}
+                            Object.entries(char.moves).forEach((entry)=>{
+                                //for each move {command, name, etc}
+                                entry[1].forEach((moveobj) => {
+                                    //check if move satisfies all conditions
+                                    let match = conditions.every((cur)=>{
+                                        //condition has to return true for at least 1 field:value
+                                        return Object.entries(moveobj).some((field)=>{
+                                            //field[0] is the field name and field[1] is the field value
+                                            if (field[0]!=="gfycat") {
+                                                return cur(field[0], field[1]);
+                                            }
+                                            return false;
+                                        })
+
+                                    })
+
+                                    if (match) {
+                                        movelist.push(moveobj)
+                                    };
+                                    
+                                })
+                            })
+                            return movelist;
+                        }
+
                         //returns a function that returns true if given field matches current field and satisfies value comparison
                         function parseConditionArgs(userfield, comparison, uservalue) {
 
@@ -1153,23 +1180,12 @@ multiple conditions can be linked together using condition1&condition2&condition
                             }
 
                             function checkregex(thisvalue,comparison,uservalue) {
-                                if (comparison=="<"){
-                                    let reg = new RegExp(thisvalue+"$");
-                                    if (reg.exec(uservalue)) return true;
-                                    return false
-                                } else if (comparison=="="){
+                                if (comparison=="="){
                                     let reg = new RegExp("^"+thisvalue+"$");
-                                    if (reg.exec(uservalue)) return true;
-                                    return false
-                                } else if (comparison==">"){
-                                    let reg = new RegExp("^"+thisvalue);
-                                    if (reg.exec(uservalue)) return true;
-                                    return false
-                                } else if (comparison==":"){
-                                    let reg = new RegExp(thisvalue);
-                                    if (reg.exec(uservalue)) return true;
+                                    if (reg.test(uservalue)) return true;
                                     return false
                                 }
+                                return false;
                             }
 
                             return (thisfield, thisvalue) => {
@@ -1179,7 +1195,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 
                                 if (thisfield == "regexp" && "command".indexOf(userfield) > -1) {
                                     uservalue = simplifyMove(uservalue);
-                                    return checkregex(thisvalue,comparison,uservalue);
+                                    let check = checkregex(thisvalue,comparison,uservalue);
+                                    return check;
                                 }
                                 
                                 
@@ -1206,43 +1223,30 @@ multiple conditions can be linked together using condition1&condition2&condition
                             }
                         }
 
-                        let conditions = conditionstring.map((cur)=>{
-                            let b;
-                            if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
-                                return parseConditionArgs(b[1],b[2],b[3]);
-                            } else if (b = /^i(\d+)$/i.exec(cur)) {
-                                return parseConditionArgs("startupframe",":",b[1]);
-                            } else {
-                                return (arg1, arg2)=>{
-                                    return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2);
-                                    //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
+                        let conditions = [(arg1, arg2)=>{
+                            return parseConditionArgs("command","=",move)(arg1, arg2);
+                        }]
+                        poslist = getMoveList(conditions);
+
+                        if (poslist.length < 1) {
+                            let conditionstring = move.split("&");
+                            
+
+                            conditions = conditionstring.map((cur)=>{
+                                let b;
+                                if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
+                                    return parseConditionArgs(b[1],b[2],b[3]);
+                                } else if (b = /^i(\d+)$/i.exec(cur)) {
+                                    return parseConditionArgs("startupframe",":",b[1]);
+                                } else {
+                                    return (arg1, arg2)=>{
+                                        return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2);
+                                        //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
+                                    }
                                 }
-                            }
-                        })
-
-                        //for each {moveshorthand:[array of moves]}
-                        Object.entries(char.moves).forEach((entry)=>{
-                            //for each move {command, name, etc}
-                            entry[1].forEach((moveobj) => {
-                                //check if move satisfies all conditions
-                                let match = conditions.every((cur)=>{
-                                    //condition has to return true for at least 1 field:value
-                                    return Object.entries(moveobj).some((field)=>{
-                                        //field[0] is the field name and field[1] is the field value
-                                        if (field[0]!=="gfycat") {
-                                            return cur(field[0], field[1]);
-                                        }
-                                        return false;
-                                    })
-
-                                })
-
-                                if (match) {
-                                    poslist.push(moveobj)
-                                };
-                                
                             })
-                        })
+                            poslist = getMoveList(conditions);
+                        }
                     }
 
                     if (poslist.length === 1) {

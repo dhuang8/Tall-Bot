@@ -10,15 +10,16 @@ const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
 const CronJob = require('cron').CronJob;
 
+moment.tz.setDefault("America/New_York");
+
 exports.getCommands = (bot) => {
 
-let lastPresenceMsg = "";
+    let lastPresenceMsg = "";
     bot.on('presenceUpdate', function (oldUser, newUser) {
         try {
             //if (oldUser.presence.equals(newUser.presence)) return;
             let msg = "";
             //if (oldUser.status !== newUser.status) msg+=oldUser.status + "ↁE + newUser.status;
-            //console.log(newUser);
             let oldgame = (oldUser.presence.game ? oldUser.presence.game.name : oldUser.presence.game)
             let newgame = (newUser.presence.game ? newUser.presence.game.name : newUser.presence.game)
             let oldavatar = (oldUser.user.avatarURL ? oldUser.user.avatarURL : null)
@@ -40,8 +41,6 @@ let lastPresenceMsg = "";
             }
             if (msg === "") {
                 msg += " did something but I have no idea";
-                //console.log(oldUser);
-                //console.log(newUser);
             }
 
             msg = moment().format('h:mma') + " " + newUser.user.username + " (" + newUser.id + ")" + msg;
@@ -101,13 +100,13 @@ let lastPresenceMsg = "";
                 split: true,
                 reply: config.adminID || null
             }).catch(function (e) {
-                console.log(error.stack);
-                console.log(e.stack);
-                console.log("maybe missing bot channel");
+                console.error(error.stack);
+                console.error(e.stack);
+                console.error("maybe missing bot channel");
             })
             if (loadingMessage != null) loadingMessage.edit(content).catch(err)
         } else {
-            console.log(error);
+            console.error(error);
         }
     }
         
@@ -128,7 +127,7 @@ let lastPresenceMsg = "";
                     resolve(body);
                 }
                 catch (e){
-                    console.log(error,response,body);
+                    console.error(error,response,body);
                     reject(e);
                 }
             })
@@ -176,7 +175,7 @@ let lastPresenceMsg = "";
         this.regex = regex;
         this.callback = callback;
         this.important = false;
-        this.time = moment().add(10, "hours");
+        this.time = moment().add(2, "hours");
     }
 
     CustomCommand.prototype.onMessage = function (message) {
@@ -275,7 +274,6 @@ let lastPresenceMsg = "";
         secretChannelID: null,
         weatherChannelID: null,
         guildID: null,
-        gameUpdatesChannelID: null,
         api: {
             youtube:null,
             darksky:null,
@@ -299,11 +297,29 @@ let lastPresenceMsg = "";
                 bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)                
             });
             bot.once("ready", ()=>{
-                if (config.gameUpdatesChannelID) {                    
-                    //let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://www.guildwars2.com/en/feed/");
-                    let sub = new SubscribeRSS(bot.channels.get(config.gameUpdatesChannelID), "https://en-forum.guildwars2.com/categories/game-release-notes/feed.rss");
-                    //sub.test();
-                }
+                fs.readFile("./RSS.json", "utf8", (err,data) => {
+                    if (err && err.code === "ENOENT") {
+                        console.error("No RSS json file");
+                    } else {
+                        try {
+                            let rssarray = JSON.parse(data);
+                            rssarray.forEach(rssobj =>{
+                                try {
+                                    let channelarray = rssobj.channels.map(channelid=>{
+                                        return bot.channels.get(channelid)
+                                    })
+                                    let sub = new SubscribeRSS(channelarray, rssobj.link);
+                                    sub.test();
+                                } catch (e) {
+                                    console.error(e)
+                                }
+                            })
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
+                    }
+                })                
             })
             bot.login(config.token).catch(console.error);
             if (config.weatherChannelID) {
@@ -382,7 +398,7 @@ let lastPresenceMsg = "";
                     } finally {
                     }
                 })().catch(e=>{
-                    console.log(e);
+                    console.error(e);
                     err(e);
                 })
             }
@@ -403,7 +419,7 @@ let lastPresenceMsg = "";
                     } finally {
                     }
                 })().catch(e=>{
-                    console.log(e);
+                    console.error(e);
                     err(e);
                 })
                 return true;
@@ -562,7 +578,7 @@ returns shadowverse card info`,
                 let loadingMess = await lm;
                 loadingMess.edit.apply(loadingMess,responseMessage).catch(err);
             })().catch(e=>{
-                console.log(e);
+                console.error(e);
                 err(e);
             })
         }
@@ -767,7 +783,7 @@ returns hearthstone card data`,
                     if (card.cost) desc += `${card.cost} mana\n`;
                     if (card.attack && card.health) desc += `${card.attack}/${card.health}\n`;
                     if (card.text) {
-                        let $ = cheerio.load(card.text.replace(/<br\s*[\/]?>/gi, "\n").replace(/<\/?b>/gi, "**"))
+                        let $ = cheerio.load(card.text.replace(/\[x\]/gi, "").replace(/\\n/gi, " ").replace(/<br\s*[\/]?>/gi, "\n").replace(/<\/?b>/gi, "**"))
                         desc += `${$("body").text()}\n`;
                     }
                     /*
@@ -828,7 +844,7 @@ returns hearthstone card data`,
     let art = null;        
     fs.readFile("art/artifact.json", 'utf8', function (e, data) {
         if (e) {
-            console.log("Artifact card data not found");
+            console.error("Artifact card data not found");
         } else {
             art = JSON.parse(data);
         }
@@ -932,7 +948,7 @@ return artifact cards`,
     let gundam = null;        
     fs.readFile("gundam/gundam.json", 'utf8', function (e, data) {
         if (e) {
-            console.log("gundam data not found");
+            console.error("gundam data not found");
         } else {
             gundam = JSON.parse(data);
         }
@@ -1013,7 +1029,7 @@ return artifact cards`,
     let t7 = null;        
     fs.readFile("t7/t7.json", 'utf8', function (e, data) {
         if (e) {
-            console.log("Tekken 7 data not found");
+            console.error("Tekken 7 data not found");
         } else {
             t7 = JSON.parse(data);
         }
@@ -1167,15 +1183,19 @@ multiple conditions can be linked together using condition1&condition2&condition
                                         return value > valuestring;
                                     } else if (comparison=="=" || comparison==":"){
                                         return value == valuestring;
+                                    } else if (comparison=="<="){
+                                        return value <= valuestring;
+                                    } else if (comparison==">="){
+                                        return value >= valuestring;
                                     }
                                     return false;
                                 }
                                 
-                                if (comparison=="<"){
+                                if (comparison=="<" || comparison=="<="){
                                     return value.endsWith(valuestring);
                                 } else if (comparison=="="){
                                     return value == valuestring;
-                                } else if (comparison==">"){
+                                } else if (comparison==">" || comparison==">="){
                                     return value.startsWith(valuestring);
                                 } else if (comparison==":"){
                                     return value.indexOf(valuestring) > -1;
@@ -1237,7 +1257,7 @@ multiple conditions can be linked together using condition1&condition2&condition
 
                             conditions = conditionstring.map((cur)=>{
                                 let b;
-                                if (b = /^(.+)([:=<>])(.+)$/.exec(cur)) {
+                                if (b = /^(.+?)([<>]=|[:=<>])(.+)$/.exec(cur)) {
                                     return parseConditionArgs(b[1],b[2],b[3]);
                                 } else if (b = /^i(\d+)$/i.exec(cur)) {
                                     return parseConditionArgs("startupframe",":",b[1]);
@@ -1279,7 +1299,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                         return [msg];
                         */
                     } else {
-                        return ["`Move not found`"];
+                        return [`\`Move not found\`\n<${char.link}>`];
                     }
                 }
 
@@ -1635,7 +1655,7 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
         try {
             coin = JSON.parse(body);
         } catch (e) {
-            console.log("could not parse cryptocompare");
+            console.error("could not parse cryptocompare");
         }
     })
 
@@ -1839,7 +1859,7 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
                 }).catch(err)
             }
         } catch (e) {
-            console.log(e);
+            console.error(e);
             throw e;
         }
     }
@@ -1916,10 +1936,10 @@ number_of_results - the number of results to return. Default is 6.`,
                         try {
                             const voiceChannel = message.member.voiceChannel;
                             if (!voiceChannel) {
-                                message.reply(`get in a voice channel`).catch(err);
+                                message.channel.send(`https://youtu.be/${data.items[num-1].id.videoId}`).catch(err);
                                 return false;
                             }
-                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
+                            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num-1].id.videoId, {
                                 quality: 'highestaudio'
                             });
                             playSound(voiceChannel, stream);
@@ -2147,7 +2167,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
 
     commands.push(new Command({
         name: "weather",
-        regex: /^weather (\S.*)$/i,
+        regex: /^wea(?:ther)? (\S.*)$/i,
         prefix: ".",
         testString: ".weather nyc",
         hidden: false,
@@ -2180,7 +2200,7 @@ location - can be several things like the name of a city or a zip code`,
     let poeleague = null;
     fs.readFile("poeleague.json", 'utf8', function (e, data) {
         if (e) {
-            return console.log("could not load poe league data");
+            return console.error("could not load poe league data");
         } else {
             poeleague = JSON.parse(data);
         }
@@ -2236,7 +2256,6 @@ returns poe.trade based on item name or stats`,
                         group.forEach((e, i, aa) => {
                             aa[i] = e.split("\n")
                         })
-                        //console.log(group);
                         if (group[0][0] === "Rarity: Unique") {
                             form.name = group[0][group[0].length - 2] + " " + group[0][group[0].length - 1];
                             form.rarity = "unique";
@@ -2401,7 +2420,6 @@ returns poe.trade based on item name or stats`,
                         return setLeague("Update your league", null, message);
                     }
                     let $ = cheerio.load(body);
-                    //console.log(body);
                     let rich = new Discord.RichEmbed();
                     rich.setTitle("Results - " + poeleague[message.author.id]);
                     rich.setDescription(desc_list.join("\n"));
@@ -2414,7 +2432,6 @@ returns poe.trade based on item name or stats`,
                         //let wikilink = $(e).find(".wiki-link").attr("href");
                         //if (wikilink != "") title = `[${title}](${wikilink})`;
                         //.find(".title").clone().children().remove().end().text().trim();
-                        //console.log(title)
                         let desc = $(e).attr("data-buyout");
                         desc += "\n" + $(e).find(".found-time-ago").text().trim();
                         desc += "\n" + $(e).find(".bottom-row .label").text().trim();
@@ -2694,7 +2711,7 @@ can be anywhere in a message`,
                 })
                 let thismsg = thismsgs.first();
                 if (thismsg.content == "") return ["shut up"]
-                else if (thismsg.author.id === message.author.id)  return ["you know what you said"]
+                else if (thismsg.author.id === message.author.id)  return ["shut up"]
                 else return [thismsg.content.toUpperCase()];
             })().then(params=>{
                 message.channel.send.apply(message.channel, params).catch(e=>{
@@ -3009,7 +3026,7 @@ can be anywhere in a message`,
                 loadingMes.edit("Done")
             })
             .catch(e=>{
-                console.log(e)
+                console.error(e)
                 message.channel.send("`Error`");
             })
             return true;

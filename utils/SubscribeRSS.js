@@ -1,34 +1,36 @@
 "use strict";
 const Discord = require('discord.js');
 const CronJob = require('cron').CronJob;
-let Parser = require('rss-parser');
+const Parser = require('rss-parser');
 
 class SubscribeRSS {
-    constructor(channel, link) {
-        this.parser = new Parser();
-        //this.time = new Date(1546318780909);
-        this.time = new Date();
-        this.channel = channel;
-        this.link = link;
-        let sub = this;
-        new CronJob('0 0 * * * *', function() {
-            (async ()=>{
-                let feed = await sub.parser.parseURL(sub.link);
-                feed.items.filter((cur)=>{
-                    let date = new Date(cur.pubDate);
-                    return sub.time < date;
-                }).forEach(item => {
-                    sub.channel.send(`${feed.title}\n${item.title}\n${item.link}`)
-                });
-                sub.time = new Date();
-            })().catch(e=>{
-                console.error(e);
-                sub.channel.send("`Error`").catch(err);
-            })
-        }, null, true, 'America/New_York');
+    constructor(channels, link) {
+        try {
+            this.parser = new Parser();
+            this.time = new Date();
+            this.channels = channels;
+            this.link = link;
+            let sub = this;
+            new CronJob('0 0 * * * *', function() {
+                (async ()=>{
+                    await this.__lookup(0);
+                    sub.time = new Date();
+                })().catch(e=>{
+                    console.error(e);
+                    sub.channel.send("`Error`").catch(err);
+                })
+            }, null, true, 'America/New_York');
+        } catch(e) {
+            console.error(e);
+        }
     }
 
     test() {
+        //7 days
+        this.__lookup(1000*60*60*24*7);
+    }
+
+    preview() {
          (async ()=>{
             let feed = await this.parser.parseURL(this.link);
             let rich = new Discord.RichEmbed();
@@ -41,18 +43,36 @@ class SubscribeRSS {
             rich.setDescription(mes);
             return ["",rich];
         })().then(params=>{
-            this.channel.send.apply(this.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    this.channel.send("`Message too large`").catch(err);
-                } else {
-                    console.error(e);
-                    this.channel.send("`Error`").catch(err);
-                }
+            sub.channels.forEach(channel=>{
+                channel.send.apply(channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        channel.send("`Message too large`").catch(err);
+                    } else {
+                        console.error(e);
+                        channel.send("`Error`").catch(err);
+                    }
+                })
             });
         }).catch(e=>{
             console.error(e);
-            this.channel.send("`Error`").catch(err);
         })               
+    }
+
+    async __lookup(timeOffset) {
+        try {
+            let feed = await this.parser.parseURL(this.link);
+            feed.items.filter((cur)=>{
+                let date = new Date(cur.pubDate);
+                return (this.time-timeOffset) < date;
+            }).forEach(item => {
+                this.channels.forEach(channel=>{
+                    channel.send(`${item.title}\n${item.link}`)
+                })
+            });
+        } catch(e) {
+            console.error(e);
+            this.channels[0].send("`Error`").catch(err);
+        }
     }
 
     toString() {

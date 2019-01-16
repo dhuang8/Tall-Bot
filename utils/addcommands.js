@@ -309,7 +309,6 @@ exports.getCommands = (bot) => {
                                         return bot.channels.get(channelid)
                                     })
                                     let sub = new SubscribeRSS(channelarray, rssobj.link);
-                                    sub.test();
                                 } catch (e) {
                                     console.error(e)
                                 }

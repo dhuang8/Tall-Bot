@@ -383,7 +383,11 @@ exports.getCommands = (bot) => {
                             guildchan = await bot.guilds.get(config.guildID).createChannel(msgchannel,"text");
                             guildchan.setParent(guildcat);
                         }
-                        guildchan.send("`" + message.author.tag + ":` " + message.content);
+                        let msg = "`" + message.author.tag + ":` " + message.cleanContent
+                        message.attachments.forEach(attach => {
+                            msg += "\n" + attach.proxyURL;
+                        })
+                        guildchan.send(msg);
                         
                         //in case something goes wrong
                         /*

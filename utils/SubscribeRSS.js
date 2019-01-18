@@ -13,7 +13,7 @@ class SubscribeRSS {
             let sub = this;
             new CronJob('0 0 * * * *', function() {
                 (async ()=>{
-                    await this.__lookup(0);
+                    await sub.__lookup(0);
                     sub.time = new Date();
                 })().catch(e=>{
                     console.error(e);

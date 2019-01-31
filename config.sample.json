@@ -1,0 +1,16 @@
+{
+    "adminID": null,
+    "botChannelID": null,
+    "errorChannelID": null,
+    "secretChannelID": null,
+    "weatherChannelID": null,
+    "guildID": null,
+    "api": {
+        "youtube": null,
+        "darksky": null,
+        "battlerite": null,
+        "hearthstone": null
+    },
+    "token": null,
+    "botlink": null
+}

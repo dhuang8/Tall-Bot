@@ -2524,6 +2524,48 @@ returns poe.trade based on item name or stats`,
         return true;
     }
 }))
+commands.push(new Command({
+    name: "define",
+    regex: /^def(?:ine)? (.+?)(?: (\d))?$/i,
+    prefix: ".",
+    testString: ".define Devils Triangle",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "returns urban dictionary definition",
+    longDesc: `define (term)
+returns urban dictionary definition`,
+    func: (message, args) =>{
+        (async()=>{
+            let num = parseInt(args[2]) || 0;
+            let data = JSON.parse(await requestpromise(`http://api.urbandictionary.com/v0/define?term=${encodeURIComponent(args[1])}`));
+            if (data.list[num]) {
+                let rich = new Discord.RichEmbed();
+                rich.setTitle(data.list[num].word);
+                let desc = data.list[num].definition.replace(/[\[\]]/g,"");
+                if (data.list[num].example) {
+                    desc += "\n\n*" + data.list[num].example.replace(/[\[\]]/g,"") + "*";
+                }
+                rich.setDescription(desc);
+                //rich.setTimestamp(new Date(data.list[num].written_on));
+                return ["",rich];
+            }
+            return ["`No results found`"];
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
 
 commands.push(new Command({
     name: "roll",

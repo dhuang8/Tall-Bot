@@ -1,10 +1,9 @@
 node_modules/
+animalgifs/
 /gw2key.json
 /poeleague.json
 /config.json
 /RSS.json
-animalgifs/
-t7/
-sc6/
-art/
-gundam/
+/t7.json
+/sc6.json
+/gundam.json

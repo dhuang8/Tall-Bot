@@ -2689,21 +2689,12 @@ commands.push(new Command({
 turns an image into a spinning cogwheel`,
     func: (message, args) =>{
         (async()=>{
-            /*
-            console.log(args[1]);
-            console.log(bot.emojis.array().map(emoji=>{
-                return emoji.name
-            }))
-            */
             let image;
-            console.log(args[1]);
             if (message.attachments.size>0) image = await loadImage(message.attachments.first().url);
             else if (/^<:.+:.+>$/.test(args[1])) {
-                //console.log(args[1])
                 let emoji = bot.emojis.find(emoji=>{
                     return emoji.toString() == args[1];
                 })
-                //console.log(emoji)
                 image = await loadImage(emoji.url);
             } else {
                 image = await loadImage(args[1]);
@@ -2740,7 +2731,7 @@ turns an image into a spinning cogwheel`,
                 toggle  = false;                  // notch radius level (i/o)
                 ctx.beginPath();
                 ctx.moveTo(cx + radiusO * Math.cos(taperAO), cy + radiusO * Math.sin(taperAO));
-                for (; a <= pi2; a += angle) {
+                for (; a <= pi2+.01; a += angle) {
                     // draw inner to outer line
                     if (toggle) {
                         ctx.lineTo(cx + radiusI * Math.cos(a - taperAI),
@@ -2784,7 +2775,6 @@ turns an image into a spinning cogwheel`,
             await animate(40);
 
             encoder.finish();
-            //stream.pipe(fs.createWriteStream('myanimated3.gif'));
             let attach = new Discord.Attachment(stream, "cog.gif");
             return [attach];
         })().then(params=>{

@@ -79,9 +79,10 @@ class RSSManager {
         //console.log(combinedfeeds);
 
         let rich = new Discord.RichEmbed();
-        let desc = combinedlist.map((feedobj,i)=>{
+        let desc = combinedlist.slice(0,10).map((feedobj,i)=>{
             return `**${i+1}.** [${feedobj.title} - ${feedobj.feed.title}](${feedobj.feed.link})`
         }).join("\n");
+        console.log(desc)
         rich.setTitle("Last weeks posts");
         rich.setDescription(desc);
         return rich;

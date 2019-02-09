@@ -6,11 +6,8 @@ const Parser = require('rss-parser');
 class SubscribeRSS {
     constructor(title, channels, link) {
         try {
-            this.title = title
             this.parser = new Parser();
             this.time = new Date();
-            this.channels = channels;
-            this.link = link;
             let sub = this;
             new CronJob('0 0 * * * *', function() {
                 (async ()=>{
@@ -67,7 +64,7 @@ class SubscribeRSS {
                 return (this.time-timeOffset) < date;
             }).forEach(item => {
                 this.channels.forEach(channel=>{
-                    channel.send(`${this.title}\n${item.title}\n${item.link}`)
+                    channel.send(`${this.title}\n${item.title}\n<${item.link}>`)
                 })
             });
         } catch(e) {

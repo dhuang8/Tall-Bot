@@ -1,6 +1,7 @@
 "use strict";
 const Command = require('./utils/Command');
 const SubscribeRSS = require('./utils/SubscribeRSS');
+const RSSManager = require('./utils/RSSManager');
 const Discord = require('discord.js');
 const request = require('request');
 const fs = require('fs');
@@ -9,6 +10,8 @@ const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
 const CronJob = require('cron').CronJob;
+const GIFEncoder = require('gifencoder');
+const { createCanvas, loadImage } = require('canvas');
 
 moment.tz.setDefault("America/New_York");
 
@@ -284,7 +287,7 @@ let config = {
     },
     token: null
 };
-    
+let rss;
 fs.readFile("./config.json", "utf8", (err,data) => {
     if (err && err.code === "ENOENT") {
         fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
@@ -304,6 +307,14 @@ fs.readFile("./config.json", "utf8", (err,data) => {
                     console.error("No RSS json file");
                 } else {
                     try {
+                        (async()=>{
+                            rss = new RSSManager(bot);
+                            //let rich = await rss.preview("536582876683304970",1000*60*60*24*7);
+                            //bot.channels.get("536325719425286147").send(rich);
+                        })().catch(e=>{
+                            console.error(e);
+                        })
+                        /*
                         let rssarray = JSON.parse(data);
                         rssarray.forEach(rssobj =>{
                             try {
@@ -311,10 +322,12 @@ fs.readFile("./config.json", "utf8", (err,data) => {
                                     return bot.channels.get(channelid)
                                 })
                                 let sub = new SubscribeRSS(rssobj.title, channelarray, rssobj.link);
+                                sub.test();
                             } catch (e) {
                                 console.error(e)
                             }
                         })
+                        */
                     }
                     catch (e) {
                         console.error(e);
@@ -1543,7 +1556,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                     })
                     return ["",{embed:rich}];
                 } else {
-                    return ["Move not found\n" + char.link];
+                    return [`\`Move not found\`\n<${char.link}>`];
                 }
             }
 
@@ -2634,6 +2647,214 @@ commands.push(new Command({
 }))
 
 commands.push(new Command({
+    name: "rss",
+    regex: /^rss$/i,
+    prefix: ".",
+    testString: ".rss",
+    hidden: false,
+    requirePrefix: true,
+    hardAsserts: ()=>{return rss;},
+    shortDesc: "returns posted feeds since last week",
+    longDesc: `.rss
+returns posted feeds since last week`,
+    func: (message, args) =>{
+        (async()=>{
+            return [await rss.preview(message.channel.id, 1000*60*60*24*7)];
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "cog",
+    regex: /^cog(?: (.+))?$/i,
+    prefix: ".",
+    testString: "",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "turns an image into a spinning cogwheel",
+    longDesc: `.cog (imageurl) or .cog while attaching an image
+turns an image into a spinning cogwheel`,
+    func: (message, args) =>{
+        (async()=>{
+            /*
+            console.log(args[1]);
+            console.log(bot.emojis.array().map(emoji=>{
+                return emoji.name
+            }))
+            */
+            let image;
+            console.log(args[1]);
+            if (message.attachments.size>0) image = await loadImage(message.attachments.first().url);
+            else if (/^<:.+:.+>$/.test(args[1])) {
+                //console.log(args[1])
+                let emoji = bot.emojis.find(emoji=>{
+                    return emoji.toString() == args[1];
+                })
+                //console.log(emoji)
+                image = await loadImage(emoji.url);
+            } else {
+                image = await loadImage(args[1]);
+            }
+            let size = 320
+            let transparentcolor="#fffffc"
+            let cogcolor="#b0c4de"
+            const encoder = new GIFEncoder(size, size);
+            let stream = encoder.createReadStream()
+            encoder.start();
+            encoder.setRepeat(0);   // 0 for repeat, -1 for no-repeat
+            encoder.setDelay(1000/60*2);  // frame delay in ms
+            encoder.setQuality(10); // image quality. 10 is default.
+            encoder.setTransparent(transparentcolor); //
+            const canvas = createCanvas(size, size);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = transparentcolor;
+
+            function cog(ctx){
+                ctx.globalCompositeOperation='destination-in';
+                let cx      = 320/2,                    // center x
+                cy      = 320/2,                    // center y
+                notches = 8,                      // num. of notches
+                radiusO = 160,                    // outer radius
+                radiusI = 120,                    // inner radius
+                taperO  = 50,                     // outer taper %
+                taperI  = 35,                     // inner taper %
+                // pre-calculate values for loop
+                pi2     = 2 * Math.PI,            // cache 2xPI (360deg)
+                angle   = pi2 / (notches * 2),    // angle between notches
+                taperAI = angle * taperI * 0.005, // inner taper offset (100% = half notch)
+                taperAO = angle * taperO * 0.005, // outer taper offset
+                a       = angle,                  // iterator (angle)
+                toggle  = false;                  // notch radius level (i/o)
+                ctx.beginPath();
+                ctx.moveTo(cx + radiusO * Math.cos(taperAO), cy + radiusO * Math.sin(taperAO));
+                for (; a <= pi2; a += angle) {
+                    // draw inner to outer line
+                    if (toggle) {
+                        ctx.lineTo(cx + radiusI * Math.cos(a - taperAI),
+                                cy + radiusI * Math.sin(a - taperAI));
+                        ctx.lineTo(cx + radiusO * Math.cos(a + taperAO),
+                                cy + radiusO * Math.sin(a + taperAO));
+                    }
+                    // draw outer to inner line
+                    else {
+                        ctx.lineTo(cx + radiusO * Math.cos(a - taperAO),  // outer line
+                                cy + radiusO * Math.sin(a - taperAO));
+                        ctx.lineTo(cx + radiusI * Math.cos(a + taperAI),  // inner line
+                                cy + radiusI * Math.sin(a + taperAI));
+                    }
+                    // switch level
+                    toggle = !toggle;
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalCompositeOperation='source-over';
+            }
+            function spin(angle) {
+                ctx.restore();
+                ctx.fillStyle = cogcolor;
+                ctx.fillRect(0, 0, 320, 320);
+                ctx.fillStyle = transparentcolor;
+                ctx.translate(320/2, 320/2);
+                ctx.rotate(angle*Math.PI/180);
+                ctx.translate(-320/2, -320/2);
+                ctx.drawImage(image,0,0,320,320)
+                cog(ctx);
+                encoder.addFrame(ctx);
+            }
+
+            async function animate(frames) {
+                for (let i=0;i<frames;i++) {
+                    await spin(360/frames);
+                }
+            }
+
+            await animate(40);
+
+            encoder.finish();
+            //stream.pipe(fs.createWriteStream('myanimated3.gif'));
+            let attach = new Discord.Attachment(stream, "cog.gif");
+            return [attach];
+        })().then(params=>{
+            if (params == null) return;
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "alexa play",
+    regex: /alexa play (.+)$/i,
+    prefix: "",
+    testString: "blah blah alexa play despacito",
+    hidden: true,
+    requirePrefix: false,
+    hardAsserts: ()=>{return config.api.youtube;},
+    shortDesc: "",
+    longDesc: ``,
+    func: (message, args) =>{
+        (async()=>{
+            let search = encodeURIComponent(args[1]);
+            let urlpromise = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
+            let body = await urlpromise;
+
+            let data = JSON.parse(body);
+            if (data.items.length<1) return null;
+            const voiceChannel = message.member.voiceChannel;
+            if (!voiceChannel) {
+                return [`${data.items[0].snippet.title}\nhttps://youtu.be/${data.items[0].id.videoId}`];
+            } else {
+                let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {                                    
+                    filter: 'audioonly',
+                    quality: 'highestaudio'                         
+                });
+                playSound(voiceChannel, stream);
+                return null;
+            }
+        })().then(params=>{
+            if (!params) return;
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+//messages without prefixes
+
+commands.push(new Command({
     name: "00:00am est",
     regex: /(\d{1,2}(?::\d{2})? ?(?:[ap]m)?) ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt)/i,
     prefix: "",
@@ -2922,52 +3143,6 @@ commands.push(new Command({
             var msg = `${greeting}${args[1]}. ${response}`;
             return [msg];
         })().then(params=>{
-            message.channel.send.apply(message.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    message.channel.send("`Message too large`").catch(err);
-                } else {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                }
-            });
-        }).catch(e=>{
-            err(e);
-            message.channel.send("`Error`").catch(err);
-        })
-        return true;
-    }
-}))
-commands.push(new Command({
-    name: "alexa play",
-    regex: /alexa play (.+)$/i,
-    prefix: "",
-    testString: "blah blah alexa play despacito",
-    hidden: true,
-    requirePrefix: false,
-    hardAsserts: ()=>{return config.api.youtube;},
-    shortDesc: "",
-    longDesc: ``,
-    func: (message, args) =>{
-        (async()=>{
-            let search = encodeURIComponent(args[1]);
-            let urlpromise = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
-            let body = await urlpromise;
-
-            let data = JSON.parse(body);
-            if (data.items.length<1) return null;
-            const voiceChannel = message.member.voiceChannel;
-            if (!voiceChannel) {
-                return [`${data.items[0].snippet.title}\nhttps://youtu.be/${data.items[0].id.videoId}`];
-            } else {
-                let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {                                    
-                    filter: 'audioonly',
-                    quality: 'highestaudio'                         
-                });
-                playSound(voiceChannel, stream);
-                return null;
-            }
-        })().then(params=>{
-            if (!params) return;
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
                     message.channel.send("`Message too large`").catch(err);

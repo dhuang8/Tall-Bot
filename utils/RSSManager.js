@@ -17,12 +17,14 @@ class RSSManager {
                 (async ()=>{
                     let combinedfeeds = await sub.__getList(null, sub.time);
                     combinedfeeds.forEach(feedobj=>{
+                        /*
                         let rich = new Discord.RichEmbed();
                         rich.setTitle(feedobj.title);
                         rich.setURL(feedobj.feed.link);
                         rich.addField(feedobj.feed.title, `${feedobj.feed.contentSnippet.substring(0,200)}`);
+                        */
                         feedobj.channels.forEach(channelid=>{
-                            sub.bot.channels.get(channelid).send(rich);
+                            sub.bot.channels.get(channelid).send(`__**${feedobj.title}**__\n${feedobj.feed.title}\n<${feedobj.feed.link}>`);
                         })
                     })
                     sub.time = new Date();

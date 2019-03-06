@@ -2536,6 +2536,74 @@ returns poe.trade based on item name or stats`,
         return true;
     }
 }))
+
+commands.push(new Command({
+    name: "setpoeleague",
+    regex: /^setpoeleague$/i,
+    prefix: ".",
+    testString: ".level",
+    hidden: false,
+    requirePrefix: false,
+    shortDesc: "sets your PoE league for .pt",
+    longDesc: `.setpoeleague
+sets your PoE league for .pt`,
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            let body;
+            try {
+                body = await requestpromise("http://api.pathofexile.com/leagues?type=main&compact=0");
+            } catch (e) {
+                return ["`Error loading PoE API`"]
+            }
+            let data = JSON.parse(body);
+            let leaguelist = [];
+            data.forEach((leag)=>{
+                let istradeleague = leag.rules.every((rule)=>{
+                    return rule.id !== 24;
+                })
+                if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
+                    if (thismess.author.id !== message.author.id) return false;
+                    (async ()=>{
+                        let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
+                        stmt.run(message.author.id, leag.id)
+                        thismess.channel.send(`\`PoE league set to ${leag.id}\``).catch(e=>{
+                            if (e.code == 50035) {
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    })().catch( e=> {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    })
+                    return true;
+                }]);
+            })
+
+            let msg = createCustomNumCommand(message,leaguelist);
+            return [msg];
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+
 commands.push(new Command({
     name: "define",
     regex: /^def(?:ine)? (.+?)(?: (\d))?$/i,
@@ -2847,7 +2915,6 @@ translate a string to english`,
         return true;
     }
 }))
-
 
 commands.push(new Command({
     name: "level",

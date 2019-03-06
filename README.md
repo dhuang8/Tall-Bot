@@ -150,6 +150,8 @@ returns the 8 day forecast and a chart of the temperature for the next 2 days
 location - can be several things like the name of a city or a zip code
 ## pt
 returns poe.trade based on item name or stats
+## setpoeleague
+sets your PoE league for .pt
 ## define
 returns urban dictionary definition
 ## roll

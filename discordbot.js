@@ -1,7 +1,4 @@
 "use strict";
-const Command = require('./utils/Command');
-const SubscribeRSS = require('./utils/SubscribeRSS');
-const RSSManager = require('./utils/RSSManager');
 const Discord = require('discord.js');
 const request = require('request');
 const fs = require('fs');
@@ -12,6 +9,9 @@ const execFile = require('child_process').execFile;
 const CronJob = require('cron').CronJob;
 const GIFEncoder = require('gifencoder');
 const { createCanvas, loadImage } = require('canvas');
+const RSSManager = require('./utils/RSSManager');
+const translate = require('@vitalets/google-translate-api');
+const Database = require("better-sqlite3");
 
 moment.tz.setDefault("America/New_York");
 
@@ -19,6 +19,30 @@ const bot = new Discord.Client({
 //    apiRequestMethod: "burst"
 });
 
+let config = {
+    adminID: null,
+    botChannelID: null,
+    errorChannelID: null,
+    secretChannelID: null,
+    weatherChannelID: null,
+    guildID: null,
+    api: {
+        youtube:null,
+        darksky:null,
+        battlerite:null,
+        hearthstone:null
+    },
+    token: null
+};
+
+const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/);
+sql.prepare("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, points INTEGER, poeleague TEXT);").run();
+
+let globalvars = {bot, config, sql}
+module.exports = globalvars
+const Command = require('./utils/Command');
+
+/*
 let lastPresenceMsg = "";
 bot.on('presenceUpdate', function (oldUser, newUser) {
     try {
@@ -57,6 +81,7 @@ bot.on('presenceUpdate', function (oldUser, newUser) {
         //err(e)
     }
 });
+*/
 
 bot.on('guildCreate', (guild) => {
     try {
@@ -271,22 +296,6 @@ function wordWrap(str,length){
     let regex = new RegExp(`(?=(.{1,${length}}(?: |$)))\\1`,"g");
     return str.replace(regex,"$1\n");
 }
-
-let config = {
-    adminID: null,
-    botChannelID: null,
-    errorChannelID: null,
-    secretChannelID: null,
-    weatherChannelID: null,
-    guildID: null,
-    api: {
-        youtube:null,
-        darksky:null,
-        battlerite:null,
-        hearthstone:null
-    },
-    token: null
-};
 let rss;
 fs.readFile("./config.json", "utf8", (err,data) => {
     if (err && err.code === "ENOENT") {
@@ -296,10 +305,11 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         console.error("paste discord token in config.json and restart");
     } else {
         config = JSON.parse(data);
+        globalvars.config = config;
         bot.on('ready', () => {
             console.log('ready');
             bot.user.setActivity('.help for list of commands',{type: "Watching"})
-            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)                
+            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
         });
         bot.once("ready", ()=>{
             fs.readFile("./data/RSS.json", "utf8", (err,data) => {
@@ -379,6 +389,7 @@ commands.push(new Command({
         return message.author.bot;
     }
 }))
+
 commands.push(new Command({
     name: "log outside messages",
     hidden: true,
@@ -423,6 +434,7 @@ ${message.cleanContent}
         return false;
     }
 }))
+
 commands.push(new Command({
     name: "send bot messages",
     hidden: true,
@@ -2215,14 +2227,6 @@ location - can be several things like the name of a city or a zip code`,
     }
 }))
 
-let poeleague = null;
-fs.readFile("./data/poeleague.json", 'utf8', function (e, data) {
-    if (e) {
-        return console.error("could not load poe league data");
-    } else {
-        poeleague = JSON.parse(data);
-    }
-})
 commands.push(new Command({
     name: "pt",
     regex: /^pt ([^\r]+?)([ \n]?offline)?(?: ([\d]{1,2}))?$/i,
@@ -2230,7 +2234,6 @@ commands.push(new Command({
     testString: ".pt tabula rasa",
     hidden: false,
     requirePrefix: true,
-    hardAsserts: ()=>{return poeleague;},
     shortDesc: "returns poe.trade based on item name or stats",
     longDesc: `.pt (item)
 returns poe.trade based on item name or stats`,
@@ -2246,6 +2249,8 @@ returns poe.trade based on item name or stats`,
                 let poelinkid;
                 let desc_list = [];
                 args[1] = replaceAll(args[1], "’", "'");
+                let stmt = sql.prepare("SELECT poeleague FROM users WHERE user_id = ?;")
+                let poeleague = stmt.get(message.author.id).poeleague
                 if (args[1].split("\n").length < 3) {
                     poelinkid = await requestpromiseheader({
                         method: 'POST',
@@ -2256,7 +2261,7 @@ returns poe.trade based on item name or stats`,
                             "Content-Type": "application/x-www-form-urlencoded"
                         },
                         form: {
-                            league: poeleague[message.author.id],
+                            league: poeleague,
                             name: args[1],
                             online: online,
                             buyout: "x"
@@ -2265,7 +2270,7 @@ returns poe.trade based on item name or stats`,
                 } else {
                     //parse multiline
                     let form = {
-                        league: poeleague[message.author.id],
+                        league: poeleague,
                         online: online,
                         buyout: "x",
                         capquality: "x"
@@ -2439,7 +2444,7 @@ returns poe.trade based on item name or stats`,
                 }
                 let $ = cheerio.load(body);
                 let rich = new Discord.RichEmbed();
-                rich.setTitle("Results - " + poeleague[message.author.id]);
+                rich.setTitle("Results - " + poeleague);
                 rich.setDescription(desc_list.join("\n"));
                 rich.setURL(link);
                 rich.setFooter('Type "setpoeleague" to change your PoE league')
@@ -2491,14 +2496,8 @@ returns poe.trade based on item name or stats`,
                     if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
                         if (thismess.author.id !== message.author.id) return false;
                         (async ()=>{
-                            poeleague[message.author.id] = leag.id;
-                            fs.writeFile("./data/poeleague.json", JSON.stringify(poeleague, null, 4), (e) => {
-                                if (e) {
-                                    err(e);
-                                    message.channel.send("`Error`").catch(err);
-                                    return;
-                                }
-                            })
+                            let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
+                            stmt.run(message.author.id, leag.id)
 
                             let itemsearch = await poesearch(thismess,args)
                             thismess.channel.send.apply(thismess.channel, itemsearch).catch(e=>{
@@ -2659,7 +2658,7 @@ commands.push(new Command({
 returns posted feeds since last week`,
     func: (message, args) =>{
         (async()=>{
-            return [await rss.preview(message.channel.id, 1000*60*60*24*7)];
+            return [await rss.preview(message.channel.id, new Date(0))];
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
@@ -2685,13 +2684,37 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "turns an image into a spinning cogwheel",
-    longDesc: `.cog (imageurl) or .cog while attaching an image
-turns an image into a spinning cogwheel`,
+    longDesc: `.cog (imageurl) or .cog (emoji) or .cog while attaching an image
+returns a gif of the image in a spinning cogwheel`,
     func: (message, args) =>{
         (async()=>{
+            function toCodePoint(unicodeSurrogates, sep) {
+                var
+                r = [],
+                c = 0,
+                p = 0,
+                i = 0;
+                while (i < unicodeSurrogates.length) {
+                    c = unicodeSurrogates.charCodeAt(i++);
+                    if (p) {
+                        r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+                        p = 0;
+                    } else if (0xD800 <= c && c <= 0xDBFF) {
+                        p = c;
+                    } else {
+                        r.push(c.toString(16));
+                    }
+                }
+                return r.join(sep || '-');
+            }
+
+            console.log(toCodePoint(args[1]))
             let image;
-            if (message.attachments.size>0) image = await loadImage(message.attachments.first().url);
-            else if (/^<:.+:.+>$/.test(args[1])) {
+            if (message.attachments.size>0) {
+                image = await loadImage(message.attachments.first().url);
+            } else if (args[1].length<7) {
+                image = await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`);
+            } else if (/^<:.+:.+>$/.test(args[1])) {
                 let emoji = bot.emojis.find(emoji=>{
                     return emoji.toString() == args[1];
                 })
@@ -2796,6 +2819,74 @@ turns an image into a spinning cogwheel`,
 }))
 
 commands.push(new Command({
+    name: "translate",
+    regex: /^translate (.+)$/i,
+    prefix: ".",
+    testString: ".translate hola",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "translate a string to english",
+    longDesc: `.translate (string)
+translate a string to english`,
+    func: (message, args) =>{
+        (async()=>{
+            return [(await translate(args[1], {to: 'en'})).text]
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+
+commands.push(new Command({
+    name: "level",
+    regex: /^level$/i,
+    prefix: ".",
+    testString: ".level",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "returns user power level",
+    longDesc: `.level
+returns user power level`,
+    log: true,
+    points: 0,
+    func: (message, args) =>{
+        (async()=>{
+            let stmt = sql.prepare("SELECT points FROM users WHERE user_id = ?;")
+            let points = stmt.get(message.author.id).points
+            let level = Math.floor(Math.pow(points,0.5))
+            return [`\`Your power level is ${level}.\``]
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+//messages without prefixes
+
+commands.push(new Command({
     name: "alexa play",
     regex: /alexa play (.+)$/i,
     prefix: "",
@@ -2842,8 +2933,6 @@ commands.push(new Command({
     }
 }))
 
-//messages without prefixes
-
 commands.push(new Command({
     name: "00:00am est",
     regex: /(\d{1,2}(?::\d{2})? ?(?:[ap]m)?) ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt)/i,
@@ -2853,7 +2942,7 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "converts to different timezones",
     longDesc: `(00:00)[am or pm] (time_zone)
-can be anywhere in a message`,
+returns the time converted to different time zones. can be anywhere in a message`,
     func: (message, args) =>{
         (async()=>{
             let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt"];
@@ -2925,7 +3014,7 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "whens",
-    regex: /^(whens|when's|when is|when are).+$/i,
+    regex: /^(?:so )?when(?:s|'s| is| are) (.+)$/i,
     prefix: "",
     testString: "whens something",
     hidden: true,
@@ -3032,7 +3121,7 @@ commands.push(new Command({
     func: (message, args) =>{
         if (message.author.id !== config.adminID) return false;
         (async()=>{
-            return [config.botlink];
+            return [`<${config.botlink}>`];
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
@@ -3150,24 +3239,6 @@ commands.push(new Command({
 }))
 
 commands.push(new Command({
-    name: "stop",
-    regex: /^stop$/i,
-    prefix: "",
-    testString: "",
-    hidden: false,
-    requirePrefix: false,
-    shortDesc: "stops the current song playing",
-    longDesc: `stops the current song playing`,
-    func: (message, args) =>{
-        let server = message.channel.guild;
-        if (server.voiceConnection != null) {
-            server.voiceConnection.disconnect();
-            return true;
-        }
-    }
-}))
-
-commands.push(new Command({
     name: "exit",
     regex: /^exit$/i,
     prefix: ".",
@@ -3199,6 +3270,8 @@ commands.push(new Command({
     hardAsserts: ()=>{return;},
     shortDesc: "",
     longDesc: ``,
+    log: false,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             //todo
@@ -3282,24 +3355,37 @@ returns a list of commands. respond with the number for details on a specific co
 }))
 commands.push(new Command({
     name: "update",
-    regex: /^update$/i,
+    regex: /^update(?: (.+))$/i,
     requirePrefix: true,
     hidden: true,
     hardAsserts: ()=>{return config.adminID;},
     shortDesc: "update script",
     longDesc: `.update
 updates script`,
+    log: true,
+    points: 0,
     func: (message, args) =>{
         if (message.author.id != config.adminID) return false;
         (async()=>{
-            execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
-                if (e) {
-                    message.channel.send("`Error`")
-                    err(e)
-                } else {
-                    message.channel.send(`\`${stdout} ${stderr}\``)
-                }
-            })
+            if (args[1]) {
+                execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
+                    if (e) {
+                        message.channel.send("`Error`")
+                        err(e)
+                    } else {
+                        message.channel.send(`\`${stdout} ${stderr}\``)
+                    }
+                })
+            } else {
+                execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
+                    if (e) {
+                        message.channel.send("`Error`")
+                        err(e)
+                    } else {
+                        message.channel.send(`\`${stdout} ${stderr}\``)
+                    }
+                })
+            }
         })().catch(e=>{
             err(e);
             message.channel.send("`Error`").catch(err);
@@ -3340,6 +3426,26 @@ returns a list of commands. respond with the number to test that command`,
     }
 }))
 
+
+commands.push(new Command({
+    name: "stop",
+    regex: /stop/i,
+    prefix: ".",
+    testString: "",
+    hidden: false,
+    requirePrefix: false,
+    shortDesc: "stops the current song playing",
+    longDesc: `stop
+stops the current song playing`,
+    func: (message, args) =>{
+        let server = message.channel.guild;
+        if (server.voiceConnection != null) {
+            server.voiceConnection.disconnect();
+            return true;
+        }
+    }
+}))
+
 function generateREADME() {
     let readme = `# Tall Bot
 A Discord bot that does a lot of things
@@ -3347,6 +3453,16 @@ A Discord bot that does a lot of things
 [Test the bot](https://discord.gg/YpjRNZT)
 
 [Invite the bot to a server](https://discordapp.com/oauth2/authorize?client_id=180762874593935360&scope=bot&permissions=4294967295)
+
+# Tall Bot
+
+\`npm install\`
+
+\`node discord.js\`
+
+paste token into config.json
+
+\`node discord.js\` again
 `
     readme += commands.filter(cmd=>{
         return !cmd.hidden;
@@ -3364,6 +3480,7 @@ A Discord bot that does a lot of things
         return desc;
     }).join("\n").replace(/\[/g, "\\[");
     fs.writeFileSync("README.md", readme);
+    console.log("Readme generated")
 }
 
 if (process.argv[2] == "r") generateREADME();

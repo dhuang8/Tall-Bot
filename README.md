@@ -4,6 +4,16 @@ A Discord bot that does a lot of things
 [Test the bot](https://discord.gg/YpjRNZT)
 
 [Invite the bot to a server](https://discordapp.com/oauth2/authorize?client_id=180762874593935360&scope=bot&permissions=4294967295)
+
+# Tall Bot
+
+`npm install`
+
+`node discord.js`
+
+paste token into config.json
+
+`node discord.js` again
 ## ping
 
 ## time
@@ -11,19 +21,19 @@ A Discord bot that does a lot of things
 ## sv
 returns shadowverse card info
 ## remindme
-sends a reminder after specified time. the number is the id.
+sends a reminder after specified time. Returns the ID.
 
 
 
 .remindme "(message)" (00:00am est)
 
-sends a reminder at specified time. the number is the id.
+sends a reminder at specified time. Returns the ID.
 
 
 
 .remindme "(message)" (datestring)
 
-sends a reminder at specified date. datestring is any string accepted for making a new Date object in JS. the number is the id.
+sends a reminder at specified date. datestring is any string accepted for making a new Date object in JS. Returns the ID.
 ## cancelremindme
 cancels a remindme reminder with id
 ## ygo
@@ -140,6 +150,8 @@ returns the 8 day forecast and a chart of the temperature for the next 2 days
 location - can be several things like the name of a city or a zip code
 ## pt
 returns poe.trade based on item name or stats
+## define
+returns urban dictionary definition
 ## roll
 rolls dice between 1 and max_num
 ### .roll \[(num_dice)d](max_num)\[+(add)]
@@ -158,9 +170,15 @@ number to add at the end
 
 **.roll 10d6+10** - rolls 10 6-sided dice and then adds 10 to the total
 
+## rss
+returns posted feeds since last week
+## cog
+returns a gif of the image in a spinning cogwheel
+## translate
+translate a string to english
 ## 00:00am est
-can be anywhere in a message
-## stop
-
+returns the time converted to different time zones. can be anywhere in a message
 ## help
 returns a list of commands. respond with the number for details on a specific command
+## stop
+stops the current song playing

@@ -73,9 +73,8 @@ class RSSManager {
     }
     */
 
-    async preview(channelid, timeOffset) {
-        let curtime = new Date()
-        let combinedlist = await this.__getList(channelid, curtime-timeOffset);
+    async preview(channelid, oldTime) {
+        let combinedlist = await this.__getList(channelid, oldTime);
         //console.log(combinedfeeds);
 
         let rich = new Discord.RichEmbed();
@@ -83,7 +82,7 @@ class RSSManager {
             return `**${i+1}.** [${feedobj.title} - ${feedobj.feed.title}](${feedobj.feed.link})`
         }).join("\n");
         console.log(desc)
-        rich.setTitle("Last weeks posts");
+        rich.setTitle("Previous posts");
         rich.setDescription(desc);
         return rich;
     }
@@ -121,7 +120,7 @@ class RSSManager {
         combinedfeeds.sort((a,b)=>{
             let d1 = new Date(a.feed.isoDate);
             let d2 = new Date(b.feed.isoDate);
-            return d1<d2;
+            return d2-d1;
         })
 
         return combinedfeeds;

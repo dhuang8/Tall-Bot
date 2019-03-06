@@ -1,5 +1,6 @@
 "use strict";
 const Discord = require('discord.js');
+const discordbot = require('../discordbot');
 
 class Command {
     constructor(options) {
@@ -36,6 +37,8 @@ class Command {
         this.func = options.func || (()=>{return true;});
         this.regex = options.regex || null;
         this.hidden = options.hidden || false;
+        this.log = options.log || !this.hidden;
+        this.points = options.points || (options.requirePrefix?1:0);
     }
 
     _testHardRequirements() {
@@ -54,7 +57,7 @@ class Command {
         return true;
     }
 
-    run(message) {
+    _run(message) {
         let args;
         let messageString = message.content;
         let curlybracket;
@@ -63,6 +66,10 @@ class Command {
             else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
             if (this._testHardRequirements() && this._testSoftRequirements()) {
                 if (this.regex == null || (args = this.regex.exec(messageString))) {
+                    if (this.log && discordbot.config && discordbot.config.botChannelID) {
+                        let msg = "`" + message.author.tag + ":` " + message.cleanContent
+                        discordbot.bot.channels.get(discordbot.config.botChannelID).send(msg);
+                    }
                     return this.func(message, args);
                 }
                 else if (!this.hidden && this.name===messageString.toLowerCase()) {
@@ -81,6 +88,15 @@ class Command {
         } else {
             return parseMess.call(this,messageString);
         }
+    }
+
+    run(message) {
+        let check = this._run(message);
+        if (check && this.points > 0) {
+            let stmt = discordbot.sql.prepare("INSERT INTO users(user_id,points) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET points=points + excluded.points;")
+            stmt.run(message.author.id, this.points)
+        }
+        return check
     }
 
     getVisibility() {

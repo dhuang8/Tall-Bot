@@ -6,7 +6,7 @@ const moment = require('moment-timezone');
 const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
-const CronJob = require('cron').CronJob;
+//const CronJob = require('cron').CronJob;
 const GIFEncoder = require('gifencoder');
 const { createCanvas, loadImage } = require('canvas');
 const RSSManager = require('./utils/RSSManager');
@@ -347,7 +347,7 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         })
         bot.login(config.token).catch(console.error);
         if (config.weatherChannelID) {
-            new CronJob('0 0 8 * * *', function() {
+            /*new CronJob('0 0 8 * * *', function() {
                 (async ()=>{
                     return await weather("nyc");
                 })().then(params=>{
@@ -364,6 +364,7 @@ fs.readFile("./config.json", "utf8", (err,data) => {
                     message.channel.send("`Error`").catch(err);
                 })
             }, null, true, 'America/New_York');
+            */
         }
     }
 })

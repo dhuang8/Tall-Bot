@@ -3515,7 +3515,7 @@ returns a list of commands. respond with the number for details on a specific co
 }))
 commands.push(new Command({
     name: "update",
-    regex: /^update(?: (.+))$/i,
+    regex: /^update(?: (.+))?$/i,
     requirePrefix: true,
     hidden: true,
     hardAsserts: ()=>{return config.adminID;},

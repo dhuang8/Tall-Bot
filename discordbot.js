@@ -481,7 +481,7 @@ commands.push(new Command({
     name: "extra custom commands",
     hidden: true,
     prefix: "",
-    log: true,
+    log: false,
     points: 0,
     func: (message, args)=>{
         if (extraCommand[message.channel.id] != null) {

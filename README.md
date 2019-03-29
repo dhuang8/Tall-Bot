@@ -5,7 +5,7 @@ A Discord bot that does a lot of things
 
 [Invite the bot to a server](https://discordapp.com/oauth2/authorize?client_id=180762874593935360&scope=bot&permissions=4294967295)
 
-# Tall Bot
+# How to run
 
 `npm install`
 

@@ -6,7 +6,7 @@ const moment = require('moment-timezone');
 const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
-//const CronJob = require('cron').CronJob;
+const CronJob = require('cron').CronJob;
 const GIFEncoder = require('gifencoder');
 const { createCanvas, loadImage } = require('canvas');
 const RSSManager = require('./utils/RSSManager');
@@ -347,7 +347,7 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         })
         bot.login(config.token).catch(console.error);
         if (config.weatherChannelID) {
-            /*new CronJob('0 0 8 * * *', function() {
+            new CronJob('0 0 8 * * *', function() {
                 (async ()=>{
                     return await weather("nyc");
                 })().then(params=>{
@@ -364,7 +364,7 @@ fs.readFile("./config.json", "utf8", (err,data) => {
                     message.channel.send("`Error`").catch(err);
                 })
             }, null, true, 'America/New_York');
-            */
+            
         }
     }
 })
@@ -386,6 +386,8 @@ commands.push(new Command({
     name: "test if bot",
     hidden: true,
     prefix: "",
+    log: false,
+    points: 0,
     func: (message, args)=>{
         return message.author.bot;
     }
@@ -395,6 +397,8 @@ commands.push(new Command({
     name: "log outside messages",
     hidden: true,
     hardAsserts: ()=>{return config.adminID && config.guildID},
+    log: false,
+    points: 0,
     func: (message, args)=>{
         if (!message.channel.members || !message.channel.members.get(config.adminID)) {
             (async()=>{
@@ -440,6 +444,8 @@ commands.push(new Command({
     name: "send bot messages",
     hidden: true,
     hardAsserts: ()=>{return config.adminID && config.guildID},
+    log: false,
+    points: 0,
     func: (message, args)=>{
         if (message.channel.guild.id == config.guildID && message.author.id == config.adminID) {
             (async()=>{
@@ -461,6 +467,8 @@ commands.push(new Command({
     name: "remove messages in bot and error channels",
     hidden: true,
     prefix: "",
+    log: false,
+    points: 0,
     hardAsserts: ()=>{return config.botChannelID && config.errorChannelID},
     func: (message, args)=>{
         if (message.channel.id === config.botChannelID || message.channel.id === config.errorChannelID) {
@@ -473,6 +481,8 @@ commands.push(new Command({
     name: "extra custom commands",
     hidden: true,
     prefix: "",
+    log: true,
+    points: 0,
     func: (message, args)=>{
         if (extraCommand[message.channel.id] != null) {
             return extraCommand[message.channel.id].onMessage(message);
@@ -498,6 +508,8 @@ commands.push(new Command({
     prefix: "",
     testString: "^",
     hidden: true,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         message.channel.send("^").catch(err);
         return true;
@@ -511,6 +523,8 @@ commands.push(new Command({
     longDesc: "responds with \"You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside\"",
     prefix: "",
     hidden: true,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         let msg = `You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside`;
         message.channel.send(msg).catch(err);
@@ -525,6 +539,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "responds with the time at several time zones",
     longDesc: "responds with the time in UTC, CST, EST, PST, NZST, and JST",
+    log: true,
+    points: 1,
     func: (message, args)=>{
         let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         //msg += fullName;
@@ -547,6 +563,8 @@ commands.push(new Command({
 returns shadowverse card info`,
     prefix: ".",
     requirePrefix: true,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         (async ()=>{
             let lm = message.channel.send("`Loading...`");
@@ -631,6 +649,8 @@ sends a reminder at specified time. Returns the ID.
 
 .remindme "(message)" (datestring)
 sends a reminder at specified date. datestring is any string accepted for making a new Date object in JS. Returns the ID.`,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         let reminder = args[1];
         let timestring = args[2];
@@ -691,6 +711,8 @@ commands.push(new Command({
     shortDesc: "cancels a remindme reminder",
     longDesc: `.cancelremindme (id)
 cancels a remindme reminder with id`,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         let id = parseInt(args[1]);
         if (timeouts[id] != null) {
@@ -712,6 +734,8 @@ commands.push(new Command({
     shortDesc: "returns yu-gi-oh card data",
     longDesc: `.ygo (card name)
 returns yu-gi-oh card data. must use full name`,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         (async ()=>{
             let body;
@@ -792,6 +816,8 @@ commands.push(new Command({
     longDesc: `.hs (card name)
 returns hearthstone card data`,
     hardAsserts: ()=>{return config.api.hearthstone;},
+    log: true,
+    points: 1,
     func: (message, args)=>{
         (async ()=>{
                 let body = await requestpromise({
@@ -892,6 +918,8 @@ commands.push(new Command({
     shortDesc: "return artifact cards",
     longDesc: `.art (search_term)
 return artifact cards`,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             function simplifyname(s){
@@ -995,6 +1023,8 @@ commands.push(new Command({
     hardAsserts: ()=>{return gundam;},
     shortDesc: "you get gundam stuff back",
     longDesc: `.gundam (search)`,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             function simplifyname(s){
@@ -1073,6 +1103,8 @@ commands.push(new Command({
     requirePrefix: true,
     hardAsserts: ()=>{return t7;},
     testString: ".t7 ak block=1",
+    log: true,
+    points: 1,
     shortDesc: "returns information about a tekken 7 character's move string",
     longDesc: {title:`.t7 __character_name__ __condition__`,
         description: `returns information on a Tekken 7 character's move string`,
@@ -1376,6 +1408,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return sc6;},
+    log: true,
+    points: 1,
     shortDesc: "returns information about a Soulcalibur 6 character's attack string",
     longDesc: {title:`.sc6 __character_name__ __condition__`,
         description: `returns information about a Soulcalibur 6 character's attack string`,
@@ -1624,6 +1658,8 @@ commands.push(new Command({
     hardAsserts: ()=>{return sts;},
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "returns information on a Slay the Spire card or relic",
     longDesc: `.sts (card_name or relic_name)
 returns information on a Slay the Spire card or relic. Matches by substring`,
@@ -1698,6 +1734,8 @@ commands.push(new Command({
     hardAsserts: ()=>{return coin;},
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "returns the exchange rate and a 30 hour graph of the price of a foreign currency or cryptocurrency",
     longDesc: `.price [amount] (from_symbol) [to_symbol]
 returns a 30 hour graph of the price of a foreign currency or cryptocurrency
@@ -1862,14 +1900,14 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                         }).on('end', leave);
                     });
                     thisDispatch.end();
-                    //sitting in channel without playing sound
+                //sitting in channel without playing sound
                 } else {
                     channel.guild.voiceConnection.playStream(URL, {
                         seek: setstart,
                         volume: setvolume
                     }).on('end', leave);
                 }
-                //if in another voice channel
+            //if in another voice channel
             } else {
                 channel.guild.voiceConnection.dispatcher.removeAllListeners('end');
                 channel.guild.voiceConnection.dispatcher.end();
@@ -1880,7 +1918,7 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                     }).on('end', leave);
                 }).catch(err);
             }
-            //not in a voice channel
+        //not in a voice channel
         } else {
             channel.join().then(connnection => {
                 const dispatcher = connnection.playStream(URL, {
@@ -1902,6 +1940,8 @@ commands.push(new Command({
     testString: ".yt DN9YncMIr60",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "plays audio from a YouTube link in a voice channel",
     longDesc: `.yt (youtube_id)
 plays audio from a YouTube link in a voice channel
@@ -1933,6 +1973,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return config.api.youtube;},
+    log: true,
+    points: 1,
     shortDesc: "returns list of YouTube videos based on the search term",
     longDesc: `.yts (search_turn) [number_of_results]
 returns list of YouTube videos based on the search term
@@ -1997,6 +2039,8 @@ commands.push(new Command({
     testString: ".quote 508747221588639754",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "returns a link to and a quote of a past message",
     longDesc: `.quote (message_id or previous_nth_message)
 returns a link to and a quote of a past message
@@ -2050,6 +2094,8 @@ commands.push(new Command({
     testString: ".eval 1+1",
     hidden: true,
     requirePrefix: true,
+    log: true,
+    points: 0,
     shortDesc: "",
     longDesc: ``,
     func: (message, args) =>{
@@ -2093,7 +2139,14 @@ async function weather(location_name){
     let iconEmote = [":sunny:", ":crescent_moon:", ":cloud_rain:", ":cloud_snow:", ":cloud_snow:", ":wind_blowing_face:", ":fog:", ":cloud:", ":partly_sunny:", ":cloud:"];
     let rich = new Discord.RichEmbed();
     rich.setTitle("Powered by Dark Sky");
-    rich.setDescription(data.daily.summary);
+    let summary = data.daily.summary
+    if (data.alerts) {
+        let alertstring = data.alerts.map((alert)=>{
+            return `[**ALERT**](${alert.uri}}): ${alert.description}`
+        }).join("\n")
+        summary = summary + "\n\n" + alertstring;
+    }
+    rich.setDescription(summary);
     rich.setURL("https://darksky.net/poweredby/");
     rich.setAuthor(locName, "", `https://darksky.net/forecast/${lat},${lon}`);
     let iconIndex;
@@ -2204,6 +2257,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return config.api.darksky;},
+    log: true,
+    points: 1,
     shortDesc: "returns the 8 day forecast and a chart of the temperature for the next 2 days",
     longDesc: `.weather (location)
 returns the 8 day forecast and a chart of the temperature for the next 2 days
@@ -2235,6 +2290,8 @@ commands.push(new Command({
     testString: ".pt tabula rasa",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "returns poe.trade based on item name or stats",
     longDesc: `.pt (item)
 returns poe.trade based on item name or stats`,
@@ -2492,7 +2549,7 @@ returns poe.trade based on item name or stats`,
                 */
                 data.forEach((leag)=>{
                     let istradeleague = leag.rules.every((rule)=>{
-                        return rule.id !== 24;
+                        return rule.id !== "NoParties";
                     })
                     if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
                         if (thismess.author.id !== message.author.id) return false;
@@ -2562,7 +2619,7 @@ sets your PoE league for .pt`,
             let leaguelist = [];
             data.forEach((leag)=>{
                 let istradeleague = leag.rules.every((rule)=>{
-                    return rule.id !== 24;
+                    return rule.id !== "NoParties";
                 })
                 if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
                     if (thismess.author.id !== message.author.id) return false;
@@ -2612,6 +2669,8 @@ commands.push(new Command({
     testString: ".define Devils Triangle",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "returns urban dictionary definition",
     longDesc: `define (term)
 returns urban dictionary definition`,
@@ -2655,6 +2714,8 @@ commands.push(new Command({
     testString: ".roll 3d6-10",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "rolls dice between 1 and max_num",
     longDesc: {title:`.roll [(num_dice)d](max_num)[+(add)]`,
         description: `rolls dice between 1 and max_num`,
@@ -2722,6 +2783,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return rss;},
+    log: true,
+    points: 1,
     shortDesc: "returns posted feeds since last week",
     longDesc: `.rss
 returns posted feeds since last week`,
@@ -2752,6 +2815,8 @@ commands.push(new Command({
     testString: "",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "turns an image into a spinning cogwheel",
     longDesc: `.cog (imageurl) or .cog (emoji) or .cog while attaching an image
 returns a gif of the image in a spinning cogwheel`,
@@ -2777,7 +2842,6 @@ returns a gif of the image in a spinning cogwheel`,
                 return r.join(sep || '-');
             }
 
-            console.log(toCodePoint(args[1]))
             let image;
             if (message.attachments.size>0) {
                 image = await loadImage(message.attachments.first().url);
@@ -2889,11 +2953,13 @@ returns a gif of the image in a spinning cogwheel`,
 
 commands.push(new Command({
     name: "translate",
-    regex: /^translate (.+)$/i,
+    regex: /^translate ([\s\S]+)$/i,
     prefix: ".",
     testString: ".translate hola",
     hidden: false,
     requirePrefix: true,
+    log: true,
+    points: 1,
     shortDesc: "translate a string to english",
     longDesc: `.translate (string)
 translate a string to english`,
@@ -2924,6 +2990,8 @@ commands.push(new Command({
     testString: ".level",
     hidden: true,
     requirePrefix: true,
+    log: true,
+    points: 0,
     shortDesc: "returns user power level",
     longDesc: `.level
 returns user power level`,
@@ -2962,8 +3030,12 @@ commands.push(new Command({
     hidden: true,
     requirePrefix: false,
     hardAsserts: ()=>{return config.api.youtube;},
+    log: true,
+    points: 1,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             let search = encodeURIComponent(args[1]);
@@ -3011,6 +3083,8 @@ commands.push(new Command({
     shortDesc: "converts to different timezones",
     longDesc: `(00:00)[am or pm] (time_zone)
 returns the time converted to different time zones. can be anywhere in a message`,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt"];
@@ -3059,6 +3133,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         if (args[1].toLowerCase() === "you" || args[1].toLowerCase() === "u" || args[1].toLowerCase() === "this" || args[1].toLowerCase() === "that") return false;
         (async()=>{
@@ -3089,6 +3165,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             return ["never"];
@@ -3118,6 +3196,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             let thismsgs = await message.channel.fetchMessages({
@@ -3154,6 +3234,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "returns my jonio link",
     longDesc: `returns my jonio link`,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             return ["http://www.dhuang8.com/gg/"];
@@ -3216,6 +3298,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             return ["sorry"];
@@ -3246,6 +3330,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             let files = fs.readdirSync("animalgifs/");
@@ -3278,6 +3364,8 @@ commands.push(new Command({
     requirePrefix: false,
     shortDesc: "return hi blah",
     longDesc: ``,
+    log: true,
+    points: 1,
     func: (message, args) =>{
         (async()=>{
             let greetings = ["Hello", "Hi", "Hey"]
@@ -3316,6 +3404,8 @@ commands.push(new Command({
     hardAsserts: ()=>{return config.adminID;},
     shortDesc: "",
     longDesc: ``,
+    log: true,
+    points: 0,
     func: (message, args) =>{
         (async()=>{
             if (message.author.id != config.adminID) return false;
@@ -3393,6 +3483,8 @@ commands.push(new Command({
     shortDesc: "returns a list of commands",
     longDesc: `.help
 returns a list of commands. respond with the number for details on a specific command`,
+    log: true,
+    points: 1,
     func: (message, args)=>{
         let results = [];
         let mes = commands.filter((cur)=>{
@@ -3470,6 +3562,8 @@ commands.push(new Command({
     shortDesc: "tests commands",
     longDesc: `.test
 returns a list of commands. respond with the number to test that command`,
+    log: true,
+    points: 0,
     func: (message, args)=>{
         if (message.author.id != config.adminID) return false;
         let results = [];
@@ -3505,6 +3599,8 @@ commands.push(new Command({
     shortDesc: "stops the current song playing",
     longDesc: `stop
 stops the current song playing`,
+    log: true,
+    points: 0,
     func: (message, args) =>{
         let server = message.channel.guild;
         if (server.voiceConnection != null) {
@@ -3522,7 +3618,7 @@ A Discord bot that does a lot of things
 
 [Invite the bot to a server](https://discordapp.com/oauth2/authorize?client_id=180762874593935360&scope=bot&permissions=4294967295)
 
-# Tall Bot
+# How to run
 
 \`npm install\`
 

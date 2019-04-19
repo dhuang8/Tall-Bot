@@ -3020,6 +3020,48 @@ returns user power level`,
     }
 }))
 
+commands.push(new Command({
+    name: "image",
+    regex: /^image ([^\n\r]+?)$/i,
+    prefix: ".",
+    testString: ".image cat",
+    hidden: false,
+    requirePrefix: true,
+    hardAsserts: ()=>{return config.api.image;},
+    shortDesc: "returns the first image result",
+    longDesc: `.image (term)
+returns the first image result. safesearch is off if the channel is nsfw`,
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            args[1] = encodeURIComponent(args[1]);
+            let safe = message.channel.nsfw?"":"&safe=active"
+            //https://developers.google.com/custom-search/v1/cse/list
+            let urlpromise = await requestpromise(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${args[1]}&searchType=image&num=1${safe}`)
+            let data=JSON.parse(urlpromise)
+            if (data.items && data.items.length>0){
+                let attach = new Discord.Attachment(data.items[0].link,`${args[1]}.jpg`);
+                return [attach]
+            }
+            return ["`No results found`"]
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
 //messages without prefixes
 
 commands.push(new Command({

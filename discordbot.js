@@ -497,7 +497,7 @@ commands.push(new Command({
     shortDesc: "returns pings",
     longDesc: "returns the average of the last 3 pings",
     func: (message, args)=>{
-        message.channel.send(bot.ping).catch(err);
+        message.channel.send("pong").catch(err);
         return true;
     }
 }))
@@ -3035,13 +3035,20 @@ returns the first image result. safesearch is off if the channel is nsfw`,
     points: 1,
     func: (message, args) =>{
         (async()=>{
-            args[1] = encodeURIComponent(args[1]);
+            //args[1] = encodeURIComponent(args[1]);
             let safe = message.channel.nsfw?"":"&safe=active"
             //https://developers.google.com/custom-search/v1/cse/list
-            let urlpromise = await requestpromise(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${args[1]}&searchType=image&num=1${safe}`)
+            let urlpromise = await requestpromise(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`)
             let data=JSON.parse(urlpromise)
-            if (data.items && data.items.length>0){
-                let attach = new Discord.Attachment(data.items[0].link,`${args[1]}.jpg`);
+            let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+            let extension = [".png",".jpg",".bmp",".gif"]
+            let imagedata = data.items.find(element=>{
+                return validmime.indexOf(element.mime)>-1;
+            })
+            if (imagedata){
+                console.log(imagedata);
+                console.log(imagedata.link, `${args[1]}${extension[validmime.indexOf(imagedata.mime)]}`);
+                let attach = new Discord.Attachment(imagedata.link,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
                 return [attach]
             }
             return ["`No results found`"]

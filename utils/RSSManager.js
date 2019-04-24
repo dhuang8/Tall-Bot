@@ -82,7 +82,7 @@ class RSSManager {
             return `**${i+1}.** [${feedobj.title} - ${feedobj.feed.title}](${feedobj.feed.link})`
         }).join("\n");
         console.log(desc)
-        rich.setTitle("Previous posts");
+        rich.setTitle("Latest news");
         rich.setDescription(desc);
         return rich;
     }

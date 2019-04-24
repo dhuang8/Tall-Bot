@@ -3046,8 +3046,6 @@ returns the first image result. safesearch is off if the channel is nsfw`,
                 return validmime.indexOf(element.mime)>-1;
             })
             if (imagedata){
-                console.log(imagedata);
-                console.log(imagedata.link, `${args[1]}${extension[validmime.indexOf(imagedata.mime)]}`);
                 let attach = new Discord.Attachment(imagedata.link,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
                 return [attach]
             }

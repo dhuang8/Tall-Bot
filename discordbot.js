@@ -3042,12 +3042,14 @@ returns the first image result. safesearch is off if the channel is nsfw`,
             let data=JSON.parse(urlpromise)
             let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
             let extension = [".png",".jpg",".bmp",".gif"]
-            let imagedata = data.items.find(element=>{
-                return validmime.indexOf(element.mime)>-1;
-            })
-            if (imagedata){
-                let attach = new Discord.Attachment(imagedata.link,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
-                return [attach]
+            if (data.items && data.items.length>0) {
+                let imagedata = data.items.find(element=>{
+                    return validmime.indexOf(element.mime)>-1;
+                })
+                if (imagedata){
+                    let attach = new Discord.Attachment(imagedata.link,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
+                    return [attach]
+                }
             }
             return ["`No results found`"]
         })().then(params=>{

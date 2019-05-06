@@ -37,8 +37,8 @@ class Command {
         this.func = options.func || (()=>{return true;});
         this.regex = options.regex || null;
         this.hidden = options.hidden || false;
-        this.log = options.log || !this.hidden;
-        this.points = options.points || (options.requirePrefix?1:0);
+        this.log = options.log || false;
+        this.points = options.points || 0;
     }
 
     _testHardRequirements() {

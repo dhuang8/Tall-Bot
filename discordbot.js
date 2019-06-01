@@ -764,7 +764,7 @@ commands.push(new Command({
     requirePrefix: true,
     prefix: ".",
     shortDesc: "returns yu-gi-oh card data",
-    longDesc: `.ygo (card_name)
+    longDesc: `.ygo (card_name or random)
 returns yu-gi-oh card data`,
     log: true,
     points: 1,
@@ -971,7 +971,7 @@ commands.push(new Command({
     requirePrefix: true,
     hardAsserts: ()=>{return art;},
     shortDesc: "return artifact cards",
-    longDesc: `.art (search_term)
+    longDesc: `.art (search_term or random)
 return artifact cards`,
     log: true,
     points: 1,
@@ -1074,14 +1074,18 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "",
-    longDesc: {title:`.mtg __search_term__`,
-        description: `returns mtg`,
+    longDesc: {title:`.mtg __search_term or random__`,
+        description: `returns Magic the Gathering card`,
         fields: [{
             name: `search_term`,
             value: `The card name. For split, double-faced and flip cards, just the name of one side of the card. Basically each ‘sub-card’ has its own record.`
         },{
+            name: `random`,
+            value: `returns a random card`
+        },{
             name: `Examples`,
-            value: `.mtg saheeli`
+            value: `.mtg saheeli
+.mtg random`
         }]
     },
     log: true,
@@ -3226,7 +3230,7 @@ returns user power level`,
 
 commands.push(new Command({
     name: "image",
-    regex: /^image ([^\n\r]+?)$/i,
+    regex: /^im(?:age|g) ([^\n\r]+?)$/i,
     prefix: ".",
     testString: ".image cat",
     hidden: false,
@@ -3428,7 +3432,7 @@ returns price and chart of stock symbol`,
 
 commands.push(new Command({
     name: "news",
-    regex: /^news (.+)$/i,
+    regex: /^news(?: (.+))?$/i,
     prefix: ".",
     testString: ".news trump",
     hidden: false,
@@ -3454,23 +3458,34 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
     func: (message, args) =>{
         (async()=>{
             //https://newsapi.org/docs/endpoints/everything
-            let response = await rp(`https://newsapi.org/v2/everything?q=${encodeURIComponent(`${args[1]}`)}&apiKey=${config.api.news}&sortBy=publishedAt&language=en&pageSize=20`)
+            async function smmry(e) {
+                console.log(e)
+                let summary = JSON.parse(await rp(`http://api.smmry.com/&SM_API_KEY=${config.api.smmry}&SM_WITH_BREAK=true&SM_URL=${e.url}`)).sm_api_content;
+                summary = summary.replace(/\[BREAK\]/g, "\n\n");
+                let rich = new Discord.RichEmbed()
+                    .setTitle(e.title)
+                    .setURL(e.url)
+                    .setDescription(summary)
+                return rich;
+            }
+            let response;
+            if (args[1]) {
+                response = await rp(`https://newsapi.org/v2/everything?q=${encodeURIComponent(`${args[1]}`)}&apiKey=${config.api.news}&sortBy=publishedAt&language=en&pageSize=20`)
+            } else {
+                response = await rp(`https://newsapi.org/v2/top-headlines?apiKey=${config.api.news}&pageSize=20&language=en`)
+            }
             response = JSON.parse(response);
             let desc = response.articles.filter((e,i,arr)=>{
                 return arr.findIndex((that_e)=>{
                     return that_e.title.toLowerCase() === e.title.toLowerCase();
                 }) === i;
             }).map(e=>{
-                return `${e.source.name}: [${e.title}](${e.url})`;
-            }).join("\n")
-
-            while (desc.length>2048) {
-                desc = desc.replace(/\n.+$/,"")
-            }
+                return [`${e.source.name}: [${e.title}](${e.url})`, async()=>{return smmry(e)}];
+            })
 
             let rich = new Discord.RichEmbed()
-            rich.setTitle(`Recent News: ${args[1]}`);
-            rich.setDescription(desc);
+            rich.setTitle(`Recent News${args[1]?`: ${args[1]}`:""}`);
+            rich.setDescription(createCustomNumCommand3(message,desc));
             return [rich];
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
@@ -3496,9 +3511,9 @@ commands.push(new Command({
     testString: ".ff14 furry",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "returns FFXIV Lodestone character data",
+    shortDesc: "returns FFXIV Lodestone character data. slow as f and breaks a lot. just try again.",
     longDesc: {title:`.ff14 __character_name__`,
-        description: `returns nothing`,
+        description: `returns character data`,
         fields: [{
             name: `character_name`,
             value: `The name to search for`
@@ -3972,6 +3987,8 @@ commands.push(new Command({
     }
 }))
 
+//might be too annoying now
+/*
 commands.push(new Command({
     name: "im blah",
     regex: /(?:^|(?:\.|,) )(?:\w+ )?(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
@@ -4010,6 +4027,7 @@ commands.push(new Command({
         return true;
     }
 }))
+*/
 
 commands.push(new Command({
     name: "exit",

@@ -43,12 +43,16 @@ returns hearthstone card data
 ## art
 return artifact cards
 ## mtg
-returns mtg
-### .mtg __search_term__
+returns Magic the Gathering card
+### .mtg __search_term or random__
 #### search_term
 The card name. For split, double-faced and flip cards, just the name of one side of the card. Basically each ‘sub-card’ has its own record.
+#### random
+returns a random card
 #### Examples
 .mtg saheeli
+
+.mtg random
 
 ## gundam
 
@@ -209,7 +213,7 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
 .news "yang gang" - return news containing the phrase "yang gang"
 
 ## ff14
-returns nothing
+returns character data
 ### .ff14 __character_name__
 #### character_name
 The name to search for

@@ -65,7 +65,15 @@ class Command {
             if (this.requirePrefix && messageString[0] !== this.prefix) return false;
             else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
             if (this._testHardRequirements() && this._testSoftRequirements()) {
-                if (this.regex == null || (args = this.regex.exec(messageString))) {
+                if (!this.hidden && `${this.name} help`===messageString.toLowerCase()) {
+                    if (typeof this.getLongDesc() == "string"){
+                        message.channel.send("```" + this.getLongDesc() + "```");
+                    } else {
+                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+                    }
+                    return true;
+                } 
+                else if (this.regex == null || (args = this.regex.exec(messageString))) {
                     if (this.log && discordbot.config && discordbot.config.botChannelID) {
                         let msg = "`" + message.author.tag + ":` " + message.cleanContent
                         discordbot.bot.channels.get(discordbot.config.botChannelID).send(msg);

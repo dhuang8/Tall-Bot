@@ -37,11 +37,19 @@ sends a reminder at specified date. datestring is any string accepted for making
 ## cancelremindme
 cancels a remindme reminder with id
 ## ygo
-returns yu-gi-oh card data. must use full name
+returns yu-gi-oh card data
 ## hs
 returns hearthstone card data
 ## art
 return artifact cards
+## mtg
+returns mtg
+### .mtg __search_term__
+#### search_term
+The card name. For split, double-faced and flip cards, just the name of one side of the card. Basically each ‘sub-card’ has its own record.
+#### Examples
+.mtg saheeli
+
 ## gundam
 
 ## t7
@@ -71,6 +79,8 @@ full or part of a character's name
 multiple conditions can be linked together using condition1&condition2&condition3...
 #### Examples
 **.t7 aku 11** - returns information on Akuma's 1,1
+
+**.t7 aku com:11** - returns strings that contains 1,1
 
 **.t7 aku hadoken** - returns moves where the name contains "hadoken"
 
@@ -178,6 +188,38 @@ returns posted feeds since last week
 returns a gif of the image in a spinning cogwheel
 ## translate
 translate a string to english
+## image
+returns the first image result. safesearch is off if the channel is nsfw
+## stock
+returns price and chart of stock symbol
+## news
+returns news articles containing search term
+### .news __search_term__
+#### search_term
+Surround phrases with quotes (") for exact match.
+
+Prepend words or phrases that must appear with a + symbol. Eg: +bitcoin
+
+Prepend words that must not appear with a - symbol. Eg: -bitcoin
+
+Alternatively you can use the AND / OR / NOT keywords, and optionally group these with parenthesis. Eg: crypto AND (ethereum OR litecoin) NOT bitcoin.
+#### Examples
+.news trump - returns news containing "trump"
+
+.news "yang gang" - return news containing the phrase "yang gang"
+
+## ff14
+returns nothing
+### .ff14 __character_name__
+#### character_name
+The name to search for
+
+## patch notes
+added mtg, stock, news, ff14
+
+added random argument to mtg, ygo, art
+
+2019-05-30`
 ## 00:00am est
 returns the time converted to different time zones. can be anywhere in a message
 ## help

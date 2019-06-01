@@ -12,6 +12,9 @@ const { createCanvas, loadImage } = require('canvas');
 const RSSManager = require('./utils/RSSManager');
 const translate = require('@vitalets/google-translate-api');
 const Database = require("better-sqlite3");
+const { CanvasRenderService } = require('chartjs-node-canvas');
+const annotation = require('chartjs-plugin-annotation');
+const rp = require('request-promise');
 
 moment.tz.setDefault("America/New_York");
 
@@ -246,6 +249,13 @@ function createCustomNumCommand2 (message, data_array) {
     let mes = data_array.map((cur, index)=>{
         return `**${index+1}**. ${cur[0]}`;
     }).join("\n");
+
+    if (mes.length>2048) {
+        while (mes.length>2048-9) {
+            mes = mes.replace(/\n.+$/,"")
+        }
+        mes = mes + "\nand more";
+    }
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
         if (num < data_array.length && num > -1) {
@@ -266,6 +276,14 @@ function createCustomNumCommand3 (message, data_array) {
     let mes = data_array.map((cur, index)=>{
         return `**${index+1}**. ${cur[0]}`;
     }).join("\n");
+
+    if (mes.length>2048) {
+        while (mes.length>2048-9) {
+            mes = mes.replace(/\n.+$/,"")
+        }
+        mes = mes + "\nand more";
+    }
+
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
         if (num < data_array.length && num > -1) {
@@ -273,14 +291,25 @@ function createCustomNumCommand3 (message, data_array) {
                 (async()=>{
                     return await data_array[num][1](message);
                 })().then(params=>{
-                    message.channel.send.apply(message.channel, params).catch(e=>{
-                        if (e.code == 50035) {
-                            message.channel.send("`Message too large`").catch(err);
-                        } else {
-                            err(e);
-                            message.channel.send("`Error`").catch(err);
-                        }
-                    });
+                    if (Array.isArray(params)) {
+                        message.channel.send.apply(message.channel, params).catch(e=>{
+                            if (e.code == 50035) {
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    } else {
+                        message.channel.send(params).catch(e=>{
+                            if (e.code == 50035) {
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    }
                 })
             } else {
                 message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
@@ -394,16 +423,16 @@ commands.push(new Command({
 }))
 
 commands.push(new Command({
-    name: "log outside messages",
+    name: "log outside messages and pings",
     hidden: true,
     hardAsserts: ()=>{return config.adminID && config.guildID},
     log: false,
     points: 0,
     func: (message, args)=>{
-        if (!message.channel.members || !message.channel.members.get(config.adminID)) {
+        if (!message.channel.members || !message.channel.members.get(config.adminID) || message.mentions.members.get(bot.user.id)) {
             (async()=>{
                 try {
-                    let msgguild = message.guild.id;
+                    let msgguild = message.guild?message.guild.id:"whispers";
                     let msgchannel = message.channel.id;
                     let guildcat = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgguild && chan.type=="category");
                     if (!guildcat) {
@@ -414,10 +443,13 @@ commands.push(new Command({
                         guildchan = await bot.guilds.get(config.guildID).createChannel(msgchannel,"text");
                         guildchan.setParent(guildcat);
                     }
-                    let msg = "`" + message.author.tag + ":` " + message.cleanContent
+                    let msg= "`" + message.author.tag + ":` " + message.cleanContent
                     message.attachments.forEach(attach => {
                         msg += "\n" + attach.proxyURL;
                     })
+                    if (message.mentions.users.get(bot.user.id)) {
+                        msg += bot.users.get(config.adminID)
+                    }
                     guildchan.send(msg);
                     
                     //in case something goes wrong
@@ -447,7 +479,7 @@ commands.push(new Command({
     log: false,
     points: 0,
     func: (message, args)=>{
-        if (message.channel.guild.id == config.guildID && message.author.id == config.adminID) {
+        if (message.channel.guild && message.channel.guild.id == config.guildID && message.author.id == config.adminID) {
             (async()=>{
                 try {
                     bot.channels.get(message.channel.name).send(message.content);
@@ -732,73 +764,96 @@ commands.push(new Command({
     requirePrefix: true,
     prefix: ".",
     shortDesc: "returns yu-gi-oh card data",
-    longDesc: `.ygo (card name)
-returns yu-gi-oh card data. must use full name`,
+    longDesc: `.ygo (card_name)
+returns yu-gi-oh card data`,
     log: true,
     points: 1,
     func: (message, args)=>{
         (async ()=>{
-            let body;
-            try {
-                body = await requestpromise(`https://db.ygoprodeck.com/api/allcards.php`)
-            } catch(e) {
-                err(e);
-                return ['Failed to retrieve card list'];
+            let response;
+            if (args[1] === "random") {
+                response = await requestpromise(`https://db.ygoprodeck.com/api/v4/randomcard.php`)
+            } else {
+                response = await requestpromise(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`)
             }
-            let data = JSON.parse(body)[0];
-            let matches=[];
-            for (let i=0;i<data.length;i++){
-                let ele = data[i];
-                if (ele.name.toLowerCase() == args[1].toLowerCase()) {
-                    return await getCard(ele.id);
-                } else {
-                    if (ele.name.toLowerCase().indexOf(args[1].toLowerCase())>-1){
-                        matches.push([ele.name,async()=>{
-                            return await getCard(ele.id)
-                        }])
-                    }
+            response = JSON.parse(response);
+            
+            function cardRich(card) {
+                let rich = new Discord.RichEmbed()
+                    .setTitle(card.name)
+                    .setImage(card.image_url)
+                    .setURL(`http://yugioh.wikia.com/wiki/${encodeURIComponent(card.name)}`)
+                let desc_lines = []
+                if (card.attribute) desc_lines.push(`${card.attribute}`);
+                if (card.level) desc_lines.push(`Level: ${card.level}:star:`);
+                if (card.scale) desc_lines.push(`Scale: ${card.scale}`);
+                if (card.linkmarkers) {
+                    let ascii_arrows = {
+                        "Top": ":arrow_up:",
+                        "Bottom": ":arrow_down:",
+                        "Left": ":arrow_left:",
+                        "Right": ":arrow_right:",
+                        "Top-Left": ":arrow_upper_left:",
+                        "Top-Right": ":arrow_upper_right:",
+                        "Bottom-Left": ":arrow_lower_left:",
+                        "Bottom-Right": ":arrow_lower_right:"
+                    };
+                    let links = card.linkmarkers.split(",").map(dir=>{
+                        return ascii_arrows[dir];
+                    }).join(" ")
+                    
+                    desc_lines.push(`LINK: ${links}`);
                 }
+                let race_type = []
+                if (card.race) race_type.push(card.race)
+                if (card.type) race_type.push(card.type)
+                if (race_type.length > 0) desc_lines.push(`**[${race_type.join(" / ")}]**`)
+                if (card.desc) desc_lines.push(card.desc);
+                let atk_def = []
+                if (card.atk) atk_def.push(`ATK/ ${card.atk}`);
+                if (card.def) atk_def.push(`DEF/ ${card.def}`);
+                if (card.linkval && card.linkval>0) atk_def.push(`LINK-${card.linkval}`);
+                if (atk_def.length>0) desc_lines.push(`**${atk_def.join("  ")}**`)
+                if (card.tcgplayer_price) desc_lines.push(`Price: $${card.tcgplayer_price}`);                
+                rich.setDescription(desc_lines.join("\n"))
+                return rich;
             }
 
-            if (matches.length==1) {
-                return await matches[0][1]();
-            } else if (matches.length>1){
+            let card_list = response[0].map(card=>{
+                return [card.name, ()=>{return cardRich(card)}]
+            })
+
+            if (card_list.length==1) {
+                return card_list[0][1]();
+            } else if (card_list.length>1){
                 return ["", new Discord.RichEmbed({
                     title:"Multiple cards found",
-                    description: createCustomNumCommand3(message,matches)
+                    description: createCustomNumCommand3(message,card_list)
                 })];
             } else {
                 return ["No cards found."];
             }
-
-            async function getCard(id) {
-                let body;
-                try {
-                    body = await requestpromise(`https://db.ygoprodeck.com/api/cardinfo.php?name=${id}`)
-                } catch(e) {
-                    err(e);
-                    return ['Failed to retrieve card data'];
-                }
-                data = JSON.parse(body)[0];
-                if (data.error) {
-                    return [data.error]
-                }
-                let rich = new Discord.RichEmbed();
-                rich.setTitle(data.name);
-                rich.setDescription(data.desc);
-                //probably not a good idea but oh well
-                rich.setImage(`http://www.ygo-api.com/api/images/cards/${encodeURIComponent(data.name)}`);
-                return ["",{embed:rich}];
-            }
         })().then(params=>{
-            message.channel.send.apply(message.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    message.channel.send("`Message too large`").catch(err);
-                } else {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                }
-            });
+            if (Array.isArray(params)) {
+                console.log(params)
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            } else {
+                message.channel.send(params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }
         }).catch(e=>{
             message.channel.send("`Error`").catch(err);
             err(e);
@@ -930,13 +985,20 @@ return artifact cards`,
             }
             let perfectmatch = [];
             let goodmatch = [];
-            Object.keys(art).forEach((key)=>{
-                let card = art[key]
-                let cardsimplename = simplifyname(card.card_name);
-                let searchsimple = simplifyname(args[1]);
-                if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, async()=>await createMessage(card)]);
-                else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,async()=>await createMessage(card)]);
-            })
+            if (args[1].toLowerCase() === "random") {
+                let keys = Object.keys(art)
+                let rand = Math.floor(keys.length * Math.random())
+                let card = art[keys[rand]]
+                perfectmatch.push([card.card_name, async()=>await createMessage(card)])
+            } else {
+                Object.keys(art).forEach((key)=>{
+                    let card = art[key]
+                    let cardsimplename = simplifyname(card.card_name);
+                    let searchsimple = simplifyname(args[1]);
+                    if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, async()=>await createMessage(card)]);
+                    else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,async()=>await createMessage(card)]);
+                })
+            }
 
             async function parselist(list) {
                 if (list.length == 1) {
@@ -1003,6 +1065,138 @@ return artifact cards`,
         return true;
     }
 }))
+
+commands.push(new Command({
+    name: "mtg",
+    regex: /^mtg (.+)$/i,
+    prefix: ".",
+    testString: ".mtg saheeli",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: {title:`.mtg __search_term__`,
+        description: `returns mtg`,
+        fields: [{
+            name: `search_term`,
+            value: `The card name. For split, double-faced and flip cards, just the name of one side of the card. Basically each ‘sub-card’ has its own record.`
+        },{
+            name: `Examples`,
+            value: `.mtg saheeli`
+        }]
+    },
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            function cardRich(card) {
+                let rich = new Discord.RichEmbed()
+                    .setTitle(card.name)
+                    .setImage(card.imageUrl)
+                if (card.multiverseid) {
+                    rich.setURL(`https://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=${card.multiverseid}`)
+                }
+                let desc_lines = [];
+                if (card.manaCost) desc_lines.push(`Mana Cost: ${replaceIcons(card.manaCost)}`)
+                if (card.type) desc_lines.push(`**${replaceIcons(card.type)}**`)
+                if (card.text) desc_lines.push(replaceIcons(card.text))
+                let stats = ""
+                if (card.power) stats += card.power;
+                if (card.toughness) stats += "/" + card.toughness;
+                if (stats !== "") desc_lines.push(stats);
+                if (card.flavor) desc_lines.push(`\n*_${card.flavor}_*`);
+                
+                //looks ugly
+                    /*
+                let legal = "\n" + card.legalities.map(format=>{
+                    return `${format.format}: ${format.legality}`
+                }).join("\n");
+                if (card.legalities) desc_lines.push(legal)
+                    */
+
+                rich.setDescription(desc_lines.join("\n"))
+                return rich;
+            }
+
+            function replaceIcons(text) {
+                let icons = {
+                    "{E}": `<:mtg_e:584109084861530132>`,
+                    "{W}": `<:mtg_w:584108894595448970>`,
+                    "{U}": `<:mtg_u:584108894922735629>`,
+                    "{T}": `<:mtg_t:584108894591254535>`,
+                    "{R}": `<:mtg_r:584108894524276746>`,
+                    "{G}": `<:mtg_g:584108863607930881>`,
+                    "{B}": `<:mtg_b:584108877440876544>`,
+                    "{C}": `<:mtg_b:584131157206237184>`,
+                    "{X}": `:regional_indicator_x:`,
+                    "{1}": `:one:`,
+                    "{2}": `:two:`,
+                    "{3}": `:three:`,
+                    "{4}": `:four:`,
+                    "{5}": `:five:`,
+                    "{6}": `:six:`,
+                    "{7}": `:seven:`,
+                    "{8}": `:eight:`,
+                    "{9}": `:nine:`,
+                }
+                Object.keys(icons).forEach(icon=>{
+                    let literal = icon.replace(/\{/g,`\\{`).replace(/\}/g,`\\}`)
+                    text = text.replace(new RegExp(literal, 'g'), icons[icon])
+                })
+                return text
+            }
+
+            //https://docs.magicthegathering.io/#api_v1cards_list
+            let response;
+            if (args[1].toLowerCase() === "random") {
+                response = await rp(`https://api.magicthegathering.io/v1/cards?random=true&pageSize=100`)
+                response = JSON.parse(response);
+                response.cards = [response.cards.find(card=>{
+                    return card.multiverseid !== undefined;
+                })]
+            } else {
+                response = await rp(`https://api.magicthegathering.io/v1/cards?name=${encodeURIComponent(args[1])}&orderBy=name`)
+                response = JSON.parse(response);
+            }
+            let card_list = {}
+
+            response.cards.forEach((card)=>{
+                card.checkid = card.multiverseid || 0;
+                if (!card_list[card.name]) card_list[card.name] = card;
+                else if (card_list[card.name].checkid < card.checkid) card_list[card.name] = card
+            })
+
+            card_list = Object.values(card_list).map(card=>{
+                return [card.name, ()=>{return [cardRich(card)]}]
+            })
+
+            if (card_list.length < 1) {
+                return ["`No results`"];
+            } else if (card_list.length == 1) {
+                return card_list[0][1]();
+            } else {
+                let rich = new Discord.RichEmbed({
+                    title: "Multiple cards found",
+                    description: createCustomNumCommand3(message,card_list)
+                })
+                return [rich];
+            }
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
 
 let gundam = null;        
 fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
@@ -1126,6 +1320,7 @@ multiple conditions can be linked together using condition1&condition2&condition
         },{
             name: "Examples",
             value: `**.t7 aku 11** - returns information on Akuma's 1,1
+**.t7 aku com:11** - returns strings that contains 1,1
 **.t7 aku hadoken** - returns moves where the name contains "hadoken"
 **.t7 aku hit level>m** - returns moves that begin with a mid
 **.t7 aku hit level<m** - returns moves that end with a mid
@@ -1286,23 +1481,25 @@ multiple conditions can be linked together using condition1&condition2&condition
                             }
                             
                             
-                            if (thisfield.indexOf(userfield) < 0) return false; 
+                            if (thisfield.indexOf(userfield) !== 0) return false; 
                             let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed"];
                             let isnumfield = false;
+                            let tmpthisvalue;
+                            let tmpuservalue;
                             if (numfields.indexOf(thisfield) > -1 && !isNaN(uservalue)) {
                                 isnumfield = true;
-                                thisvalue = parseInt(thisvalue);
-                                uservalue = parseInt(uservalue);
+                                tmpthisvalue = parseInt(thisvalue);
+                                tmpuservalue = parseInt(uservalue);
                             } else {
                                 if (thisfield.indexOf("command")== 0) {
-                                    thisvalue = simplifyMove(thisvalue);
-                                    uservalue = simplifyMove(uservalue);
+                                    tmpthisvalue = simplifyMove(thisvalue);
+                                    tmpuservalue = simplifyMove(uservalue);
                                 } else {
-                                    thisvalue = simplifyfield(thisvalue);
-                                    uservalue = simplifyfield(uservalue);
+                                    tmpthisvalue = simplifyfield(thisvalue);
+                                    tmpuservalue = simplifyfield(uservalue);
                                 }
                             }
-                            if (comparefunc(thisvalue,comparison,uservalue,isnumfield)) {
+                            if (comparefunc(tmpthisvalue,comparison,tmpuservalue,isnumfield)) {
                                 return true;
                             }
                             return false;
@@ -1381,7 +1578,14 @@ multiple conditions can be linked together using condition1&condition2&condition
             let msg = parseCharList(charfound) || parseCharList(charfoundmid) || ["`Character not found`"]
             return msg;
         })().then(params=>{
-            message.channel.send.apply(message.channel, params).catch(err);
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
         }).catch(e=>{
             err(e);
             message.channel.send("`Error`").catch(err);
@@ -3069,6 +3273,360 @@ returns the first image result. safesearch is off if the channel is nsfw`,
     }
 }))
 
+function createChartStream(datapoints, labels, annotations, ylabelcallback) {
+    const configuration = {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: datapoints,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 5,
+                pointRadius: 0
+            }]
+        },
+        plugins: [annotation],
+        options: {
+            annotation: {
+                annotations: annotations
+            },
+            legend: {
+                display:false,
+                labels: {
+                    fontStyle: "bold",
+                    fontSize: 20
+                }
+            },
+            showLines: true,
+            elements : {
+                line: {
+                    tension: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        fontStyle: "bold",
+                        fontSize: 16,
+                        autoSkip: false
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        callback: ylabelcallback,
+                        fontStyle: "bold",
+                        fontSize: 16
+                    }
+                }]
+            }
+        }
+    };
+    const canvasRenderService = new CanvasRenderService(729, 410);
+    const chart = canvasRenderService.renderChart(configuration);
+    const canvas = chart.canvas;
+    let PNGStream = canvas.createPNGStream();
+    PNGStream.on("end", ()=>{
+        chart.destroy();
+    })
+    return PNGStream;
+}
+
+commands.push(new Command({
+    name: "stock",
+    regex: /^stock ([\w\d]+)$/i,
+    prefix: ".",
+    testString: ".stock aapl",
+    hidden: false,
+    requirePrefix: true,
+    hardAsserts: ()=>{return config.api.stock;},
+    shortDesc: ".stock (symbol)",
+    longDesc: `.stock (symbol)
+returns price and chart of stock symbol`,
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            //https://iexcloud.io/console/usage
+            //https://iexcloud.io/docs/api/#historical-prices
+            let base = `https://cloud.iexapis.com/stable/`
+            let symbol = args[1]
+            let token = config.api.stock;
+
+            let response = await rp(`${base}ref-data/us/dates/trade/last/2?token=${token}`)
+            response = JSON.parse(response);
+            let promprice = rp(`${base}stock/${symbol}/quote?token=${token}`)
+            let promlist = [];
+            response.forEach(data=>{
+                promlist.push(rp(`${base}stock/${symbol}/chart/date/${data.date.replace(/-/g,"")}?token=${token}&chartInterval=1`))
+            })
+            response = await rp(`${base}stock/${symbol}/intraday-prices?token=${token}&chartInterval=1`)
+            response = JSON.parse(response);
+            let stock_data = response;
+            let thisdate = stock_data.length>0?stock_data[0].date:"";
+            for (let promnum=1; promnum<promlist.length; promnum++) {
+                response = await promlist[promnum]
+                response = JSON.parse(response);
+                if (response[0].date == thisdate) {
+                    continue;
+                }
+                stock_data = response.concat(stock_data);
+            }
+            stock_data = stock_data.map(data=>{
+                return {
+                    close: data.close,
+                    time: moment.tz(`${data.date} ${data.minute}`, "YYYY-MM-DD HH:mm", "America/New_York")
+                }
+            })
+            let stock_price = JSON.parse(await promprice);
+            let annotations = []
+            let labels = stock_data.map((data, ind, arr)=>{
+                let label_text = data.time.format("h:mm a")
+                if (label_text == "9:30 am") {
+                    annotations.push(
+                        {
+                            type: "line",
+                            mode: "vertical",
+                            scaleID: "x-axis-0",
+                            value: data.time.format("MMM D"),
+                            borderColor: 'rgba(255, 255, 255, 1)',
+                            borderWidth: 1
+                        }
+                    )
+                    return data.time.format("MMM D")
+                } else if (ind == arr.length-1 && label_text == "3:59 pm") {
+                    return "4:00 pm"
+                }
+                return (data.time.minute()%60==0)?label_text:"";
+            })
+            let datapoints = stock_data.map((data)=>{return data.close})
+            let stream = createChartStream(datapoints, labels, annotations, (value) => '$' + value);
+            let updown = "";
+            if (stock_price.change > 0) updown = "▲";
+            else if (stock_price.change < 0) updown = "▼";
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(stock_price.companyName);
+            rich.setDescription(`${stock_price.symbol} $${stock_price.latestPrice} (${updown}${Math.abs(stock_price.change)}%)`);
+            rich.attachFile({attachment: stream, name: `${stock_price.symbol}.png`})
+            rich.setImage(`attachment://${stock_price.symbol}.png`)
+            return ["", rich];
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "news",
+    regex: /^news (.+)$/i,
+    prefix: ".",
+    testString: ".news trump",
+    hidden: false,
+    requirePrefix: true,
+    hardAsserts: ()=>{return config.api.news;},
+    shortDesc: ".news (search_term)",
+    longDesc: {title:`.news __search_term__`,
+        description: `returns news articles containing search term`,
+        fields: [{
+            name: `search_term`,
+            value: `Surround phrases with quotes (") for exact match.
+Prepend words or phrases that must appear with a + symbol. Eg: +bitcoin
+Prepend words that must not appear with a - symbol. Eg: -bitcoin
+Alternatively you can use the AND / OR / NOT keywords, and optionally group these with parenthesis. Eg: crypto AND (ethereum OR litecoin) NOT bitcoin.`
+        },{
+            name: `Examples`,
+            value: `.news trump - returns news containing "trump"
+.news "yang gang" - return news containing the phrase "yang gang"`
+        }]
+    },
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            //https://newsapi.org/docs/endpoints/everything
+            let response = await rp(`https://newsapi.org/v2/everything?q=${encodeURIComponent(`${args[1]}`)}&apiKey=${config.api.news}&sortBy=publishedAt&language=en&pageSize=20`)
+            response = JSON.parse(response);
+            let desc = response.articles.filter((e,i,arr)=>{
+                return arr.findIndex((that_e)=>{
+                    return that_e.title.toLowerCase() === e.title.toLowerCase();
+                }) === i;
+            }).map(e=>{
+                return `${e.source.name}: [${e.title}](${e.url})`;
+            }).join("\n")
+
+            while (desc.length>2048) {
+                desc = desc.replace(/\n.+$/,"")
+            }
+
+            let rich = new Discord.RichEmbed()
+            rich.setTitle(`Recent News: ${args[1]}`);
+            rich.setDescription(desc);
+            return [rich];
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "ff14",
+    regex: /^ff(?:14|xiv) (.+)$/i,
+    prefix: ".",
+    testString: ".ff14 furry",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "returns FFXIV Lodestone character data",
+    longDesc: {title:`.ff14 __character_name__`,
+        description: `returns nothing`,
+        fields: [{
+            name: `character_name`,
+            value: `The name to search for`
+        }]
+    },
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            //https://xivapi.com/docs/Character#search
+            let response = await rp(`https://xivapi.com/character/search?name=${encodeURIComponent(args[1])}`)
+            response = JSON.parse(response);
+
+            async function charRich(char) {
+                let response = await rp(`https://xivapi.com/character/${char.ID}?data=AC,FC`)
+                response = JSON.parse(response);
+                let char_data = response.Character;
+                let rich = new Discord.RichEmbed()
+                    .setTitle(`${char_data.Name} - ${char_data.Server}`)
+                    .setImage(char_data.Portrait)
+                    .setURL(`https://na.finalfantasyxiv.com/lodestone/character/${char.ID}/`)
+                let desc_lines = []
+                let genders = ["Male", "Female"]
+                let races = ["Hyur", "Elezen", "Lalafell", "Miqo'te", "Roegadyn", "Au Ra"]
+                desc_lines.push(`**${genders[char_data.Gender-1]} ${races[char_data.Race-1]}**`)
+                if (response.FreeCompany) desc_lines.push(`Free Company: [${response.FreeCompany.GrandCompany}](https://na.finalfantasyxiv.com/lodestone/freecompany/${response.FreeCompany.ID}/)`)
+                if (response.Achievements) desc_lines.push(`Achievement Points: ${response.Achievements.Points}`)
+                if (char_data.Minions) desc_lines.push(`Minions: ${char_data.Minions.length}`);
+                if (char_data.Mounts) desc_lines.push(`Mounts: ${char_data.Mounts.length}`);
+                if (char_data.Bio) desc_lines.push(`Character Profile: ${char_data.Bio}`);
+                rich.setDescription(desc_lines.join("\n"))
+                return rich;
+            }
+
+            let char_list = response.Results.map(char=>{
+                return [`${char.Name} - ${char.Server}`, async()=>await charRich(char)]
+            })
+
+            if (char_list.length<1) {
+                return `\`No characters found\``
+            } else if (char_list.length==1) {
+                return await char_list[0][1]();
+            } else {
+                let rich = new Discord.RichEmbed({
+                    title: "Multiple characters found",
+                    description: createCustomNumCommand3(message,char_list)
+                })
+                return rich;
+            }
+        })().then(params=>{
+            if (Array.isArray(params)) {
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            } else {
+                message.channel.send(params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "patch notes",
+    regex: /^patch(notes)?$/i,
+    prefix: ".",
+    testString: ".patchnotes",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: `\`fixed a bunch of errors
+added mtg, stock, news, ff14
+added random argument to mtg, ygo, art
+2019-05-30\``,
+    longDesc: `\`fixed a bunch of errors
+added mtg, stock, news, ff14
+added random argument to mtg, ygo, art
+2019-05-30\``,
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            return `\`fixed a bunch of errors
+added mtg, stock, news, ff14
+added random argument to mtg, ygo, art
+2019-05-30\``
+        })().then(params=>{
+            if (Array.isArray(params)) {
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            } else {
+                message.channel.send(params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
 //messages without prefixes
 
 commands.push(new Command({
@@ -3124,7 +3682,7 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "00:00am est",
-    regex: /(\d{1,2}(?::\d{2})? ?(?:[ap]m)?) ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt)/i,
+    regex: /(\d{1,2}):?(\d{2})? ?([ap]m)? ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt|gmt)/i,
     prefix: "",
     testString: "blah blah blah 12:30am est blah blah blah",
     hidden: false,
@@ -3136,24 +3694,34 @@ returns the time converted to different time zones. can be anywhere in a message
     points: 1,
     func: (message, args) =>{
         (async()=>{
-            let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt"];
-            let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC", "America/New_York", "America/Chicago", "America/Los_Angeles"];
+            let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt", "gmt"];
+            let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Etc/UTC"];
             let fullZones2 = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
-            let fullName = fullZones[shortZones.indexOf(args[2].toLowerCase())];
+            let fullName = fullZones[shortZones.indexOf(args[4].toLowerCase())];
             //msg += fullName;
-            let inputTime = moment.tz(args[1], "h:mma", fullName).subtract(1, 'days');
+            let inputTime = moment.tz(`${args[1]}${args[2]}${args[3]}`, ["h:mma", "hmma"], fullName).subtract(1, 'days');
             if (!inputTime.isValid()) return;
-            if (inputTime.diff(moment()) < 0) {
-                inputTime.add(1, 'days');
+            if (parseInt(args[1])<13 && args[3]===undefined) {
+                for (let i=0;i<4;i++) {
+                    if (inputTime.diff(moment()) >= 0) {
+                        break;
+                    }
+                    inputTime.add(12, 'hours');
+                }
+            } else {
+                for (let i=0;i<2;i++) {
+                    if (inputTime.diff(moment()) >= 0) {
+                        break;
+                    }
+                    inputTime.add(1, 'days');
+                }
             }
-            if (inputTime.diff(moment()) < 0) {
-                inputTime.add(1, 'days');
-            }
-            let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow();
+            let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow() + "\n";
 
-            for (let i = 0; i < fullZones2.length; i++) {
-                msg += "\n" + inputTime.tz(fullZones2[i]).format('ddd, MMM Do YYYY, h:mma z');
-            }
+            msg = msg + fullZones2.map(zone=>{
+                return inputTime.tz(zone).format('ddd, MMM Do YYYY, h:mma z');
+            }).join("\n")
+
             msg += "`";
             return [msg];
         })().then(params=>{
@@ -3476,21 +4044,38 @@ commands.push(new Command({
     requirePrefix: true,
     hardAsserts: ()=>{return;},
     shortDesc: "",
-    longDesc: ``,
-    log: false,
+    longDesc: {title:`.nothing __args__`,
+        description: `returns nothing`,
+        fields: [{
+            name: `nothing`,
+            value: `of value is lost`
+        }]
+    },
+    log: true,
     points: 1,
     func: (message, args) =>{
         (async()=>{
             //todo
         })().then(params=>{
-            message.channel.send.apply(message.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    message.channel.send("`Message too large`").catch(err);
-                } else {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                }
-            });
+            if (Array.isArray(params)) {
+                message.channel.send.apply(message.channel, params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            } else {
+                message.channel.send(params).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
+            }
         }).catch(e=>{
             err(e);
             message.channel.send("`Error`").catch(err);

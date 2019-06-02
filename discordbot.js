@@ -310,7 +310,14 @@ function createCustomNumCommand3 (message, data_array) {
                             }
                         });
                     }
-                })
+                }).catch(e=>{
+                    if (e.code == 50035) {
+                        message.channel.send("`Message too large`").catch(err);
+                    } else {
+                        err(e);
+                        message.channel.send("`Error`").catch(err);
+                    }
+                });
             } else {
                 message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
             }
@@ -1073,7 +1080,7 @@ commands.push(new Command({
     testString: ".mtg saheeli",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "",
+    shortDesc: "returns Magic the Gathering card",
     longDesc: {title:`.mtg __search_term or random__`,
         description: `returns Magic the Gathering card`,
         fields: [{
@@ -1303,7 +1310,7 @@ commands.push(new Command({
     testString: ".t7 ak block=1",
     log: true,
     points: 1,
-    shortDesc: "returns information about a tekken 7 character's move string",
+    shortDesc: "returns info on Tekken 7 moves",
     longDesc: {title:`.t7 __character_name__ __condition__`,
         description: `returns information on a Tekken 7 character's move string`,
         fields: [{
@@ -1618,7 +1625,7 @@ commands.push(new Command({
     hardAsserts: ()=>{return sc6;},
     log: true,
     points: 1,
-    shortDesc: "returns information about a Soulcalibur 6 character's attack string",
+    shortDesc: "returns info on Soulcalibur 6 moves",
     longDesc: {title:`.sc6 __character_name__ __condition__`,
         description: `returns information about a Soulcalibur 6 character's attack string`,
         fields: [{
@@ -1868,7 +1875,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "returns information on a Slay the Spire card or relic",
+    shortDesc: "returns info on Slay the Spire cards and relics",
     longDesc: `.sts (card_name or relic_name)
 returns information on a Slay the Spire card or relic. Matches by substring`,
     func: (message, args) =>{
@@ -1944,7 +1951,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "returns the exchange rate and a 30 hour graph of the price of a foreign currency or cryptocurrency",
+    shortDesc: "returns the exchange rate and graph of the price of a foreign currency or cryptocurrency",
     longDesc: `.price [amount] (from_symbol) [to_symbol]
 returns a 30 hour graph of the price of a foreign currency or cryptocurrency
 amount (optional) - the amount of from_symbol currency. Default is 1.
@@ -2183,7 +2190,7 @@ commands.push(new Command({
     hardAsserts: ()=>{return config.api.youtube;},
     log: true,
     points: 1,
-    shortDesc: "returns list of YouTube videos based on the search term",
+    shortDesc: "searches YouTube videos",
     longDesc: `.yts (search_turn) [number_of_results]
 returns list of YouTube videos based on the search term
 number_of_results - the number of results to return. Default is 6.`,
@@ -2249,7 +2256,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "returns a link to and a quote of a past message",
+    shortDesc: "returns a link and quote of a past message",
     longDesc: `.quote (message_id or previous_nth_message)
 returns a link to and a quote of a past message
 message_id - get the id by selecting "copy id" from the settings of the message
@@ -2467,7 +2474,7 @@ commands.push(new Command({
     hardAsserts: ()=>{return config.api.darksky;},
     log: true,
     points: 1,
-    shortDesc: "returns the 8 day forecast and a chart of the temperature for the next 2 days",
+    shortDesc: "returns 8 day forecast and chart of the temp for the next 2 days",
     longDesc: `.weather (location)
 returns the 8 day forecast and a chart of the temperature for the next 2 days
 location - can be several things like the name of a city or a zip code`,
@@ -2924,7 +2931,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "rolls dice between 1 and max_num",
+    shortDesc: "rolls dice",
     longDesc: {title:`.roll [(num_dice)d](max_num)[+(add)]`,
         description: `rolls dice between 1 and max_num`,
         fields:[{
@@ -2993,7 +3000,7 @@ commands.push(new Command({
     hardAsserts: ()=>{return rss;},
     log: true,
     points: 1,
-    shortDesc: "returns posted feeds since last week",
+    shortDesc: "returns posted feeds",
     longDesc: `.rss
 returns posted feeds since last week`,
     func: (message, args) =>{
@@ -3025,7 +3032,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "turns an image into a spinning cogwheel",
+    shortDesc: "turns image into a spinning cogwheel",
     longDesc: `.cog (imageurl) or .cog (emoji) or .cog while attaching an image
 returns a gif of the image in a spinning cogwheel`,
     func: (message, args) =>{
@@ -3236,7 +3243,7 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return config.api.image;},
-    shortDesc: "returns the first image result",
+    shortDesc: "returns the first image search result",
     longDesc: `.image (term)
 returns the first image result. safesearch is off if the channel is nsfw`,
     log: true,
@@ -3343,7 +3350,7 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return config.api.stock;},
-    shortDesc: ".stock (symbol)",
+    shortDesc: ".returns price and chart of stock symbol",
     longDesc: `.stock (symbol)
 returns price and chart of stock symbol`,
     log: true,
@@ -3438,7 +3445,7 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return config.api.news;},
-    shortDesc: ".news (search_term)",
+    shortDesc: "searches news articles",
     longDesc: {title:`.news __search_term__`,
         description: `returns news articles containing search term`,
         fields: [{
@@ -3483,11 +3490,18 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
                 return [`${e.source.name}: [${e.title}](${e.url})`, async()=>{return smmry(e)}];
             })
 
-            let rich = new Discord.RichEmbed()
-            rich.setTitle(`Recent News${args[1]?`: ${args[1]}`:""}`);
-            rich.setDescription(createCustomNumCommand3(message,desc));
-            return [rich];
+            if (desc.length==1) {
+                return await desc[0][1]()
+            } else if (desc.length<1) {
+                return `No results found`
+            } else {
+                let rich = new Discord.RichEmbed()
+                rich.setTitle(`Recent News${args[1]?`: ${args[1]}`:""}`);
+                rich.setDescription(createCustomNumCommand3(message,desc));
+                return rich;
+            }
         })().then(params=>{
+            if (!Array.isArray(params)) params = [params];
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
                     message.channel.send("`Message too large`").catch(err);
@@ -3511,7 +3525,7 @@ commands.push(new Command({
     testString: ".ff14 furry",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "returns FFXIV Lodestone character data. slow as f and breaks a lot. just try again.",
+    shortDesc: "returns FFXIV Lodestone character data",
     longDesc: {title:`.ff14 __character_name__`,
         description: `returns character data`,
         fields: [{
@@ -3598,10 +3612,7 @@ commands.push(new Command({
     testString: ".patchnotes",
     hidden: false,
     requirePrefix: true,
-    shortDesc: `\`fixed a bunch of errors
-added mtg, stock, news, ff14
-added random argument to mtg, ygo, art
-2019-05-30\``,
+    shortDesc: `lists recent updates`,
     longDesc: `\`fixed a bunch of errors
 added mtg, stock, news, ff14
 added random argument to mtg, ygo, art
@@ -4075,25 +4086,15 @@ commands.push(new Command({
         (async()=>{
             //todo
         })().then(params=>{
-            if (Array.isArray(params)) {
-                message.channel.send.apply(message.channel, params).catch(e=>{
-                    if (e.code == 50035) {
-                        message.channel.send("`Message too large`").catch(err);
-                    } else {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    }
-                });
-            } else {
-                message.channel.send(params).catch(e=>{
-                    if (e.code == 50035) {
-                        message.channel.send("`Message too large`").catch(err);
-                    } else {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    }
-                });
-            }
+            if (!Array.isArray(params)) params = [params];
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
         }).catch(e=>{
             err(e);
             message.channel.send("`Error`").catch(err);
@@ -4149,6 +4150,7 @@ returns a list of commands. respond with the number for details on a specific co
             }
             return `**${index+1}.** ${cur.getShortDesc()}`;
         }).join("\n");
+        console.log(mes)
         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
             var num = parseInt(message.content) - 1;
             if (num < results.length && num > -1) {

@@ -944,12 +944,13 @@ returns yu-gi-oh card data`,
         (async ()=>{
             let response;
             if (args[1] === "random") {
-                response = await requestpromise(`https://db.ygoprodeck.com/api/v4/randomcard.php`)
+                response = await rp(`https://db.ygoprodeck.com/api/v4/randomcard.php`).catch(e=>{return {error: "`No cards found`"}})
             } else {
-                response = await requestpromise(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`)
+                response = await rp(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`).catch(e=>{return {error: "`No cards found`"}})
             }
+            if (response.error) return response.error;
             response = JSON.parse(response);
-            
+
             function cardRich(card) {
                 let rich = new Discord.RichEmbed()
                     .setTitle(card.name)

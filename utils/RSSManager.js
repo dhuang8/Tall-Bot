@@ -58,7 +58,7 @@ class RSSManager {
 
     async add(message, rss_url) {
         try {
-            let a = /.*steam(?:powered|community)\.com\/(?:app|news)\/(?:\?appids=)?(\d+).?/.exec(rss_url)
+            let a = /.*steam(?:powered|community)\.com\/(?:app|news|games)\/(?:\?appids=)?(\d+).?/.exec(rss_url)
             if (a) {
                 let valve = {
                     "504": "Dota2",
@@ -155,7 +155,7 @@ class RSSManager {
             let d2 = new Date(b.isoDate);
             return d2-d1;
         });
-        
+
         if (items.length>0) {
             let rich = new Discord.RichEmbed()
                 .setTitle(items[0].title)

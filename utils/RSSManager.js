@@ -6,31 +6,49 @@ const fs = require('fs');
 const rp = require('request-promise');
 
 class RSSManager {
-    constructor(bot) {
+    constructor(bot, sql, error_channel) {
         try {
+            this.sql = sql;
+            sql.prepare("CREATE TABLE IF NOT EXISTS feeds (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, url TEXT, UNIQUE(url));").run();
+            sql.prepare("CREATE TABLE IF NOT EXISTS subscriptions (channel_id TEXT, feed_id INTEGER, FOREIGN KEY(feed_id) REFERENCES feeds(id), PRIMARY KEY (feed_id, channel_id)) WITHOUT ROWID;").run();
             this.bot = bot
             this.parser = new Parser();
             this.time = new Date();
+            this.error_channel = error_channel;
             let sub = this;
-            this.list = JSON.parse(fs.readFileSync("./data/RSS.json"));
             new CronJob('0 0 * * * *', function() {
                 (async ()=>{
-                    let combinedfeeds = await sub.__getList(null, sub.time);
-                    combinedfeeds.forEach(feedobj=>{
-                        /*
-                        let rich = new Discord.RichEmbed();
-                        rich.setTitle(feedobj.title);
-                        rich.setURL(feedobj.feed.link);
-                        rich.addField(feedobj.feed.title, `${feedobj.feed.contentSnippet.substring(0,200)}`);
-                        */
-                        feedobj.channels.forEach(channelid=>{
-                            sub.bot.channels.get(channelid).send(`__**${feedobj.title}**__\n${feedobj.feed.title}\n<${feedobj.feed.link}>`);
-                        })
+                    let feeds = sql.prepare("SELECT DISTINCT feed_id, feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id").all()
+                    let rss_prom = feeds.map(feed=>{
+                        return {title:feed.title, prom: sub.parser.parseURL(feed.url), id:feed.feed_id}
                     })
+                    for (let i=0;i<rss_prom.length;i++) {
+                        let feed = rss_prom[i];
+                        let channels = sql.prepare("SELECT channel_id FROM subscriptions WHERE feed_id=?").all(feed.id);
+                        let rss = await feed.prom;
+                        let desc = rss.items.filter(item=>{
+                            let item_date = new Date(item.isoDate);
+                            if (sub.time < item_date) {
+                                return true;
+                            }
+                            return false;
+                        }).map((item, index)=>{
+                            return `**[${item.title}](${item.link})**`
+                        });
+                        if (desc.length>0) {
+                            desc = desc.join("\n\n");
+                            let rich = new Discord.RichEmbed()
+                                .setTitle(feed.title)
+                                .setDescription(desc);
+                            channels.forEach(channel=>{
+                                sub.bot.channels.get(sub.error_channel).send(rich).catch(console.log);
+                            })
+                        }
+                    }
                     sub.time = new Date();
                 })().catch(e=>{
                     console.error(e);
-                    sub.channel.send("`Error`").catch(err);
+                    sub.bot.channels.get("").send("`Error`").catch(console.log);
                 })
             }, null, true, 'America/New_York');
         } catch(e) {
@@ -38,113 +56,142 @@ class RSSManager {
         }
     }
 
-    async test() {
-        //7 days
-        return this.__lookup(1000*60*60*24*7);
-    }
-
-    /*
-    preview() {
-         (async ()=>{
-            let feed = await this.parser.parseURL(this.link);
-            let rich = new Discord.RichEmbed();
-            rich.setTitle(feed.title);
-            let mes = feed.items.filter((cur, index)=>{
-                return index<10;
-            }).map((cur, index)=>{
-                return `**${index+1}**. [${cur.title}](${cur.link})`;
-            }).join("\n");
-            rich.setDescription(mes);
-            return ["",rich];
-        })().then(params=>{
-            sub.channels.forEach(channel=>{
-                channel.send.apply(channel, params).catch(e=>{
-                    if (e.code == 50035) {
-                        channel.send("`Message too large`").catch(err);
-                    } else {
-                        console.error(e);
-                        channel.send("`Error`").catch(err);
-                    }
-                })
-            });
-        }).catch(e=>{
-            console.error(e);
-        })               
-    }
-    */
-
-    async preview(channelid, oldTime) {
-        let combinedlist = await this.__getList(channelid, oldTime);
-        //console.log(combinedfeeds);
-
-        let rich = new Discord.RichEmbed();
-        let desc = combinedlist.slice(0,10).map((feedobj,i)=>{
-            return `**${i+1}.** [${feedobj.title} - ${feedobj.feed.title}](${feedobj.feed.link})`
-        }).join("\n");
-        console.log(desc)
-        rich.setTitle("Latest news");
-        rich.setDescription(desc);
-        return rich;
-    }
-
-    //returns array [{title: game_title, feed, channels},...]
-    async __getList(channelid, oldTime) {
-        let plist = [];
-        this.list.filter((e)=>{
-            if (channelid == null) return true;
-            return e.channels.indexOf(channelid)>-1;
-        }).forEach((cur)=>{
-            plist.push({
-                title: cur.title,
-                channels: cur.channels,
-                prom: this.parser.parseURL(cur.link)
-            })
-        })
-        let combinedfeeds=[];
-
-        for (let i=0;i<plist.length;i++){
-            let rssobj = plist[i];
-            let feeds = (await rssobj.prom).items;
-            feeds.forEach(feed=>{
-                let date = new Date(feed.isoDate);
-                if (oldTime < date) {
-                    combinedfeeds.push({
-                        title: rssobj.title,
-                        channels: rssobj.channels,
-                        feed: feed
-                    })
-                }
-            })
-        }
-
-        combinedfeeds.sort((a,b)=>{
-            let d1 = new Date(a.feed.isoDate);
-            let d2 = new Date(b.feed.isoDate);
-            return d2-d1;
-        })
-
-        return combinedfeeds;
-    }
-
-    async __lookup(timeOffset) {
+    async add(message, rss_url) {
         try {
-            let feed = await this.parser.parseURL(this.link);
-            feed.items.filter((cur)=>{
-                let date = new Date(cur.isoDate);
-                return (this.time-timeOffset) < date;
-            }).forEach(item => {
-                this.channels.forEach(channel=>{
-                    channel.send(`__**${this.title}**__\n${item.title}\n<${item.link}>`)
-                })
-            });
+            let a = /.*steam(?:powered|community)\.com\/(?:app|news)\/(?:\?appids=)?(\d+).?/.exec(rss_url)
+            if (a) {
+                let valve = {
+                    "504": "Dota2",
+                    "730": "CSGO",
+                    "440": "TF2"
+                };
+                if (valve[a[1]]) a[1] = valve[a[1]]
+                rss_url = `https://steamcommunity.com/games/${a[1]}/rss`
+            }
+            let sql = this.sql
+            let stmt = sql.prepare("SELECT id, title FROM feeds WHERE url = ?")
+            let row = stmt.get(rss_url);
+            let feed_id;
+            let title;
+            if (row === undefined) {
+                let feed = await this.parser.parseURL(rss_url);
+                feed.title = feed.title.replace("RSS Feed","").trim();
+                let info = sql.prepare("INSERT INTO feeds(title, url) VALUES (?,?)").run(feed.title, rss_url)
+                feed_id = info.lastInsertRowid;
+                title = feed.title
+            } else {
+                feed_id = row.id;
+                title = row.title;
+            }
+            let info = sql.prepare("INSERT OR IGNORE INTO subscriptions(feed_id, channel_id) VALUES (?, ?)").run(feed_id, message.channel.id)
+            if (info.changes<1) {
+                return [`\`${title} already on list\``]
+            }
+            return [`\`added ${title} to list\``]
         } catch(e) {
-            console.error(e);
-            this.channels[0].send("`Error`").catch(err);
+            console.log(e)
+            return ["`failed to add`"]
         }
     }
 
-    toString() {
-        return "lol";
+    subs(message) {
+        let rows = this.__getSubs(message.channel.id);
+        let desc_lines = rows.map((row, index)=>{
+            return `${index+1}. ${row.title}`;
+        });
+        if (desc_lines.length < 1) return ["`No subscriptions`"];
+        let rich = new Discord.RichEmbed()
+            .setTitle("Subscriptions")
+            .setDescription(desc_lines.join("\n"))
+            .setFooter("Remove a subscription by using \".rss remove (number)\"")
+        return [rich]
+    }
+
+    async list(message){
+        let feeds = this.sql.prepare("SELECT feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ?").all(message.channel.id);
+        let rich = new Discord.RichEmbed()
+            .setTitle("Recent News");
+        let rss_prom = feeds.map(feed=>{
+            return {title:feed.title, prom: this.parser.parseURL(feed.url)}
+        })
+        let items = [];
+        for (let feed_index in rss_prom) {
+            let feed = rss_prom[feed_index];
+            let rss = await feed.prom;
+            rss = rss.items.slice(0,10).map(item=>{
+                return {line: `${feed.title} — **[${item.title}](${item.link})**`, isoDate: item.isoDate}
+            })
+            items = items.concat(rss);
+        }
+        items.sort((a,b)=>{
+            let d1 = new Date(a.isoDate);
+            let d2 = new Date(b.isoDate);
+            return d2-d1;
+        });
+
+        let desc = items.slice(0,10).map((item, index)=>{
+            return `${item.line}`
+        }).join("\n");
+        rich.setDescription(desc);
+        return [rich];
+    }
+
+    async test(message){
+        let feeds = this.sql.prepare("SELECT feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ?").all(message.channel.id);
+        let rich = new Discord.RichEmbed()
+            .setTitle("Recent News");
+        let rss_prom = feeds.map(feed=>{
+            return {title:feed.title, prom: this.parser.parseURL(feed.url)}
+        })
+        let items = [];
+        for (let feed_index in rss_prom) {
+            let feed = rss_prom[feed_index];
+            let rss = await feed.prom;
+            rss = rss.items.slice(0,1).map(item=>{
+                return {line: `${feed.title} — **[${item.title}](${item.link})**`, isoDate: item.isoDate}
+            })
+            items = items.concat(rss);
+        }
+        items.sort((a,b)=>{
+            let d1 = new Date(a.isoDate);
+            let d2 = new Date(b.isoDate);
+            return d2-d1;
+        });
+
+        let desc = items.slice(0,1).map((item, index)=>{
+            return `${item.line}`
+        }).join("\n");
+        rich.setDescription(desc);
+        return [rich];
+    }
+
+    remove(message, num){
+        try {
+            num = parseInt(num)-1;
+            let row = this.sql.prepare("SELECT feed_id, feeds.title FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ? LIMIT ?, 1").get(message.channel.id, num);
+            if (row === undefined) return ["`Subscription not found`"]
+            let info = this.sql.prepare("DELETE FROM subscriptions WHERE channel_id = ? AND feed_id = ?").run(message.channel.id, row.feed_id);
+            if (info.changes<1) return ["`No changes`"];
+            let rows = this.__getSubs(message.channel.id);
+            
+            let msg = `\`${row.title} removed\``
+            let desc_lines = rows.map((row, index)=>{
+                return `${index+1}. ${row.title}`;
+            })
+            if (desc_lines.length < 1) return [`\`${msg}\n\`No subscriptions left\``];
+            let rich = new Discord.RichEmbed()
+                .setTitle("Subscriptions")
+                .setDescription(desc_lines.join("\n"))
+                .setFooter("Remove a subscription by using \".rss remove (number)\"")
+            return [msg, rich]
+        } catch (e) {
+            console.log(e)
+            return ["`Error`"];
+        }
+    }
+
+    __getSubs(channel_id) {
+        return this.sql.prepare("SELECT id, channel_id, title, url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ?").all(channel_id);
     }
 }
 module.exports = RSSManager;

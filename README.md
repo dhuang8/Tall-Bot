@@ -14,26 +14,34 @@ A Discord bot that does a lot of things
 paste token into config.json
 
 `node discord.js` again
-## ping
-
 ## time
 
 ## sv
 returns shadowverse card info
-## remindme
-sends a reminder after specified time. Returns the ID.
+## reminder
+returns nothing
+### .reminder (message_with_timestring) or .reminder (action) (arg) or .reminder (message) (num) (unit_of_time)
+#### message_with_timestring
+Must contain a timestring somewhere in the message. A timestring is a parsable string in some form of M/DD/YYYY h:mm am/pm est or YYYY-MM-DD h:mm am/pm est. All parts are optional but at least 1 part must exist. If it doesn't work, try moving the time string to the beginning or end or including more parts.
+#### action
+.reminder list - returns list of pending reminders
 
+.reminder cancel - cancel the latest reminder"
 
+.reminder cancel (num) - cancel a reminder using the number from ".reminder list"
+#### num unit_of_time
+set a reminder to (num) (unit_of_time) in the future. Unit of time includes: sec, min, hour, day, week, month, year. Can be 1 letter shorthand (4s) or full word (4 seconds). Must be at the end.
+#### Examples
+.reminder cancel 1 - cancels the first reminder from ".reminder list"
 
-.remindme "(message)" (00:00am est)
+.reminder wake up in 7 hours - sets a reminder to go off in 7 hours
 
-sends a reminder at specified time. Returns the ID.
+.reminder Tom's birthday on 12/31 - sets a reminder to go off at Dec 31 12:00am est of this year
 
+.reminder Earth will melt in 2070 - sets a reminder to go off Jan 1 2070 12:00am est
 
+.reminder 2020-08-31 12:00am jst Japan builds an anime super weapon - sets a reminder to go off Oct 31 2020 12:00am JST
 
-.remindme "(message)" (datestring)
-
-sends a reminder at specified date. datestring is any string accepted for making a new Date object in JS. Returns the ID.
 ## cancelremindme
 cancels a remindme reminder with id
 ## ygo
@@ -187,11 +195,31 @@ number to add at the end
 **.roll 10d6+10** - rolls 10 6-sided dice and then adds 10 to the total
 
 ## rss
-returns posted feeds since last week
+Subscribing to a feed will allow me to automatically post when updates occur
+### .rss (action) (args)
+#### rss add (rss_link or any type of steam_page_url)
+Subscribes to an RSS feed
+
+**Examples**
+
+__.rss add \[https]()://steamcommunity.com/games/389730/__ - subscribes to Tekken 7 steam news
+
+__.rss add \[http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top stories (enjoy the spam)
+#### rss subs
+Lists all subscriptions
+#### rss list
+Lists all recent news from subscriptions
+#### rss remove (num)
+Remove a subscription from this channel. Get the number from ".rss subs"
+#### rss test
+Returns the latest feed
+
 ## cog
 returns a gif of the image in a spinning cogwheel
 ## translate
 translate a string to english
+## rank
+returns rank. lower is better
 ## image
 returns the first image result. safesearch is off if the channel is nsfw
 ## stock
@@ -218,12 +246,22 @@ returns character data
 #### character_name
 The name to search for
 
-## patch notes
+## patchnotes
+added rss to post automatic updates to steam games or other rss feeds
+
+changed remindme to reminder
+
+changed syntax of reminder to be easier to understand
+
+reminders now persist even if the bot restarts
+
+2019-05-30
+
+fixed a bunch of errors
+
 added mtg, stock, news, ff14
 
-added random argument to mtg, ygo, art
-
-2019-05-30`
+added random argument to mtg, ygo, art`
 ## 00:00am est
 returns the time converted to different time zones. can be anywhere in a message
 ## help

@@ -39,7 +39,8 @@ let config = {
 };
 
 const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/);
-sql.prepare("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, points INTEGER, poeleague TEXT);").run();
+sql.prepare("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, points INTEGER, poeleague TEXT) WITHOUT ROWID;").run();
+sql.prepare("CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, channel_id TEXT, message_text TEXT, message_id TEXT, time DATETIME, original_time DATETIME, url TEXT, triggered BOOLEAN DEFAULT(FALSE), FOREIGN KEY(user_id) REFERENCES users(user_id));").run();
 
 let globalvars = {bot, config, sql}
 module.exports = globalvars
@@ -251,10 +252,10 @@ function createCustomNumCommand2 (message, data_array) {
     }).join("\n");
 
     if (mes.length>2048) {
-        while (mes.length>2048-9) {
+        while (mes.length>2048-4) {
             mes = mes.replace(/\n.+$/,"")
         }
-        mes = mes + "\nand more";
+        mes = mes + "\n...";
     }
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
@@ -332,6 +333,24 @@ function wordWrap(str,length){
     let regex = new RegExp(`(?=(.{1,${length}}(?: |$)))\\1`,"g");
     return str.replace(regex,"$1\n");
 }
+
+function convertTZ(s) {
+    s = s.toLowerCase();
+    let timezone = {
+        "est": "America/New_York",
+        "edt": "America/New_York",
+        "cst": "America/Chicago",
+        "cdt": "America/Chicago",
+        "pst": "America/Los_Angeles",
+        "pdt": "America/Los_Angeles",
+        "nzdt": "Pacific/Auckland",
+        "nzst": "Pacific/Auckland",
+        "jst": "Asia/Tokyo",
+        "utc": "Etc/UTC"
+    }
+    return timezone[s];
+}
+
 let rss;
 fs.readFile("./config.json", "utf8", (err,data) => {
     if (err && err.code === "ENOENT") {
@@ -343,18 +362,24 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         config = JSON.parse(data);
         globalvars.config = config;
         bot.on('ready', () => {
-            console.log('ready');
+            console.log("ready2")
             bot.user.setActivity('.help for list of commands',{type: "Watching"})
-            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
         });
         bot.once("ready", ()=>{
+            console.log("ready")
+            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+            let rows = sql.prepare("SELECT * FROM reminders WHERE triggered=false").all();
+            rows.forEach(row=>{
+                setReminder(row.id, row.user_id, row.channel_id, row.message_text, row.message_id, row.time, row.original_time, row.url);
+            })
             fs.readFile("./data/RSS.json", "utf8", (err,data) => {
                 if (err && err.code === "ENOENT") {
                     console.error("No RSS json file");
                 } else {
                     try {
                         (async()=>{
-                            rss = new RSSManager(bot);
+                            rss = new RSSManager(bot, sql, config.errorChannelID);
                             //let rich = await rss.preview("536582876683304970",1000*60*60*24*7);
                             //bot.channels.get("536325719425286147").send(rich);
                         })().catch(e=>{
@@ -533,8 +558,10 @@ commands.push(new Command({
     regex: /^ping$/,
     prefix: "",
     testString: "ping",
-    shortDesc: "returns pings",
-    longDesc: "returns the average of the last 3 pings",
+    hidden: true,
+    shortDesc: "pong",
+    longDesc: "pong",
+    points:0,
     func: (message, args)=>{
         message.channel.send("pong").catch(err);
         return true;
@@ -673,42 +700,176 @@ returns shadowverse card info`,
 }))
 
 let timeouts=[];
+
+function createReminder(user_id, channel_id, message_text, message_id, time, original_time, url) {
+    try {
+        let info = sql.prepare("INSERT INTO reminders(user_id, channel_id, message_text, message_id, time, original_time, url) VALUES (?,?,?,?,?,?,?)").run(user_id, channel_id, message_text, message_id, time.valueOf(), original_time, url);
+        if (info.changes<1) throw new Error("Could not create reminder");
+        let now = moment();
+        let rich = Discord.RichEmbed();
+        rich.setTitle(message_text);
+        rich.setDescription(`Setting reminder to ${time.format("MMM D YYYY h:mm:ss a z")}`);
+        setReminder(info.lastInsertRowid, user_id, channel_id, message_text, message_id, time.valueOf(), original_time, url)
+        return rich;
+    } catch (e) {
+        err (e)
+    }
+}
+
+function setReminder(id, user_id, channel_id, message_text, message_id, time, original_time, url) {
+    try {
+        let now = moment();
+        let wait = (time - now.valueOf());
+        //handle long timeouts;
+        if (wait > 2147483647) return;
+        let user = bot.users.get(user_id)
+        if (!user) throw new Error("Could find user");
+        let channel = bot.channels.get(channel_id)
+        if (!channel) throw new Error("Could find channel");
+
+        timeouts[id] = bot.setTimeout(function () {
+            let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
+            if (info.changes<1) throw new Error("Could not modify reminder");
+            let rich = new Discord.RichEmbed();
+            let member = channel.members.get(user)
+            let username;
+            if (member && member.nickname) {
+                username = member.nickname;
+            } else {
+                username = user.username;
+            }
+            rich.setAuthor(username, user.displayAvatarURL );
+            rich.setDescription(message_text);
+            rich.setTimestamp(original_time);
+            bot.channels.get(channel_id).send(`reminder: ${message_text}\n${url}`, {
+                reply: user,
+                embed: rich
+            });
+        }, wait)
+    } catch (e) {
+        err (e)
+    }
+}
+
+function cancelReminder(id) {
+    let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
+    if (timeouts[id]) bot.clearTimeout(timeouts[id]);
+    timeouts[id] = null;
+    if (info.changes<1) return false;
+    return true
+}
+
 commands.push(new Command({
-    name: "remindme",
-    regex: /^remindme "(.*)" (.+)$/i,
+    name: "reminder",
+    regex: /^remind(?:me|er) (.+)$/i,
     prefix: ".",
     requirePrefix: true,
-    testString: '.remindme "this is a test message" 5 seconds',
-    shortDesc: "sends a reminder at a later time",
-    longDesc: `.remindme "(message)" (num) (sec/min/hour/etc)
-sends a reminder after specified time. Returns the ID.
-
-.remindme "(message)" (00:00am est)
-sends a reminder at specified time. Returns the ID.
-
-.remindme "(message)" (datestring)
-sends a reminder at specified date. datestring is any string accepted for making a new Date object in JS. Returns the ID.`,
+    testString: '.reminder this is a test message 5 seconds',
+    shortDesc: "sends a message to yourself at a later time",
+    longDesc: {title:`.reminder (message_with_timestring) or .reminder (action) (arg) or .reminder (message) (num) (unit_of_time)`,
+        description: `returns nothing`,
+        fields: [{
+            name: `message_with_timestring`,
+            value: `Must contain a timestring somewhere in the message. A timestring is a parsable string in some form of M/DD/YYYY h:mm am/pm est or YYYY-MM-DD h:mm am/pm est. All parts are optional but at least 1 part must exist. If it doesn't work, try moving the time string to the beginning or end or including more parts.`
+        }, {
+            name: `action`,
+            value: `.reminder list - returns list of pending reminders
+.reminder cancel - cancel the latest reminder"
+.reminder cancel (num) - cancel a reminder using the number from ".reminder list"`
+        }, {
+            name: `num unit_of_time`,
+            value: `set a reminder to (num) (unit_of_time) in the future. Unit of time includes: sec, min, hour, day, week, month, year. Can be 1 letter shorthand (4s) or full word (4 seconds). Must be at the end.`
+        }, {
+            name: `Examples`,
+            value: `.reminder cancel 1 - cancels the first reminder from ".reminder list"
+.reminder wake up in 7 hours - sets a reminder to go off in 7 hours
+.reminder Tom's birthday on 12/31 - sets a reminder to go off at Dec 31 12:00am est of this year
+.reminder Earth will melt in 2070 - sets a reminder to go off Jan 1 2070 12:00am est
+.reminder 2020-08-31 12:00am jst Japan builds an anime super weapon - sets a reminder to go off Oct 31 2020 12:00am JST`
+        }]
+    },
     log: true,
     points: 1,
     func: (message, args)=>{
+        (async()=>{
+            function listReminders() {
+                let rows = sql.prepare("SELECT * FROM reminders WHERE user_id=? AND triggered=false").all(message.author.id);
+                if (rows.length<1) {
+                    let rich = new Discord.RichEmbed()
+                        .setTitle("No reminders left")
+                    return rich;
+                } 
+                let lines = rows.map((reminder,index)=>{
+                    return `**${index+1}.** ${reminder.message_text}`
+                })
+                let rich = new Discord.RichEmbed()
+                    .setTitle("Reminders")
+                    .setDescription(lines.join("\n"))
+                    .setFooter(`Cancel a reminder with ".reminder cancel (number)"`)
+                return rich;
+            }
+            if (/^list$/i.test(args[1])) {
+                return listReminders();
+            } else if (/^cancel$/i.test(args[1])) {
+                let row = sql.prepare("SELECT row_number() OVER (ORDER BY original_time) fake_id, id FROM reminders WHERE user_id=? AND triggered=false ORDER BY original_time DESC LIMIT 1").get(message.author.id);
+                if (row && cancelReminder(row.id)) {
+                    return [`\`Canceled reminder ${row.fake_id}\``, listReminders()]
+                }
+                return `\`Failed to cancel reminder\``;
+            }
+            let a = /cancel (\d+)$/i.exec(args[1]);
+            if (a) {
+                let fake_id = parseInt(a[1])
+                let row = sql.prepare("SELECT id, fake_id FROM (SELECT row_number() OVER (ORDER BY original_time) fake_id, id FROM reminders WHERE user_id=? AND triggered=false) WHERE fake_id=?").get(message.author.id,fake_id);
+                if (row && cancelReminder(row.id)) {
+                    return [`\`Canceled reminder ${row.fake_id}\``, listReminders()]
+                }
+                return `\`Failed to cancel reminder\``;
+            }
+            let time;
+            a = /(?:(?:.*) |^)(a|\d+) ?((?:sec(?:ond)?|min(?:ute)?|hour|day|week|month|year)s?|[smhdwy])$/i.exec(args[1]);
+            if (a) {
+                if (a[1]==="a") {
+                    a[1] === 1;
+                } else {
+                    a[1] = parseInt(a[1]);
+                }
+                if (a[2] === "sec") a[2]="s"
+                else if (a[2] === "min") a[2]="m"
+                time = moment().tz("America/New_York").add(a[1],a[2]);
+            } else {
+                let a = /(.+) (est|cst|pst|edt|pdt|cdt|nzdt|jst|utc)(?:$| .+)/i.exec(args[1]);
+                let timezone_name="America/New_York"
+                if (a) {
+                    timezone_name = convertTZ(a[2])
+                    time = moment.tz(a[1], ["YYYY-MM-DD h:mm a", "M/DD/YYYY h:mm a", "M/DD h:mm a", "M-DD h:mm a", "M-DD h a", "M/DD h a", "h:mm a", "M/DD", "M-DD", "YYYY-MM-DD", "M/DD/YYYY"], timezone_name);
+                } else {
+                    time = moment.tz(args[1], ["YYYY-MM-DD h:mm a", "M/DD/YYYY h:mm a", "M/DD h:mm a", "M-DD h:mm a", "M-DD h a", "M/DD h a", "h:mm a", "M/DD", "M-DD", "YYYY-MM-DD", "M/DD/YYYY"], timezone_name);
+                }
+            }
+            let now = moment.tz();
+            if (!time.isValid()) return "`Could not parse time`"
+            if (now.isAfter(time)) return `\`Parsed time (${time.format("MMM D YYYY h:mm:ssa z")}) has passed\``;
+            return createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url);
+        })().then(params=>{
+            if (!Array.isArray(params)) params = [params];
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+
+        /*
         let reminder = args[1];
         let timestring = args[2];
-        function createReminder(time) {
-            let rich = Discord.RichEmbed();
-            let now = moment();
-            rich.setTitle(reminder);
-            rich.setDescription("Setting reminder to");
-            rich.setTimestamp(time);
-            let timeoutid = timeouts.length;
-            timeouts[timeoutid] = bot.setTimeout(function () {
-                message.reply(`reminder: ${reminder}`, {
-                    embed: richQuote(message)
-                });
-            }, time - now)
-            message.reply(timeoutid, {
-                embed: rich
-            });
-        }
         //.remindme ("message") (num) (sec/min/hour/etc)
         let b = /^(\d+) (\w+)$/i.exec(timestring);
         if (b) {
@@ -733,13 +894,17 @@ sends a reminder at specified date. datestring is any string accepted for making
                 inputTime.add(1, 'days');
             }
             let time = inputTime;
-            createReminder(time);
+            let rich = createReminder(message.author.id, message.channel.id, reminder, time);
+            message.reply("", {
+                embed: rich
+            });
         } else {
             let time = moment.utc(new Date(timestring));
             if (!time.isValid()) return false;
             createReminder(time);
         }
         return true;
+        */
     }
 }))
 commands.push(new Command({
@@ -842,7 +1007,6 @@ returns yu-gi-oh card data`,
             }
         })().then(params=>{
             if (Array.isArray(params)) {
-                console.log(params)
                 message.channel.send.apply(message.channel, params).catch(e=>{
                     if (e.code == 50035) {
                         message.channel.send("`Message too large`").catch(err);
@@ -1303,7 +1467,7 @@ fs.readFile("./data/t7.json", 'utf8', function (e, data) {
 
 commands.push(new Command({
     name: "t7",
-    regex: /^t7 (\S+) ([^\n\r]+?)$/i,
+    regex: /^(?:t7|tek) (\S+) ([^\n\r]+?)$/i,
     prefix: ".",
     requirePrefix: true,
     hardAsserts: ()=>{return t7;},
@@ -1352,6 +1516,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                 s = replaceAll(s, ",", "");
                 s = replaceAll(s, "(\\D)\\+(\\d)", "$1$2");
                 s = replaceAll(s, "(\\D)\\+(\\D)", "$1$2");
+                if (s.indexOf("run")==0) s = "fff" + s.slice(3);
+                if (s.indexOf("running")==0) s = "fff" + s.slice(6);
                 if (s.indexOf("wr")==0) s = "fff" + s.slice(2);
                 if (s.indexOf("cd")==0) s = "fnddf" + s.slice(2);
                 if (s.indexOf("rds")==0) s = "bt" + s.slice(3);
@@ -2210,7 +2376,7 @@ number_of_results - the number of results to return. Default is 6.`,
             let msg = "";
             for (var i = 0; i < data.items.length; i++) {
                 //rich.addField(i + 1, `[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})`, false);
-                msg += `**${i + 1}**. [${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})\n`;
+                msg += `**${i + 1}**. **[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})**\n`;
             }
             rich.setDescription(msg);
             let loadingMessage = await loadingtask;
@@ -2814,7 +2980,7 @@ commands.push(new Command({
     name: "setpoeleague",
     regex: /^setpoeleague$/i,
     prefix: ".",
-    testString: ".level",
+    testString: ".setpoeleague",
     hidden: false,
     requirePrefix: false,
     shortDesc: "sets your PoE league for .pt",
@@ -2992,20 +3158,52 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "rss",
-    regex: /^rss$/i,
+    regex: /^rss (\w+)(?: (.+))?$/i,
     prefix: ".",
-    testString: ".rss",
+    testString: ".rss add https://en-forum.guildwars2.com/categories/game-release-notes/feed.rss",
     hidden: false,
     requirePrefix: true,
     hardAsserts: ()=>{return rss;},
     log: true,
     points: 1,
     shortDesc: "returns posted feeds",
-    longDesc: `.rss
-returns posted feeds since last week`,
+    longDesc: {title:`.rss (action) (args)`,
+        description: `Subscribing to a feed will allow me to automatically post when updates occur`,
+        fields: [{
+            name: `rss add (rss_link or any type of steam_page_url)`,
+            value: `Subscribes to an RSS feed
+**Examples**
+__.rss add [https]()://steamcommunity.com/games/389730/__ - subscribes to Tekken 7 steam news
+__.rss add [http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top stories (enjoy the spam)`
+        },{
+            name: `rss subs`,
+            value: `Lists all subscriptions`
+        },{
+            name: `rss list`,
+            value: `Lists all recent news from subscriptions`
+        },{
+            name: `rss remove (num)`,
+            value: `Remove a subscription from this channel. Get the number from ".rss subs"`
+        },{
+            name: `rss test`,
+            value: `Returns the latest feed`
+        }]
+    },
     func: (message, args) =>{
         (async()=>{
-            return [await rss.preview(message.channel.id, new Date(0))];
+            if (args[1] === "add") {
+                return await rss.add(message, args[2]);
+            } else if (args[1] === "subs" || args[1] === "sub") {
+                return await rss.subs(message);
+            } else if (args[1] === "list") {
+                return await rss.list(message);
+            } else if (args[1] === "remove" || args[1] === "rem") {
+                return await rss.remove(message, args[2]);
+            } else if (args[1] === "test" ) {
+                return await rss.test(message);
+            } else {
+                return ["`unknown action`"];
+            }
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
@@ -3210,14 +3408,46 @@ commands.push(new Command({
     shortDesc: "returns user power level",
     longDesc: `.level
 returns user power level`,
-    log: true,
-    points: 0,
     func: (message, args) =>{
         (async()=>{
             let stmt = sql.prepare("SELECT points FROM users WHERE user_id = ?;")
             let points = stmt.get(message.author.id).points
             let level = Math.floor(Math.pow(points,0.5))
             return [`\`Your power level is ${level}.\``]
+        })().then(params=>{
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
+
+commands.push(new Command({
+    name: "rank",
+    regex: /^rank$/i,
+    prefix: ".",
+    testString: ".rank",
+    hidden: false,
+    requirePrefix: true,
+    log: true,
+    points: 0,
+    shortDesc: "returns rank. lower is better",
+    longDesc: `.rank
+returns rank. lower is better`,
+    func: (message, args) =>{
+        (async()=>{
+            let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users) WHERE user_id = ?;")
+            let rank = stmt.get(message.author.id).rank
+            return [`\`Your rank is ${rank}\``]
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
@@ -3466,7 +3696,6 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
         (async()=>{
             //https://newsapi.org/docs/endpoints/everything
             async function smmry(e) {
-                console.log(e)
                 let summary = JSON.parse(await rp(`http://api.smmry.com/&SM_API_KEY=${config.api.smmry}&SM_WITH_BREAK=true&SM_URL=${e.url}`)).sm_api_content;
                 summary = summary.replace(/\[BREAK\]/g, "\n\n");
                 let rich = new Discord.RichEmbed()
@@ -3487,13 +3716,13 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
                     return that_e.title.toLowerCase() === e.title.toLowerCase();
                 }) === i;
             }).map(e=>{
-                return [`${e.source.name}: [${e.title}](${e.url})`, async()=>{return smmry(e)}];
+                return [`${e.source.name}: **[${e.title}](${e.url})**`, async()=>{return smmry(e)}];
             })
 
             if (desc.length==1) {
                 return await desc[0][1]()
             } else if (desc.length<1) {
-                return `No results found`
+                return "`No results found`";
             } else {
                 let rich = new Discord.RichEmbed()
                 rich.setTitle(`Recent News${args[1]?`: ${args[1]}`:""}`);
@@ -3606,17 +3835,22 @@ commands.push(new Command({
 }))
 
 commands.push(new Command({
-    name: "patch notes",
+    name: "patchnotes",
     regex: /^patch(notes)?$/i,
     prefix: ".",
     testString: ".patchnotes",
     hidden: false,
     requirePrefix: true,
     shortDesc: `lists recent updates`,
-    longDesc: `\`fixed a bunch of errors
+    longDesc: `\`2019-06-07
+added rss to post automatic updates to steam games or other rss feeds
+changed remindme to reminder
+changed syntax of reminder to be easier to understand
+reminders now persist even if the bot restarts
+2019-05-30
+fixed a bunch of errors
 added mtg, stock, news, ff14
-added random argument to mtg, ygo, art
-2019-05-30\``,
+added random argument to mtg, ygo, art\``,
     log: true,
     points: 1,
     func: (message, args) =>{
@@ -3720,10 +3954,8 @@ returns the time converted to different time zones. can be anywhere in a message
     points: 1,
     func: (message, args) =>{
         (async()=>{
-            let shortZones = ["est", "cst", "pst", "nzdt", "jst", "utc", "edt", "cdt", "pdt", "gmt"];
-            let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Etc/UTC"];
             let fullZones2 = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
-            let fullName = fullZones[shortZones.indexOf(args[4].toLowerCase())];
+            let fullName = convertTZ(args[4]);
             //msg += fullName;
             let inputTime = moment.tz(`${args[1]}${args[2]}${args[3]}`, ["h:mma", "hmma"], fullName).subtract(1, 'days');
             if (!inputTime.isValid()) return;
@@ -4150,7 +4382,6 @@ returns a list of commands. respond with the number for details on a specific co
             }
             return `**${index+1}.** ${cur.getShortDesc()}`;
         }).join("\n");
-        console.log(mes)
         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
             var num = parseInt(message.content) - 1;
             if (num < results.length && num > -1) {

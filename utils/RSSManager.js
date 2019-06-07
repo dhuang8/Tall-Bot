@@ -41,7 +41,7 @@ class RSSManager {
                                 .setTitle(feed.title)
                                 .setDescription(desc);
                             channels.forEach(channel=>{
-                                sub.bot.channels.get(sub.error_channel).send(rich).catch(console.log);
+                                sub.bot.channels.get(channel).send(rich).catch(console.log);
                             })
                         }
                     }

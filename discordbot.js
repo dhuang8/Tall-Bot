@@ -3861,6 +3861,7 @@ added rss to post automatic updates to steam games or other rss feeds
 changed remindme to reminder
 changed syntax of reminder to be easier to understand
 reminders now persist even if the bot restarts
+
 2019-05-30
 fixed a bunch of errors
 added mtg, stock, news, ff14

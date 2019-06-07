@@ -110,7 +110,7 @@ class RSSManager {
     async list(message){
         let feeds = this.sql.prepare("SELECT feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ?").all(message.channel.id);
         let rich = new Discord.RichEmbed()
-            .setTitle("Recent News");
+            .setTitle("Recent Feeds");
         let rss_prom = feeds.map(feed=>{
             return {title:feed.title, prom: this.parser.parseURL(feed.url)}
         })
@@ -138,8 +138,6 @@ class RSSManager {
 
     async test(message){
         let feeds = this.sql.prepare("SELECT feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ?").all(message.channel.id);
-        let rich = new Discord.RichEmbed()
-            .setTitle("Recent News");
         let rss_prom = feeds.map(feed=>{
             return {title:feed.title, prom: this.parser.parseURL(feed.url)}
         })
@@ -148,7 +146,7 @@ class RSSManager {
             let feed = rss_prom[feed_index];
             let rss = await feed.prom;
             rss = rss.items.slice(0,1).map(item=>{
-                return {line: `${feed.title} — **[${item.title}](${item.link})**`, isoDate: item.isoDate}
+                return {desc: `**[${item.title}](${item.link})**`, isoDate: item.isoDate, title: feed.title}
             })
             items = items.concat(rss);
         }
@@ -157,12 +155,14 @@ class RSSManager {
             let d2 = new Date(b.isoDate);
             return d2-d1;
         });
-
-        let desc = items.slice(0,1).map((item, index)=>{
-            return `${item.line}`
-        }).join("\n");
-        rich.setDescription(desc);
-        return [rich];
+        
+        if (items.length>0) {
+            let rich = new Discord.RichEmbed()
+                .setTitle(items[0].title)
+                .setDescription(items[0].desc);
+            return [rich];
+        }
+        return [`\`No feeds\``]
     }
 
     remove(message, num){

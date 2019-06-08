@@ -364,7 +364,7 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         globalvars.config = config;
         bot.on('ready', () => {
             console.log("ready2")
-            bot.user.setActivity('.help for list of commands',{type: "Watching"})
+            bot.user.setActivity('v6.08 .help for list of commands',{type: "Watching"})
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
         });
         bot.once("ready", ()=>{
@@ -3963,7 +3963,7 @@ v6.07
 
 v5.30
 • Added new characters mtg, stock, news, ff14.
-• mtg, ygo, and art can now use "random."\``
+• mtg, ygo, and art can now use "random".\``
         })().then(params=>{
             message.channel.send(params).catch(e=>{
                 if (e.code == 50035) {

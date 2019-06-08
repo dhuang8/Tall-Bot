@@ -3054,10 +3054,7 @@ commands.push(new Command({
     shortDesc: "",
     longDesc: {title:`.poe (search)`,
         description: `search poe wiki`,
-        fields: [{
-            name: `search`,
-            value: `search term`
-        }]
+        fields: []
     },
     log: true,
     points: 1,
@@ -3069,7 +3066,26 @@ commands.push(new Command({
                 response = JSON.parse(response);
                 if (response.cargoquery.length>0) {
                     let html = unescape(response.cargoquery[0].title.html)
-                    html = html.replace(/<span [^>]*?class="group.+?>/g,"\n\n").replace(/<(\w+?) .+?>/g,"").replace(/<\/(\w+?)>/g,"").replace(/<br>/g,"\n").replace(/\[\[:\w+:.+?\|(.+?)\]\]/g,"$1").replace(/\[\[(.+)\]\]/,"")
+
+                        //<span class=group>
+                    html = html.replace(/<span [^>]*?class="group.+?>/g,"\n\n")
+                        //<br>
+                        .replace(/<br>/g,"\n")
+                        //&ndash;
+                        .replace(/&ndash;/g,"-")
+                        //<div>
+                        .replace(/<(\w+?).+?>/g,"")
+                        //</div>
+                        .replace(/<\/(\w+?)>/g,"")
+                        //[[File:asdf.png]]
+                        .replace(/\[\[File:(.+)\]\]/g,"")
+                        //[[:asdf:asdf|asdf]]
+                        .replace(/\[\[:\w+:.+?\|(.+?)\]\]/g,"$1")
+                        //[[asdf|asdf]]
+                        .replace(/\[\[[^\]\r\n]+?\|(.+?)\]\]/g,"$1")
+                        //[[asdf]]
+                        .replace(/\[\[([^\]\r\n]+?)\]\]/g,"$1")
+
                     let lines = html.split("\n");
                     while (lines[0]==="" || lines[0]===item_name) {
                         lines.shift()

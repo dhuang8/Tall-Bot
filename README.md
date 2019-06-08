@@ -177,8 +177,6 @@ sets your PoE league for .pt
 ## poe
 search poe wiki
 ### .poe (search)
-#### search
-search term
 
 ## define
 returns urban dictionary definition
@@ -225,7 +223,7 @@ returns a gif of the image in a spinning cogwheel
 ## translate
 translate a string to english
 ## rank
-returns rank. lower is better
+have a trophy
 ## image
 returns the first image result. safesearch is off if the channel is nsfw
 ## stock

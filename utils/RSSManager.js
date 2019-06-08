@@ -65,7 +65,7 @@ class RSSManager {
 
     async add(message, rss_url) {
         try {
-            let a = /.*steam(?:powered|community)\.com\/(?:app|news|games)\/(?:\?appids=)?(\d+).?/.exec(rss_url)
+            let a = /^.*steam(?:powered|community)\.com\/(?:app|news|games)\/?(?:\?appids=)?(\d+).*$/.exec(rss_url)
             if (a) {
                 let valve = {
                     "504": "Dota2",

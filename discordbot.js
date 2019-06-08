@@ -731,7 +731,7 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
             let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
             if (info.changes<1) throw new Error("Could not modify reminder");
             let rich = new Discord.RichEmbed();
-            let member = channel.members.get(user)
+            let member = channel.members?channel.members.get(user):null
             let username;
             if (member && member.nickname) {
                 username = member.nickname;

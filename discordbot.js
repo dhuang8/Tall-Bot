@@ -3951,7 +3951,7 @@ lists recent changes`,
     func: (message, args) =>{
         (async()=>{
             return `\`v6.08
-• Added new character poe who searches the PoE Wiki.
+• Added new character poe to search the PoE Wiki.
 • Implemented leaderboards. Use ".rank" to check your rank. Ranked matchmaking later?
 
 v6.07

@@ -3956,7 +3956,7 @@ lists recent changes`,
 
 v6.07
 • Added new character rss who has the unique ability to post news for Steam games and other RSS feeds. rss is a stance-heavy character so use ".rss help" to check his movelist.
-• Renamed remindme to reminder because it made new players confused.
+• Renamed remindme to reminder because it confused new players.
 • reminder can now be played in simple mode.
 • Fixed a bug that caused reminders to disappear when the game crashed.
 • ygo's "no cards found" is now safe on block.

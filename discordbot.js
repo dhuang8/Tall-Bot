@@ -279,10 +279,10 @@ function createCustomNumCommand3 (message, data_array) {
     }).join("\n");
 
     if (mes.length>2048) {
-        while (mes.length>2048-9) {
+        while (mes.length>2048-4) {
             mes = mes.replace(/\n.+$/,"")
         }
-        mes = mes + "\nand more";
+        mes = mes + "\n...";
     }
 
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {

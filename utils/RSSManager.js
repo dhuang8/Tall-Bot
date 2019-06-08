@@ -16,7 +16,7 @@ class RSSManager {
             this.time = new Date();
             this.error_channel = error_channel;
             let sub = this;
-            new CronJob('0 0 * * * *', function() {
+            new CronJob('0 * * * * *', function() {
                 (async ()=>{
                     let feeds = sql.prepare("SELECT DISTINCT feed_id, feeds.title, feeds.url FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id").all()
                     let rss_prom = feeds.map(feed=>{
@@ -26,22 +26,29 @@ class RSSManager {
                         let feed = rss_prom[i];
                         let channels = sql.prepare("SELECT channel_id FROM subscriptions WHERE feed_id=?").all(feed.id);
                         let rss = await feed.prom;
-                        let desc = rss.items.filter(item=>{
+                        let desc = rss.items/*.filter(item=>{
                             let item_date = new Date(item.isoDate);
                             if (sub.time < item_date) {
                                 return true;
                             }
                             return false;
-                        }).map((item, index)=>{
+                        })*/.map((item, index)=>{
                             return `**[${item.title}](${item.link})**`
                         });
                         if (desc.length>0) {
                             desc = desc.join("\n\n");
+
+                            if (desc.length>2048) {
+                                while (desc.length>2048) {
+                                    desc = desc.replace(/\n\n.+$/,"")
+                                }
+                            }
+
                             let rich = new Discord.RichEmbed()
                                 .setTitle(feed.title)
                                 .setDescription(desc);
                             channels.forEach(channel=>{
-                                sub.bot.channels.get(channel).send(rich).catch(console.log);
+                                sub.bot.channels.get(channel.channel_id).send(rich).catch(console.log);
                             })
                         }
                     }

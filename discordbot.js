@@ -15,6 +15,7 @@ const Database = require("better-sqlite3");
 const { CanvasRenderService } = require('chartjs-node-canvas');
 const annotation = require('chartjs-plugin-annotation');
 const rp = require('request-promise');
+const unescape = require('unescape');
 
 moment.tz.setDefault("America/New_York");
 
@@ -3043,6 +3044,89 @@ sets your PoE league for .pt`,
     }
 }))
 
+commands.push(new Command({
+    name: "poe",
+    regex: /^poe (.+)$/i,
+    prefix: ".",
+    testString: "",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: {title:`.poe (search)`,
+        description: `search poe wiki`,
+        fields: [{
+            name: `search`,
+            value: `search term`
+        }]
+    },
+    log: true,
+    points: 1,
+    func: (message, args) =>{
+        (async()=>{
+            //https://pathofexile.gamepedia.com/api.php
+            async function createItemRich(item_name, url) {
+                let response = await rp(`https://pathofexile.gamepedia.com/api.php?action=cargoquery&tables=items&fields=items.html,items.name&where=items.name=${encodeURIComponent(`"${item_name}"`)}&format=json`)
+                response = JSON.parse(response);
+                if (response.cargoquery.length>0) {
+                    let html = unescape(response.cargoquery[0].title.html)
+                    html = html.replace(/<span [^>]*?class="group.+?>/g,"\n\n").replace(/<(\w+?) .+?>/g,"").replace(/<\/(\w+?)>/g,"").replace(/<br>/g,"\n").replace(/\[\[:\w+:.+?\|(.+?)\]\]/g,"$1").replace(/\[\[(.+)\]\]/,"")
+                    let lines = html.split("\n");
+                    while (lines[0]==="" || lines[0]===item_name) {
+                        lines.shift()
+                    }
+                    let rich = new Discord.RichEmbed()
+                        .setTitle(item_name)
+                        .setURL(url)
+                        .setDescription(lines.join("\n"));
+                    return rich;
+                } else {
+                    return `**__${item_name}__**\n${url}`;
+                }
+            }
+            //https://pathofexile.gamepedia.com/api.php
+            let response = await rp(`https://pathofexile.gamepedia.com/api.php?action=opensearch&search=${encodeURIComponent(args[1])}&format=json`)
+            response = JSON.parse(response)
+            //convert to {name, url}
+            let items = response[1].map((item_name,index)=>{
+                return {name:item_name, url:response[3][index]}
+            })
+            let list = items.map((item)=>{
+                return [item.name, async ()=>{return createItemRich(item.name, item.url)}];
+            })
+            switch (list.length) {
+                case 0:
+                    return `\`No results found\``;
+                case 1:
+                    return await list[0][1]();
+                default:
+                    let rich = new Discord.RichEmbed()
+                        .setTitle("Multiple items found")
+                        .setDescription(createCustomNumCommand3(message, list))
+                    return rich;
+            }
+            /*
+            let rich = new Discord.RichEmbed();
+            let name = response[1][0]
+            response = await rp(`https://pathofexile.gamepedia.com/api.php?action=cargoquery&tables=items&fields=items.html,items.name&where=items.name=${encodeURIComponent(`"${name}"`)}&format=json`)
+            response = JSON.parse(response)
+            let html = unescape(response.cargoquery[0].title.html)*/
+        })().then(params=>{
+            if (!Array.isArray(params)) params = [params];
+            message.channel.send.apply(message.channel, params).catch(e=>{
+                if (e.code == 50035) {
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
+        }).catch(e=>{
+            err(e);
+            message.channel.send("`Error`").catch(err);
+        })
+        return true;
+    }
+}))
 
 commands.push(new Command({
     name: "define",
@@ -3440,15 +3524,32 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     log: true,
-    points: 0,
-    shortDesc: "returns rank. lower is better",
+    points: 1,
+    shortDesc: "have a trophy",
     longDesc: `.rank
-returns rank. lower is better`,
+have a trophy`,
     func: (message, args) =>{
         (async()=>{
             let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users) WHERE user_id = ?;")
             let rank = stmt.get(message.author.id).rank
-            return [`\`Your rank is ${rank}\``]
+            let url = "";
+            if (rank<4) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/a/a4/League_division_S.png";
+            } else if (rank<10) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/c/c3/League_division_A.png";
+            } else if (rank<20) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/6/6b/League_division_B.png";
+            } else if (rank<30) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/4/43/League_division_C.png";
+            } else if (rank<40) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/2/23/League_division_D.png";
+            } else if (rank<60) {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/9/9c/League_division_E.png";
+            } else {
+                url = "https://vignette.wikia.nocookie.net/sonic/images/c/cd/League_division_F.png";
+            }
+            let attach = new Discord.Attachment(url);
+            return [attach]
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
                 if (e.code == 50035) {
@@ -3842,50 +3943,37 @@ commands.push(new Command({
     testString: ".patchnotes",
     hidden: false,
     requirePrefix: true,
-    shortDesc: `lists recent updates`,
-    longDesc: `\`2019-06-07
-added rss to post automatic updates to steam games or other rss feeds
-changed remindme to reminder
-changed syntax of reminder to be easier to understand
-reminders now persist even if the bot restarts
-2019-05-30
-fixed a bunch of errors
-added mtg, stock, news, ff14
-added random argument to mtg, ygo, art\``,
+    shortDesc: `lists recent changes`,
+    longDesc: `.patchnotes
+lists recent changes`,
     log: true,
     points: 1,
     func: (message, args) =>{
         (async()=>{
-            return `\`2019-06-07
-added rss to post automatic updates to steam games or other rss feeds
-changed remindme to reminder
-changed syntax of reminder to be easier to understand
-reminders now persist even if the bot restarts
+            return `\`v6.08
+• Added new character poe who searches the PoE Wiki.
+• Implemented leaderboards. Use ".rank" to check your rank. Ranked matchmaking later?
 
-2019-05-30
-fixed a bunch of errors
-added mtg, stock, news, ff14
-added random argument to mtg, ygo, art\``
+v6.07
+• Added new character rss who has the unique ability to post news for Steam games and other RSS feeds. rss is a stance-heavy character so use ".rss help" to check his movelist.
+• Renamed remindme to reminder because it made new players confused.
+• reminder can now be played in simple mode.
+• Reminders are now saved even if the game crashes.
+• ygo's "no cards found" is now safe on block.
+
+v5.30
+• Added new characters mtg, stock, news, ff14.
+• mtg, ygo, and art can now use "random."\``
         })().then(params=>{
-            if (Array.isArray(params)) {
-                message.channel.send.apply(message.channel, params).catch(e=>{
-                    if (e.code == 50035) {
-                        message.channel.send("`Message too large`").catch(err);
-                    } else {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    }
-                });
-            } else {
-                message.channel.send(params).catch(e=>{
-                    if (e.code == 50035) {
-                        message.channel.send("`Message too large`").catch(err);
-                    } else {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    }
-                });
-            }
+            message.channel.send(params).catch(e=>{
+                if (e.code == 50035) {
+                    err(e);
+                    message.channel.send("`Message too large`").catch(err);
+                } else {
+                    err(e);
+                    message.channel.send("`Error`").catch(err);
+                }
+            });
         }).catch(e=>{
             err(e);
             message.channel.send("`Error`").catch(err);
@@ -4087,17 +4175,12 @@ commands.push(new Command({
                 before: message.id
             })
             let thismsg = thismsgs.first();
-            if (thismsg.content == "") return ["shut up"]
-            else if (thismsg.author.id === message.author.id)  return ["shut up"]
+            if (thismsg.content == "") return ["", new Discord.Attachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg")]
+            else if (thismsg.author.id === message.author.id)  return ["", new Discord.Attachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg")]
             else return [thismsg.content.toUpperCase()];
         })().then(params=>{
             message.channel.send.apply(message.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    message.channel.send("`Message too large`").catch(err);
-                } else {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                }
+                err(e);
             });
         }).catch(e=>{
             err(e);

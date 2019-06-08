@@ -174,6 +174,12 @@ location - can be several things like the name of a city or a zip code
 returns poe.trade based on item name or stats
 ## setpoeleague
 sets your PoE league for .pt
+## poe
+search poe wiki
+### .poe (search)
+#### search
+search term
+
 ## define
 returns urban dictionary definition
 ## roll
@@ -247,21 +253,7 @@ returns character data
 The name to search for
 
 ## patchnotes
-added rss to post automatic updates to steam games or other rss feeds
-
-changed remindme to reminder
-
-changed syntax of reminder to be easier to understand
-
-reminders now persist even if the bot restarts
-
-2019-05-30
-
-fixed a bunch of errors
-
-added mtg, stock, news, ff14
-
-added random argument to mtg, ygo, art`
+lists recent changes
 ## 00:00am est
 returns the time converted to different time zones. can be anywhere in a message
 ## help

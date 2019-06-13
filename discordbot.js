@@ -462,7 +462,7 @@ commands.push(new Command({
     log: false,
     points: 0,
     func: (message, args)=>{
-        if (!message.channel.members || !message.channel.members.get(config.adminID) || message.mentions.members.get(bot.user.id)) {
+        //if (!message.channel.members || !message.channel.members.get(config.adminID) || message.mentions.members.get(bot.user.id)) {
             (async()=>{
                 try {
                     let msgguild = message.guild?message.guild.id:"whispers";
@@ -484,14 +484,6 @@ commands.push(new Command({
                         msg += bot.users.get(config.adminID)
                     }
                     guildchan.send(msg);
-                    
-                    //in case something goes wrong
-                    /*
-                    let msg = `\`${moment().format('h:mma')} ${message.author.username} (${message.author.id}):\` 
-${message.cleanContent}
-\`${message.channel.type} channel ${(message.channel.name ? `${message.channel.name} (${message.channel.id})` : message.channel.id)}${((message.channel.guild && message.channel.guild.name) ? ` in guild ${message.channel.guild.name}(${message.channel.guild.id})` : "")}\``;
-                    bot.channels.get(config.secretChannelID).send(msg).catch(err);
-                    */
                 } catch (e) {
                     err(e);
                 } finally {
@@ -500,7 +492,7 @@ ${message.cleanContent}
                 console.error(e);
                 err(e);
             })
-        }
+        //}
         return false;
     }
 }))
@@ -2266,6 +2258,12 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
         setvolume = setvolume || /*(serverVol ? serverVol[channel.guild] / 100:false) || */.2;
         setstart = setstart || 0;
 
+        let stream_options = {
+            seek: setstart,
+            volume: setvolume,
+            bitrate: "auto"
+        }
+
         function leave() {
             channel.leave();
         }
@@ -2277,37 +2275,25 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                 if (thisDispatch) {
                     thisDispatch.removeAllListeners('end');
                     thisDispatch.on('end', () => {
-                        const dispatcher = channel.guild.voiceConnection.playStream(URL, {
-                            seek: setstart,
-                            volume: setvolume
-                        }).on('end', leave);
+                        const dispatcher = channel.guild.voiceConnection.playStream(URL, stream_options).on('end', leave);
                     });
                     thisDispatch.end();
                 //sitting in channel without playing sound
                 } else {
-                    channel.guild.voiceConnection.playStream(URL, {
-                        seek: setstart,
-                        volume: setvolume
-                    }).on('end', leave);
+                    channel.guild.voiceConnection.playStream(URL, stream_options).on('end', leave);
                 }
             //if in another voice channel
             } else {
                 channel.guild.voiceConnection.dispatcher.removeAllListeners('end');
                 channel.guild.voiceConnection.dispatcher.end();
                 channel.join().then(connnection => {
-                    const dispatcher = connnection.playStream(URL, {
-                        seek: setstart,
-                        volume: setvolume
-                    }).on('end', leave);
+                    const dispatcher = connnection.playStream(URL, stream_options).on('end', leave);
                 }).catch(err);
             }
         //not in a voice channel
         } else {
             channel.join().then(connnection => {
-                const dispatcher = connnection.playStream(URL, {
-                    seek: setstart,
-                    volume: setvolume
-                }).on('end', leave);
+                const dispatcher = connnection.playStream(URL, stream_options).on('end', leave);
             }).catch(err)
         }
     } catch (e) {
@@ -3061,6 +3047,7 @@ commands.push(new Command({
     func: (message, args) =>{
         (async()=>{
             //https://pathofexile.gamepedia.com/api.php
+            //https://github.com/ha107642/RedditPoEBot/blob/master/redditbot.py
             async function createItemRich(item_name, url) {
                 let response = await rp(`https://pathofexile.gamepedia.com/api.php?action=cargoquery&tables=items&fields=items.html,items.name&where=items.name=${encodeURIComponent(`"${item_name}"`)}&format=json`)
                 response = JSON.parse(response);

@@ -133,7 +133,7 @@ class Command {
                         }
                         let return_mes = await this.func(message, args);
                         if (typing_prom) {
-                            console.log("fulfilled?", fulfilled);
+                            //console.log("fulfilled?", fulfilled);
                             await typing_prom;
                         }
                         return return_mes;

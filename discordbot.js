@@ -3712,10 +3712,25 @@ updates script`,
     prerun: (message) => {return message.author.id === config.adminID},
     func: (message, args) =>{
         if (args[1]) {
-            return execFileSync('node', [`update_scripts/${args[1]}/update.js`]);
+            execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
+                if (e) {
+                    message.channel.send("`Error`")
+                    err(e)
+                } else {
+                    message.channel.send(`\`${stdout} ${stderr}\``)
+                }
+            })
         } else {
-            return execFileSync('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"]);
+            execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
+                if (e) {
+                    message.channel.send("`Error`")
+                    err(e)
+                } else {
+                    message.channel.send(`\`${stdout} ${stderr}\``)
+                }
+            })
         }
+        return null;
     }
 }))
 commands.push(new Command({

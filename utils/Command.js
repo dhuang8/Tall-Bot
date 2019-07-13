@@ -2,6 +2,27 @@
 const Discord = require('discord.js');
 const discordbot = require('../discordbot');
 
+
+function err(error, message) {
+    if (discordbot.config.errorChannelID) {
+        let messageString = "";
+        if (message) {
+            messageString = message.author.tag + ": " + message.cleanContent;
+        }
+        discordbot.bot.channels.get(discordbot.config.errorChannelID).send(`${messageString}\n${error.stack}`, {
+            code: true,
+            split: true,
+            reply: discordbot.config.adminID || null
+        }).catch(function (e) {
+            console.error(error.stack);
+            console.error(e.stack);
+            console.error("maybe missing bot channel");
+        })
+    } else {
+        console.error(error);
+    }
+}
+
 class Command {
     constructor(options) {
         if (!options || !options.name) throw new Error("missing options, name, regex, or function");
@@ -11,32 +32,37 @@ class Command {
         this.requirePrefix = options.requirePrefix || false;
         this.shortDesc = options.shortDesc || "";
         this.longDesc = options.longDesc || "";
-        this.testString = options.testString || ""
+        this.testString = options.testString || "";
+        this.hidden = options.hidden || false;
+        if ("typing" in options) this.typing = options.typing;
+        else this.typing = !this.hidden;
+        
         //won't run if one is false
-        if (options.softAsserts) {
-            if (!Array.isArray(options.softAsserts)) {
-                this.softAsserts = [options.softAsserts];
+        options.prerun = options.prerun || options.softAsserts;
+        if (options.prerun) {
+            if (!Array.isArray(options.prerun)) {
+                this.softAsserts = [options.prerun];
             } else {
-                this.softAsserts = options.softAsserts;
+                this.softAsserts = options.prerun;
             }
         } else {
             this.softAsserts = [];
         }
         
         //same as softasserts but also will not show up in help if 1 is false
-        if (options.hardAsserts) {
-            if (!Array.isArray(options.hardAsserts)) {
-                this.hardAsserts = [options.hardAsserts];
+        options.req = options.req || options.hardAsserts;
+        if (options.req) {
+            if (!Array.isArray(options.req)) {
+                this.hardAsserts = [options.req];
             } else {
-                this.hardAsserts = options.hardAsserts;
+                this.hardAsserts = options.req;
             }
         } else {
             this.hardAsserts = [];
         }
 
-        this.func = options.func || (()=>{return true;});
+        this.func = options.run || options.func || (()=>{return null;});
         this.regex = options.regex || null;
-        this.hidden = options.hidden || false;
         this.log = options.log || false;
         this.points = options.points || 0;
     }
@@ -45,49 +71,97 @@ class Command {
         return this._testRequirements(this.hardAsserts);
     }
 
-    _testSoftRequirements() {
-        return this._testRequirements(this.softAsserts);
+    _testSoftRequirements(message, args) {
+        try {
+            return this.softAsserts.every((testfunc)=>{
+                if (typeof testfunc == "function" && !testfunc(message, args)) return false;
+                else if (!testfunc) return false;
+                return true;
+            })
+        } catch (e) {
+            err(e);
+            return false;
+        }
     }
 
     _testRequirements(asserts) {
-        for (let i=0;i<asserts.length;i++) {
-            if (typeof asserts[i] == "function" && !asserts[i]()) return false;
-            else if (!asserts[i]) return false;
+        try {
+            for (let i=0;i<asserts.length;i++) {
+                if (typeof asserts[i] == "function" && !asserts[i]()) return false;
+                else if (!asserts[i]) return false;
+            }
+            return true;
+        } catch (e) {
+            err(e)
+            return false;
         }
-        return true;
     }
 
     _run(message) {
+
         let args;
         let messageString = message.content;
         let curlybracket;
         function parseMess(messageString){
             if (this.requirePrefix && messageString[0] !== this.prefix) return false;
             else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
-            if (this._testHardRequirements() && this._testSoftRequirements()) {
+            if (this.regex) args = this.regex.exec(messageString)
+            if (this._testHardRequirements()) {
+                //tests for ".command help"
                 if (!this.hidden && `${this.name} help`===messageString.toLowerCase()) {
                     if (typeof this.getLongDesc() == "string"){
-                        message.channel.send("```" + this.getLongDesc() + "```");
+                        message.channel.send("```" + this.getLongDesc() + "```").catch(err);
                     } else {
-                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())}).catch(err);
                     }
                     return true;
-                } 
-                else if (this.regex == null || (args = this.regex.exec(messageString))) {
+                }
+                else if ((this.regex == null || (args = this.regex.exec(messageString))) && this._testSoftRequirements(message, args)) {
                     if (this.log && discordbot.config && discordbot.config.botChannelID) {
                         let msg = "`" + message.author.tag + ":` " + message.cleanContent
                         discordbot.bot.channels.get(discordbot.config.botChannelID).send(msg);
                     }
-                    return this.func(message, args);
-                }
-                else if (!this.hidden && this.name===messageString.toLowerCase()) {
+                    let thiscom = this;
+                    //let start = new Date();
+                    (async ()=>{
+                        let typing_prom;
+                        if (thiscom.typing) {
+                            typing_prom = discordbot.bot.api.channels[message.channel.id].typing.post();
+                        }
+                        let return_mes = await this.func(message, args);
+                        if (typing_prom) await typing_prom;
+                        return return_mes;
+                    })().then(params=>{
+                        if (params == null) {
+                            return;
+                        } else if (!Array.isArray(params)) params = [params];
+                        message.channel.send.apply(message.channel, params)/*.then(()=>{
+                            let end = new Date();
+                            console.log(end-start)
+                        })*/.catch(e=>{
+                            if (e.code == 50035) {
+                                err(e, message);
+                                message.channel.send("`Message too large`").catch(err);
+                            } else {
+                                err(e, message);
+                                message.channel.send("`Error`").catch(err);
+                            }
+                        });
+                    }).catch(e=>{
+                        err(e, message);
+                        message.channel.send("`Error`").catch(err);
+                    }).finally(()=>{
+                    })
+                    return true;
+                //tests for ".command" if not captured by command parser
+                } else if (!this.hidden && this.name===messageString.toLowerCase()) {
                     if (typeof this.getLongDesc() == "string"){
-                        message.channel.send("```" + this.getLongDesc() + "```");
+                        message.channel.send("```" + this.getLongDesc() + "```").catch(err);
                     } else {
-                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())});
+                        message.channel.send("",{embed: new Discord.RichEmbed(this.getLongDesc())}).catch(err);
                     }
                     return true;
-                }
+                } 
             }
             return false;
         }

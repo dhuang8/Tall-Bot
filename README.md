@@ -18,32 +18,6 @@ paste token into config.json
 
 ## sv
 returns shadowverse card info
-## reminder
-returns nothing
-### .reminder (message_with_timestring) or .reminder (action) (arg) or .reminder (message) (num) (unit_of_time)
-#### message_with_timestring
-Must contain a timestring somewhere in the message. A timestring is a parsable string in some form of M/DD/YYYY h:mm am/pm est or YYYY-MM-DD h:mm am/pm est. All parts are optional but at least 1 part must exist. If it doesn't work, try moving the time string to the beginning or end or including more parts.
-#### action
-.reminder list - returns list of pending reminders
-
-.reminder cancel - cancel the latest reminder"
-
-.reminder cancel (num) - cancel a reminder using the number from ".reminder list"
-#### num unit_of_time
-set a reminder to (num) (unit_of_time) in the future. Unit of time includes: sec, min, hour, day, week, month, year. Can be 1 letter shorthand (4s) or full word (4 seconds). Must be at the end.
-#### Examples
-.reminder cancel 1 - cancels the first reminder from ".reminder list"
-
-.reminder wake up in 7 hours - sets a reminder to go off in 7 hours
-
-.reminder Tom's birthday on 12/31 - sets a reminder to go off at Dec 31 12:00am est of this year
-
-.reminder Earth will melt in 2070 - sets a reminder to go off Jan 1 2070 12:00am est
-
-.reminder 2020-08-31 12:00am jst Japan builds an anime super weapon - sets a reminder to go off Oct 31 2020 12:00am JST
-
-## cancelremindme
-cancels a remindme reminder with id
 ## ygo
 returns yu-gi-oh card data
 ## hs
@@ -225,7 +199,7 @@ translate a string to english
 ## rank
 have a trophy
 ## image
-returns the first image result. safesearch is off if the channel is nsfw
+returns the first image result. safesearch is off if the channel is nsfw. add gif to the search if you want gifs
 ## stock
 returns price and chart of stock symbol
 ## news

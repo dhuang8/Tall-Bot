@@ -3028,63 +3028,6 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
     }
 }))
 
-//datapoints: [1,1,2,3,1] or [{x:0,y:1},{x:2,y:1},{x:3,y:2}] or 
-//labels: ["xlabel1","xlabel2","xlabel3"]
-//horizontal: ["xlabel2"] (draws a horizontal line on matching xlabels)
-//ylabelcallback: (label)=>{return "$"+label}
-/*
-function createChartStream2(datapoints, labels, horizontal, ylabelcallback) {
-    
-    let annotations = horizontal.map(label=>{
-        return {
-            type: "line",
-            mode: "vertical",
-            scaleID: "x-axis-0",
-            value: label,
-            borderColor: 'rgba(255, 255, 255, 1)',
-            borderWidth: 1
-        }
-    })
-    let datasets = datapoints.map((datapoint,index)=>{
-        return {
-            data: datapoint,
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1,
-            pointRadius: 0
-        }
-    })
-    //https://www.chartjs.org/docs/latest/configuration/
-    const configuration = {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: datapoints,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                pointRadius: 0
-            }]
-        },
-        plugins: [annotation],
-        options: {
-            annotation: {
-                annotations: annotations
-            },
-            
-        }
-    };
-    const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
-        console.log(ChartJS.defaults.global)
-    });
-    const chart = canvasRenderService.renderChart(configuration);
-    const canvas = chart.canvas;
-    let PNGStream = canvas.createPNGStream();
-    PNGStream.on("end", ()=>{
-        chart.destroy();
-    })
-    return PNGStream;
-}
-*/
 function createChartStream(configuration) {
     const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
     //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
@@ -3847,7 +3790,9 @@ paste token into config.json
     }).map(cmd=>{
         let desc = `## ${cmd.name}\n`;
         if (typeof cmd.longDesc === "string") {
-            desc += cmd.longDesc.split("\n").slice(1).join("\n\n");
+            let com_desc = cmd.longDesc.split("\n");
+            if (com_desc[0] === cmd.name) com_desc = com_desc.slice(1)
+            desc += com_desc.join("\n\n");
         } else {
             desc += cmd.longDesc.description + "\n";
             desc += `### ${cmd.longDesc.title}\n`;

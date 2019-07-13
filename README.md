@@ -15,14 +15,22 @@ paste token into config.json
 
 `node discord.js` again
 ## time
-
+responds with the time in UTC, CST, EST, PST, NZST, and JST
 ## sv
+.sv (search term)
+
 returns shadowverse card info
 ## ygo
+.ygo (card_name or random)
+
 returns yu-gi-oh card data
 ## hs
+.hs (card name)
+
 returns hearthstone card data
 ## art
+.art (search_term or random)
+
 return artifact cards
 ## mtg
 returns Magic the Gathering card
@@ -37,7 +45,7 @@ returns a random card
 .mtg random
 
 ## gundam
-
+.gundam (search)
 ## t7
 returns information on a Tekken 7 character's move string
 ### .t7 __character_name__ __condition__
@@ -117,8 +125,12 @@ multiple conditions can be linked together using condition1&condition2&condition
 **.sc6 nigh hit level<m&hit level>h** - returns Nightmare moves that begin with a mid and end with a low
 
 ## sts
+.sts (card_name or relic_name)
+
 returns information on a Slay the Spire card or relic. Matches by substring
 ## price
+.price \[amount] (from_symbol) \[to_symbol]
+
 returns a 30 hour graph of the price of a foreign currency or cryptocurrency
 
 amount (optional) - the amount of from_symbol currency. Default is 1.
@@ -127,32 +139,46 @@ from_symbol - the currency symbol you are exchanging from. ex: CAD
 
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.
 ## yt
+.yt (youtube_id)
+
 plays audio from a YouTube link in a voice channel
 
 youtube_id - can either be the full YouTube URL or the unique 11 characters at the end of the URL
 ## yts
+.yts (search_turn) \[number_of_results]
+
 returns list of YouTube videos based on the search term
 
 number_of_results - the number of results to return. Default is 6.
 ## quote
+.quote (message_id or previous_nth_message)
+
 returns a link to and a quote of a past message
 
 message_id - get the id by selecting "copy id" from the settings of the message
 
 previous_nth_message - the number of messages to go back to reach the message you want to quote. 1 is the last message, 2 is the one before, etc
 ## weather
+.weather (location)
+
 returns the 8 day forecast and a chart of the temperature for the next 2 days
 
 location - can be several things like the name of a city or a zip code
 ## pt
+.pt (item)
+
 returns poe.trade based on item name or stats
 ## setpoeleague
+.setpoeleague
+
 sets your PoE league for .pt
 ## poe
 search poe wiki
 ### .poe (search)
 
 ## define
+define (term)
+
 returns urban dictionary definition
 ## roll
 rolls dice between 1 and max_num
@@ -193,14 +219,24 @@ Remove a subscription from this channel. Get the number from ".rss subs"
 Returns the latest feed
 
 ## cog
+.cog (imageurl) or .cog (emoji) or .cog while attaching an image
+
 returns a gif of the image in a spinning cogwheel
 ## translate
+.translate (string)
+
 translate a string to english
 ## rank
+.rank
+
 have a trophy
 ## image
+.image (term)
+
 returns the first image result. safesearch is off if the channel is nsfw. add gif to the search if you want gifs
 ## stock
+.stock (symbol)
+
 returns price and chart of stock symbol
 ## news
 returns news articles containing search term
@@ -225,10 +261,16 @@ returns character data
 The name to search for
 
 ## patchnotes
+.patchnotes
+
 lists recent changes
 ## 00:00am est
+(00:00)\[am or pm] (time_zone)
+
 returns the time converted to different time zones. can be anywhere in a message
 ## help
+.help
+
 returns a list of commands. respond with the number for details on a specific command
 ## stop
 stops the current song playing

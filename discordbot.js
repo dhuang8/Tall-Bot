@@ -1167,6 +1167,7 @@ commands.push(new Command({
     longDesc: `.gundam (search)`,
     log: true,
     points: 1,
+    typing: false,
     run: async (message, args) =>{
         function simplifyname(s){
             s = replaceAll(s," ","");
@@ -1232,6 +1233,7 @@ commands.push(new Command({
     testString: ".t7 ak block=1",
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "returns info on Tekken 7 moves",
     longDesc: {title:`.t7 __character_name__ __condition__`,
         description: `returns information on a Tekken 7 character's move string`,
@@ -1524,6 +1526,7 @@ commands.push(new Command({
     req: ()=>{return sc6;},
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "returns info on Soulcalibur 6 moves",
     longDesc: {title:`.sc6 __character_name__ __condition__`,
         description: `returns information about a Soulcalibur 6 character's attack string`,
@@ -1758,6 +1761,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "returns info on Slay the Spire cards and relics",
     longDesc: `.sts (card_name or relic_name)
 returns information on a Slay the Spire card or relic. Matches by substring`,
@@ -2052,6 +2056,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "returns a link and quote of a past message",
     longDesc: `.quote (message_id or previous_nth_message)
 returns a link to and a quote of a past message
@@ -2689,6 +2694,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "rolls dice",
     longDesc: {title:`.roll [(num_dice)d](max_num)[+(add)]`,
         description: `rolls dice between 1 and max_num`,
@@ -2733,6 +2739,7 @@ commands.push(new Command({
     }
 }))
 
+//add typing when using .rss add/test/list
 commands.push(new Command({
     name: "rss",
     regex: /^rss (\w+)(?: (.+))?$/i,
@@ -2955,6 +2962,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
+    typing: false,
     shortDesc: "have a trophy",
     longDesc: `.rank
 have a trophy`,
@@ -3390,6 +3398,7 @@ commands.push(new Command({
     testString: "blah blah blah 12:30am est blah blah blah",
     hidden: false,
     requirePrefix: false,
+    typing: false,
     shortDesc: "converts to different timezones",
     longDesc: `(00:00)[am or pm] (time_zone)
 returns the time converted to different time zones. can be anywhere in a message`,
@@ -3557,6 +3566,7 @@ commands.push(new Command({
     longDesc: ``,
     log: true,
     points: 1,
+    typing: false,
     func: (message, args) =>{
         let files = fs.readdirSync("animalgifs/");
         let file = files[Math.floor(Math.random() * files.length)]

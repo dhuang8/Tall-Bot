@@ -125,11 +125,17 @@ class Command {
                     //let start = new Date();
                     (async ()=>{
                         let typing_prom;
+                        let fulfilled = false;
                         if (thiscom.typing) {
-                            typing_prom = discordbot.bot.api.channels[message.channel.id].typing.post();
+                            typing_prom = discordbot.bot.api.channels[message.channel.id].typing.post().then(()=>{
+                                fulfilled = true;
+                            });
                         }
                         let return_mes = await this.func(message, args);
-                        if (typing_prom) await typing_prom;
+                        if (typing_prom) {
+                            console.log("fulfilled?", fulfilled);
+                            await typing_prom;
+                        }
                         return return_mes;
                     })().then(params=>{
                         if (params == null) {

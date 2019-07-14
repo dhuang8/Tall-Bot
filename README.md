@@ -256,9 +256,11 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
 
 ## ff14
 returns character data
-### .ff14 __character_name__
+### .ff14 __character_name__ __server_name__
 #### character_name
-The name to search for
+The name to search for.
+#### server_name
+The server which the character resides in. Not required.
 
 ## patchnotes
 .patchnotes

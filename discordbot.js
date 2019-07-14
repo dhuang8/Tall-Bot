@@ -3256,26 +3256,58 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "returns FFXIV Lodestone character data",
-    longDesc: {title:`.ff14 __character_name__`,
+    longDesc: {title:`.ff14 __character_name__ __server_name__`,
         description: `returns character data`,
         fields: [{
             name: `character_name`,
-            value: `The name to search for`
+            value: `The name to search for.`
+        }, {
+            name: `server_name`,
+            value: `The server which the character resides in. Not required.`
         }]
     },
     log: true,
     points: 1,
     func: async (message, args) =>{
+        let names = args[1].split(" ");
+        if (names.length>3) return "`Too many names. Should be .ff14 (character_name) [server_name]`";
+        
+        //https://xivapi.com/servers
+        let server = "";
+        let char_name = args[1];
+        if (names.length == 3) {
+            const servers = ["Adamantoise","Aegis","Alexander","Anima","Asura","Atomos","Bahamut","Balmung","Behemoth","Belias","Brynhildr","Cactuar","Carbuncle","Cerberus","Chocobo","Coeurl","Diabolos","Durandal","Excalibur","Exodus","Faerie","Famfrit","Fenrir","Garuda","Gilgamesh","Goblin","Gungnir","Hades","Hyperion","Ifrit","Ixion","Jenova","Kujata","Lamia","Leviathan","Lich","Louisoix","Malboro","Mandragora","Masamune","Mateus","Midgardsormr","Moogle","Odin","Omega","Pandaemonium","Phoenix","Ragnarok","Ramuh","Ridill","Sargatanas","Shinryu","Shiva","Siren","Tiamat","Titan","Tonberry","Typhon","Ultima","Ultros","Unicorn","Valefor","Yojimbo","Zalera","Zeromus","Zodiark","Spriggan","Twintania"];
+            let matches = servers.filter((server)=>{
+                return server.indexOf(names[2])>-1;
+            })
+            if (matches.length == 1) {
+                server = matches[0];
+                char_name = names[0] + " " + names[1];
+            } else if (matches.length > 1) {
+                //find server
+                return "`Server not found`";
+            } else {
+                return "`Server not found`";
+            }
+        }
+
         //https://xivapi.com/docs/Character#search
-        let response = await rp(`https://xivapi.com/character/search?name=${encodeURIComponent(args[1])}`)
+        let response = await rp(`https://xivapi.com/character/search?name=${encodeURIComponent(char_name)}&server=${server}`)
         response = JSON.parse(response);
+
+ 
 
         async function charRich(char) {
             let response = await rp(`https://xivapi.com/character/${char.ID}?data=AC,FC`)
             response = JSON.parse(response);
-            if (response.Character === null) {
-                response = await rp(`https://xivapi.com/character/${char.ID}?data=AC,FC`)
-                response = JSON.parse(response);
+            if (response.Info.Character.State == 1) {
+                return "`The character will be added to the database. Try again in a few seconds.`";
+            } else if (response.Info.Character.State == 3) {
+                return "`Character not found`";
+            } else if (response.Info.Character.State == 4) {
+                throw new Error(`Blacklisted character. ${response}`)
+            } else if (response.Info.Character.State == 5) {
+                return "`Character is private on lodestone`";
             }
             let char_data = response.Character;
             let rich = new Discord.RichEmbed()

@@ -127,9 +127,12 @@ class Command {
                         let typing_prom;
                         let fulfilled = false;
                         if (thiscom.typing) {
+                            message.channel.startTyping();
+                            /*
                             typing_prom = discordbot.bot.api.channels[message.channel.id].typing.post().then(()=>{
                                 fulfilled = true;
                             });
+                            */
                         }
                         let return_mes = await this.func(message, args);
                         if (typing_prom) {
@@ -140,11 +143,17 @@ class Command {
                     })().then(params=>{
                         if (params == null) {
                             return;
-                        } else if (!Array.isArray(params)) params = [params];
+                        } else if (!Array.isArray(params)) {
+                            params = [params];
+                        }
+                        if (thiscom.typing) {
+                            message.channel.stopTyping();
+                        }
                         message.channel.send.apply(message.channel, params)/*.then(()=>{
                             let end = new Date();
                             console.log(end-start)
                         })*/.catch(e=>{
+                            message.channel.stopTyping();
                             if (e.code == 50035) {
                                 err(e, message);
                                 message.channel.send("`Message too large`").catch(err);
@@ -157,6 +166,7 @@ class Command {
                         err(e, message);
                         message.channel.send("`Error`").catch(err);
                     }).finally(()=>{
+                        //message.channel.stopTyping()
                     })
                     return true;
                 //tests for ".command" if not captured by command parser

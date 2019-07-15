@@ -3256,29 +3256,30 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "returns FFXIV Lodestone character data",
-    longDesc: {title:`.ff14 __character_name__ __server_name__`,
+    longDesc: {title:`.ff14 __character_name__ __server_name_or_data_center__`,
         description: `returns character data`,
         fields: [{
             name: `character_name`,
             value: `The name to search for.`
         }, {
-            name: `server_name`,
-            value: `The server which the character resides in. Not required.`
+            name: `server_name or data_center`,
+            value: `The server or data center which the character resides in. Not required.`
         }]
     },
     log: true,
     points: 1,
     func: async (message, args) =>{
         let names = args[1].split(" ");
-        if (names.length>3) return "`Too many names. Should be .ff14 (character_name) [server_name]`";
+        if (names.length>3) return "`Incorrect arguments. Should be .ff14 (character_name) [server_name]`";
         
         //https://xivapi.com/servers
+        //https://xivapi.com/servers/dc
         let server = "";
         let char_name = args[1];
         if (names.length == 3) {
-            const servers = ["Adamantoise","Aegis","Alexander","Anima","Asura","Atomos","Bahamut","Balmung","Behemoth","Belias","Brynhildr","Cactuar","Carbuncle","Cerberus","Chocobo","Coeurl","Diabolos","Durandal","Excalibur","Exodus","Faerie","Famfrit","Fenrir","Garuda","Gilgamesh","Goblin","Gungnir","Hades","Hyperion","Ifrit","Ixion","Jenova","Kujata","Lamia","Leviathan","Lich","Louisoix","Malboro","Mandragora","Masamune","Mateus","Midgardsormr","Moogle","Odin","Omega","Pandaemonium","Phoenix","Ragnarok","Ramuh","Ridill","Sargatanas","Shinryu","Shiva","Siren","Tiamat","Titan","Tonberry","Typhon","Ultima","Ultros","Unicorn","Valefor","Yojimbo","Zalera","Zeromus","Zodiark","Spriggan","Twintania"];
+            const servers = ["_dc_Aether","_dc_Chaos","_dc_Crystal","_dc_Elemental","_dc_Gaia","_dc_Light","_dc_Mana","_dc_Primal","Adamantoise","Aegis","Alexander","Anima","Asura","Atomos","Bahamut","Balmung","Behemoth","Belias","Brynhildr","Cactuar","Carbuncle","Cerberus","Chocobo","Coeurl","Diabolos","Durandal","Excalibur","Exodus","Faerie","Famfrit","Fenrir","Garuda","Gilgamesh","Goblin","Gungnir","Hades","Hyperion","Ifrit","Ixion","Jenova","Kujata","Lamia","Leviathan","Lich","Louisoix","Malboro","Mandragora","Masamune","Mateus","Midgardsormr","Moogle","Odin","Omega","Pandaemonium","Phoenix","Ragnarok","Ramuh","Ridill","Sargatanas","Shinryu","Shiva","Siren","Tiamat","Titan","Tonberry","Typhon","Ultima","Ultros","Unicorn","Valefor","Yojimbo","Zalera","Zeromus","Zodiark","Spriggan","Twintania"];
             let matches = servers.filter((server)=>{
-                return server.indexOf(names[2])>-1;
+                return server.toLowerCase().indexOf(names[2].toLowerCase())>-1;
             })
             if (matches.length == 1) {
                 server = matches[0];
@@ -3294,8 +3295,6 @@ commands.push(new Command({
         //https://xivapi.com/docs/Character#search
         let response = await rp(`https://xivapi.com/character/search?name=${encodeURIComponent(char_name)}&server=${server}`)
         response = JSON.parse(response);
-
- 
 
         async function charRich(char) {
             let response = await rp(`https://xivapi.com/character/${char.ID}?data=AC,FC`)
@@ -3319,11 +3318,49 @@ commands.push(new Command({
             //https://xivapi.com/race
             let races = ["Hyur", "Elezen", "Lalafell", "Miqo'te", "Roegadyn", "Au Ra", "Hrothgar", "Viera"]
             desc_lines.push(`**${genders[char_data.Gender-1]} ${races[char_data.Race-1]}**`)
-            if (response.FreeCompany) desc_lines.push(`Free Company: [${response.FreeCompany.GrandCompany}](https://na.finalfantasyxiv.com/lodestone/freecompany/${response.FreeCompany.ID}/)`)
-            if (response.Achievements) desc_lines.push(`Achievement Points: ${response.Achievements.Points}`);
-            if (char_data.Minions) desc_lines.push(`Minions: ${char_data.Minions.length}`);
-            if (char_data.Mounts) desc_lines.push(`Mounts: ${char_data.Mounts.length}`);
-            if (char_data.Bio) desc_lines.push(`Character Profile: ${escapeMarkdownText(char_data.Bio)}`);
+
+            if (char_data.ActiveClassJob) {
+                //https://xivapi.com/ClassJob
+                const jobs = ["Adventurer","Gladiator","Pugilist","Marauder","Lancer","Archer","Conjurer","Thaumaturge","Carpenter","Blacksmith","Armorer","Goldsmith","Leatherworker","Weaver","Alchemist","Culinarian","Miner","Botanist","Fisher","Paladin","Monk","Warrior","Dragoon","Bard","White Mage","Black Mage","Arcanist","Summoner","Scholar","Rogue","Ninja","Machinist","Dark Knight","Astrologian","Samurai","Red Mage","Blue Mage","Gunbreaker","Dancer"]
+                //const job_data = JSON.parse(await rp(`https://xivapi.com/ClassJob/${char_data.ActiveClassJob.JobID}?columns=NameEnglish`));
+                //const job = job_data.NameEnglish;
+                desc_lines.push(`Level ${char_data.ActiveClassJob.Level} ${jobs[char_data.ActiveClassJob.JobID]}`);
+            }
+
+            if (char_data.GearSet.Gear) {
+                const slots = ["Body","Bracelets","Earrings","Feet","Hands","Head","Legs","MainHand","Necklace","OffHand","Ring1","Ring2","Waist"]
+                let item_ids = [];
+                slots.forEach(slot=>{
+                    if (char_data.GearSet.Gear[slot]) item_ids.push(char_data.GearSet.Gear[slot].ID);
+                })
+                let post_body = {
+                    "indexes": "item",
+                    "columns": "LevelItem,EquipSlotCategory",
+                    "body": {
+                        "query": {
+                            "ids": {
+                                "values": item_ids
+                            }
+                        },
+                        "from": 0,
+                        "size": 20
+                    }
+                }
+                let results = JSON.parse(await rp.post("https://xivapi.com/search").form(JSON.stringify(post_body))).Results;
+                let total = results.reduce((sum, item)=>{
+                    if (item.EquipSlotCategory.OffHand != -1) {
+                        return sum + item.LevelItem;
+                    } else {
+                        return sum + item.LevelItem*2;                        
+                    }
+                },0)
+                desc_lines.push(`**Average Item Level**: ${Math.round(total/13*100)/100}`);
+            }
+            if (response.FreeCompany) desc_lines.push(`**Free Company**: **[${response.FreeCompany.Name}](https://na.finalfantasyxiv.com/lodestone/freecompany/${response.FreeCompany.ID}/)**`)
+            if (response.Achievements) desc_lines.push(`**Achievement Points**: ${response.Achievements.Points}`);
+            if (char_data.Minions) desc_lines.push(`**Minions**: ${char_data.Minions.length}`);
+            if (char_data.Mounts) desc_lines.push(`**Mounts**: ${char_data.Mounts.length}`);
+            if (char_data.Bio) desc_lines.push(`**Character Profile**: ${escapeMarkdownText(char_data.Bio)}`);
             rich.setDescription(desc_lines.join("\n"))
             return rich;
         }

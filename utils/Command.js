@@ -153,16 +153,21 @@ class Command {
                             let end = new Date();
                             console.log(end-start)
                         })*/.catch(e=>{
-                            message.channel.stopTyping();
+                            if (thiscom.typing) {
+                                message.channel.stopTyping();
+                            }
                             if (e.code == 50035) {
                                 err(e, message);
-                                message.channel.send("`Message too large`").catch(err);
+                                message.channel.send("`Error`").catch(err);
                             } else {
                                 err(e, message);
                                 message.channel.send("`Error`").catch(err);
                             }
                         });
                     }).catch(e=>{
+                        if (thiscom.typing) {
+                            message.channel.stopTyping();
+                        }
                         err(e, message);
                         message.channel.send("`Error`").catch(err);
                     }).finally(()=>{

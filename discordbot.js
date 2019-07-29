@@ -1414,7 +1414,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                             return parseConditionArgs("startupframe",":",b[1]);
                         } else {
                             return (arg1, arg2)=>{
-                                return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2);
+                                return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2) || parseConditionArgs("engrish",":",cur)(arg1, arg2);
                                 //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
                             }
                         }
@@ -3479,6 +3479,7 @@ lists recent changes`,
     run: (message, args) =>{
         return `\`v7.28
 • .ff14 will now explain errors and estimate level, item level, and class job.
+• Added Engrish Notes to the default search of t7
         
 v7.11
 • Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.

@@ -146,7 +146,7 @@ class Command {
                         } else if (!Array.isArray(params)) {
                             params = [params];
                         }
-                        if (thiscom.typing) {
+                        if (thiscom.typing || params.stopTyping) {
                             message.channel.stopTyping();
                         }
                         message.channel.send.apply(message.channel, params)/*.then(()=>{

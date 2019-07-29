@@ -33,7 +33,7 @@ class RSSManager {
                             }
                             return false;
                         }).map((item, index)=>{
-                            return `**[${item.title}](${item.link})**`
+                            return `**[${Discord.escapeMarkdown(item.title)}](${Discord.escapeMarkdown(item.link)})**`
                         });
                         if (desc.length>0) {
                             desc = desc.join("\n\n");

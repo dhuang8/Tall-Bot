@@ -274,5 +274,3 @@ returns the time converted to different time zones. can be anywhere in a message
 .help
 
 returns a list of commands. respond with the number for details on a specific command
-## stop
-stops the current song playing

@@ -104,48 +104,6 @@ function err(error, loadingMessage, content) {
         console.error(error);
     }
 }
-    
-function requestpromise (link) {
-    return new Promise((resolve, reject) => {
-        request(link, function (error, response, body) {
-            try {
-                if (error) reject(error);
-                else if (response.statusCode < 200 || response.statusCode >= 300) {
-                    try {
-                        let data = JSON.parse(body);
-                        reject(new Error(body));
-                    } catch (e) {
-                        reject(new Error(`${response.statusCode} ${body}`))
-                    }
-                }
-                //if (response.statusCode < 200 || response.statusCode >= 300) reject(response)
-                resolve(body);
-            }
-            catch (e){
-                console.error(error,response,body);
-                reject(e);
-            }
-        })
-    })
-}
-
-function requestpromiseheader (link) {
-    return new Promise((resolve, reject) => {
-        request(link, function (error, response, body) {
-            if (error) reject(error);
-            if (response.statusCode < 200 || response.statusCode >= 303) {
-                try {
-                    body = JSON.parse(body);
-                    reject(body.text);
-                } catch (e) {
-                    reject(`${response.statusCode} ${body}`)
-                }
-            }
-            //if (response.statusCode < 200 || response.statusCode >= 300) reject(response)
-            resolve(response);
-        })
-    })
-}
 
 function htmldecode(a) {
     a = replaceAll(a, "&#39;", "'")
@@ -322,8 +280,8 @@ function escapeMarkdownText(str, noemotes=true) {
 }
 
 let rss;
-fs.readFile("./config.json", "utf8", (err,data) => {
-    if (err && err.code === "ENOENT") {
+fs.readFile("./config.json", "utf8", (e,data) => {
+    if (e && e.code === "ENOENT") {
         fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
             console.error(e);
         })
@@ -333,13 +291,13 @@ fs.readFile("./config.json", "utf8", (err,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v7.11 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v7.28 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v7.11 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v7.28 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -366,17 +324,9 @@ fs.readFile("./config.json", "utf8", (err,data) => {
                 (async ()=>{
                     return await weather("nyc");
                 })().then(params=>{
-                    bot.channels.get(config.weatherChannelID).send.apply(bot.channels.get(config.weatherChannelID), params).catch(e=>{
-                        if (e.code == 50035) {
-                            message.channel.send("`Message too large`").catch(err);
-                        } else {
-                            err(e);
-                            message.channel.send("`Error`").catch(err);
-                        }
-                    });
+                    bot.channels.get(config.weatherChannelID).send(params).catch(err);
                 }).catch(e=>{
                     err(e);
-                    message.channel.send("`Error`").catch(err);
                 })
             }, null, true, 'America/New_York');
             
@@ -874,7 +824,7 @@ returns hearthstone card data`,
     log: true,
     points: 1,
     run: async (message, args)=>{
-        let body = await requestpromise({
+        let body = await rp({
             url: `https://omgvamp-hearthstone-v1.p.mashape.com/cards/search/${encodeURIComponent(args[1])}`,
             headers: {
                 "X-Mashape-Key": config.api.hearthstone
@@ -1000,7 +950,7 @@ return artifact cards`,
             let price;
             let link;
             try {
-                let pricebody = await requestpromise("https://steamcommunity.com/market/priceoverview/?appid=583950&currency=1&market_hash_name=1" + card.card_id)
+                let pricebody = await rp("https://steamcommunity.com/market/priceoverview/?appid=583950&currency=1&market_hash_name=1" + card.card_id)
                 let pricedata = JSON.parse(pricebody);
                 if (pricedata.success) {
                     price = pricedata.lowest_price;
@@ -1804,7 +1754,7 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
 
 //todo: .br .gw2api
 let coin = null;
-requestpromise("https://www.cryptocompare.com/api/data/coinlist/").then(body => {
+rp("https://www.cryptocompare.com/api/data/coinlist/").then(body => {
     try {
         coin = JSON.parse(body);
     } catch (e) {
@@ -1865,15 +1815,6 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
                     borderWidth: 1,
                     pointRadius: 0
                 }]
-            },
-            options: {
-                scales: {
-                    yAxes:[{
-                        ticks: {
-                            callback: (value) => '$' + value
-                        }
-                    }]
-                }
             }
         };
         let stream = createChartStream(configuration);
@@ -2108,7 +2049,7 @@ commands.push(new Command({
 }))
 
 async function weather(location_name){
-    let body = await requestpromise(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
+    let body = await rp(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
     let data = JSON.parse(body);
     for (var i = 0; i < data.RESULTS.length; i++) {
         if (data.RESULTS[i].lat != "-9999.000000") break;
@@ -2117,7 +2058,7 @@ async function weather(location_name){
     let locName = data.RESULTS[i].name;
     let lat = data.RESULTS[i].lat;
     let lon = data.RESULTS[i].lon;
-    body = await requestpromise(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
+    body = await rp(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
     data = JSON.parse(body);
     let tM;
     (data.flags.units == "us") ? tM = "°F": tM = "°C";
@@ -2258,7 +2199,7 @@ returns poe.trade based on item name or stats`,
             let stmt = sql.prepare("SELECT poeleague FROM users WHERE user_id = ?;")
             let poeleague = stmt.get(message.author.id).poeleague
             if (args[1].split("\n").length < 3) {
-                poelinkid = await requestpromiseheader({
+                poelinkid = await rp({
                     method: 'POST',
                     url: "http://poe.trade/search",
                     followRedirect: false,
@@ -2416,7 +2357,7 @@ returns poe.trade based on item name or stats`,
                     }
                 }
                 
-                poelinkid = await requestpromiseheader({
+                poelinkid = await rp({
                     method: 'POST',
                     url: "http://poe.trade/search",
                     followRedirect: false,
@@ -2431,7 +2372,7 @@ returns poe.trade based on item name or stats`,
             let link = poelinkid.headers.location;
             let body;
             try {
-                body = await requestpromise({
+                body = await rp({
                     method: 'POST',
                     url: link,
                     //proxy: 'http://localhost:8888',
@@ -2473,7 +2414,7 @@ returns poe.trade based on item name or stats`,
         async function setLeague(top, loadingmessage, message, checked){
             let body;
             try {
-                body = await requestpromise("http://api.pathofexile.com/leagues?type=main&compact=0");
+                body = await rp("http://api.pathofexile.com/leagues?type=main&compact=0");
             } catch (e) {
                 return ["`Error loading PoE API`"]
             }
@@ -2540,7 +2481,7 @@ sets your PoE league for .pt`,
     run: async (message, args) =>{
         let body;
         try {
-            body = await requestpromise("http://api.pathofexile.com/leagues?type=main&compact=0");
+            body = await rp("http://api.pathofexile.com/leagues?type=main&compact=0");
         } catch (e) {
             return ["`Error loading PoE API`"]
         }
@@ -2670,7 +2611,7 @@ commands.push(new Command({
 returns urban dictionary definition`,
     run: async (message, args) =>{
         let num = parseInt(args[2]) || 0;
-        let data = JSON.parse(await requestpromise(`http://api.urbandictionary.com/v0/define?term=${encodeURIComponent(args[1])}`));
+        let data = JSON.parse(await rp(`http://api.urbandictionary.com/v0/define?term=${encodeURIComponent(args[1])}`));
         if (data.list[num]) {
             let rich = new Discord.RichEmbed();
             rich.setTitle(escapeMarkdownText(data.list[num].word));
@@ -2748,6 +2689,7 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     log: true,
+    typing: false,
     points: 1,
     shortDesc: "returns posted feeds",
     longDesc: {title:`.rss (action) (args)`,
@@ -2820,20 +2762,42 @@ returns a gif of the image in a spinning cogwheel`,
                 }
             }
             return r.join(sep || '-');
-        }
-        let image;
-        if (message.attachments.size>0) {
-            image = await loadImage(message.attachments.first().url);
-        } else if (args[1].length<7) {
-            image = await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`);
-        } else if (/^<:.+:.+>$/.test(args[1])) {
-            let emoji = bot.emojis.find(emoji=>{
-                return emoji.toString() == args[1];
-            })
-            image = await loadImage(emoji.url);
-        } else {
-            image = await loadImage(args[1]);
-        }
+        };
+        async function getImage (s) {
+            //if (args[1].includes('%')) args[1] = decodeURIComponent(args[1]);
+            const emoji_match = args[1].match(/<?(a)?:?(\w{2,32}):(\d{17,19})>?/);
+            if (emoji_match) {
+                let emoji_object = { animated: Boolean(emoji_match[1]), name: emoji_match[2], id: emoji_match[3] };
+                if (emoji_object.animated) return {error: '`Cannot be an animated emoji`'};
+                let emoji = new Discord.Emoji(bot, emoji_object);
+                return {image: await loadImage(emoji.url)};
+            }
+            if (message.attachments.size>0) {
+                return {image: await loadImage(message.attachments.first().url)};
+            }
+            if (args[1].length<7) {
+                let url = `https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`
+                let head = await rp.head(url);
+                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                if (validmime.indexOf(head['content-type']) > -1) {
+                    return {image: await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`)};
+                }
+            }
+            try {
+                let url = new URL(args[1]);
+                let head = await rp.head(args[1]);
+                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                if (validmime.indexOf(head['content-type']) > -1) {
+                    return {image: await loadImage(args[1])};
+                }
+            } catch (e) {
+            }
+            return {error: "`Must be a non-animated emoji, URL, or contain an uploaded image`"};
+        };
+        let image_obj = await getImage(args[1]);
+        if (image_obj.error) return image_obj.error;
+        let image = image_obj.image;
+        
         let size = 320
         let transparentcolor="#fffffc"
         let cogcolor="#b0c4de"
@@ -2914,6 +2878,113 @@ returns a gif of the image in a spinning cogwheel`,
         return attach;
     }
 }))
+
+/*
+commands.push(new Command({
+    name: "spin",
+    regex: /^spin(?: (.+))?$/i,
+    prefix: ".",
+    testString: ".spin \uD83D\uDE10",
+    hidden: false,
+    requirePrefix: true,
+    log: true,
+    points: 1,
+    shortDesc: "turns image into a spinning gif",
+    longDesc: `.spin (imageurl) or .spin (emoji) or .spin, while attaching an image
+returns a gif of the image spinning`,
+    run: async (message, args) =>{
+        function toCodePoint(unicodeSurrogates, sep) {
+            var
+            r = [],
+            c = 0,
+            p = 0,
+            i = 0;
+            while (i < unicodeSurrogates.length) {
+                c = unicodeSurrogates.charCodeAt(i++);
+                if (p) {
+                    r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+                    p = 0;
+                } else if (0xD800 <= c && c <= 0xDBFF) {
+                    p = c;
+                } else {
+                    r.push(c.toString(16));
+                }
+            }
+            return r.join(sep || '-');
+        };
+        async function getImage (s) {
+            //if (args[1].includes('%')) args[1] = decodeURIComponent(args[1]);
+            const emoji_match = args[1].match(/<?(a)?:?(\w{2,32}):(\d{17,19})>?/);
+            if (emoji_match) {
+                let emoji_object = { animated: Boolean(emoji_match[1]), name: emoji_match[2], id: emoji_match[3] };
+                if (emoji_object.animated) return {error: '`Cannot be an animated emoji`'};
+                let emoji = new Discord.Emoji(bot, emoji_object);
+                return {image: await loadImage(emoji.url)};
+            }
+            if (message.attachments.size>0) {
+                return {image: await loadImage(message.attachments.first().url)};
+            }
+            if (args[1].length<7) {
+                let url = `https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`
+                let head = await rp.head(url);
+                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                if (validmime.indexOf(head['content-type']) > -1) {
+                    return {image: await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`)};
+                }
+            }
+            try {
+                let url = new URL(args[1]);
+                let head = await rp.head(args[1]);
+                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                if (validmime.indexOf(head['content-type']) > -1) {
+                    return {image: await loadImage(args[1])};
+                }
+            } catch (e) {
+            }
+            return {error: "`Must be a non-animated emoji, URL, or contain an uploaded image`"};
+        };
+        let image_obj = await getImage(args[1]);
+        if (image_obj.error) return image_obj.error;
+        let image = image_obj.image;
+        
+        let size = 320;
+        let transparentcolor="#fffffc";
+        const encoder = new GIFEncoder(size, size);
+        let stream = encoder.createReadStream();
+        encoder.start();
+        encoder.setRepeat(0);   // 0 for repeat, -1 for no-repeat
+        encoder.setDelay(1000/60*2);  // frame delay in ms
+        encoder.setQuality(10); // image quality. 10 is default.
+        encoder.setTransparent(transparentcolor); //
+        const canvas = createCanvas(size, size);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = transparentcolor;
+
+        function spin(angle) {
+            ctx.restore();
+            ctx.fillStyle = transparentcolor;
+            ctx.fillRect(0, 0, 320, 320);
+            ctx.translate(320/2, 320/2);
+            ctx.rotate(angle*Math.PI/180);
+            ctx.translate(-320/2, -320/2);
+            ctx.drawImage(image,0,0,320,320)
+            encoder.addFrame(ctx);
+        }
+
+        async function animate(frames) {
+            for (let i=0;i<frames;i++) {
+                await spin(360/frames);
+            }
+        }
+
+        await animate(40);
+
+        encoder.finish();
+        let attach = new Discord.MessageAttachment(stream, "cog.gif");
+        return attach;
+    }
+}))
+*/
 
 commands.push(new Command({
     name: "translate",
@@ -3007,7 +3078,7 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
         //args[1] = encodeURIComponent(args[1]);
         let safe = message.channel.nsfw?"":"&safe=active"
         //https://developers.google.com/custom-search/v1/cse/list
-        let urlpromise = await requestpromise(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`)
+        let urlpromise = await rp(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`)
         let data=JSON.parse(urlpromise)
         let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
         let extension = [".png",".jpg",".bmp",".gif"]
@@ -3056,7 +3127,11 @@ function createChartStream(configuration) {
         }
         ChartJS.defaults.line.scales.yAxes[0].ticks = {
             callback: (value) => {
-                if (value % 1 == 0) return '$' + value;
+                if (value % 1 == 0) {
+                    return '$' + value
+                } else if (value < .01) {
+                    return '$' + value;
+                }
                 return '$' + value.toFixed(2);
             },
             fontStyle: "bold",
@@ -3402,7 +3477,10 @@ lists recent changes`,
     points: 1,
     typing: false,
     run: (message, args) =>{
-        return `\`v7.11
+        return `\`v7.28
+• .ff14 will now explain errors and estimate level, item level, and class job.
+        
+v7.11
 • Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.
 • Unescaped text for yts results
 • Updated to library to latest version. Something is bound to break.
@@ -3441,7 +3519,7 @@ commands.push(new Command({
     typing: false,
     run: async (message, args) =>{
         let search = encodeURIComponent(args[1]);
-        let urlpromise = requestpromise('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
+        let urlpromise = rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
         let body = await urlpromise;
 
         let data = JSON.parse(body);
@@ -3563,8 +3641,8 @@ commands.push(new Command({
             before: message.id
         })
         let thismsg = thismsgs.first();
-        if (thismsg.content == "") return new Discord.Attachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
-        else if (thismsg.author.id === message.author.id) return new Discord.Attachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
+        if (thismsg.content == "") return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
+        else if (thismsg.author.id === message.author.id) return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
         else return thismsg.content.toUpperCase();
     }
 }))
@@ -3779,25 +3857,27 @@ updates script`,
     points: 0,
     typing: true,
     prerun: (message) => {return message.author.id === config.adminID},
-    func: (message, args) =>{
+    run: (message, args) =>{
         if (args[1]) {
-            execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
-                if (e) {
-                    message.channel.send("`Error`")
-                    err(e)
-                } else {
-                    message.channel.send(`\`${stdout} ${stderr}\``)
-                }
-            })
+            return await (new Promise((res,rej) => {
+                execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
+                    if (e) {
+                        rej(e)
+                    } else {
+                        res(`\`${stdout} ${stderr}\``);
+                    }
+                })
+            }))
         } else {
-            execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
-                if (e) {
-                    message.channel.send("`Error`")
-                    err(e)
-                } else {
-                    message.channel.send(`\`${stdout} ${stderr}\``)
-                }
-            })
+            return await (new Promise((res,rej) => {
+                execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
+                    if (e) {
+                        rej(e)
+                    } else {
+                        res(`\`${stdout} ${stderr}\``);
+                    }
+                })
+            }))
         }
         return null;
     }
@@ -3843,7 +3923,7 @@ commands.push(new Command({
     regex: /^stop/i,
     prefix: ".",
     testString: "",
-    hidden: false,
+    hidden: true,
     requirePrefix: false,
     shortDesc: "stops the current song playing",
     longDesc: `stop

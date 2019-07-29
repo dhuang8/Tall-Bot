@@ -3860,7 +3860,7 @@ updates script`,
     prerun: (message) => {return message.author.id === config.adminID},
     run: (message, args) =>{
         if (args[1]) {
-            return await (new Promise((res,rej) => {
+            return (new Promise((res,rej) => {
                 execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
                     if (e) {
                         rej(e)
@@ -3870,7 +3870,7 @@ updates script`,
                 })
             }))
         } else {
-            return await (new Promise((res,rej) => {
+            return (new Promise((res,rej) => {
                 execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
                     if (e) {
                         rej(e)

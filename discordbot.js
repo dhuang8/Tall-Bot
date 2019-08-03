@@ -1788,7 +1788,7 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         let body = await rp(`https://min-api.cryptocompare.com/data/histominute?fsym=${encodeURIComponent(from)}&tsym=${encodeURIComponent(to)}&limit=144&aggregate=10`)
         let res = JSON.parse(body);
         if (res.Response && res.Response === "Error") {
-            return "`"+res.Response+"`";
+            return "`"+res.Message+"`";
         }
 
         let datapoints = res.Data.map(data=>{
@@ -3400,6 +3400,7 @@ commands.push(new Command({
                 //const job_data = JSON.parse(await rp(`https://xivapi.com/ClassJob/${char_data.ActiveClassJob.JobID}?columns=NameEnglish`));
                 //const job = job_data.NameEnglish;
                 desc_lines.push(`Level ${char_data.ActiveClassJob.Level} ${jobs[char_data.ActiveClassJob.JobID]}`);
+                console.log(char_data.ActiveClassJob.JobID)
             }
 
             if (char_data.GearSet.Gear) {

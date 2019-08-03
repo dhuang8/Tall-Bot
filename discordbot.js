@@ -2095,16 +2095,16 @@ async function weather(location_name){
 
     let hourdata = data.hourly.data;
 
-    let temp_datapoints = hourdata.map(data=>{
-        return data.temperature;
+    let temp_datapoints = hourdata.map(hour=>{
+        return hour.temperature;
     })
 
-    let apparent_temp_datapoints = hourdata.map(data=>{
-        return data.apparentTemperature;
+    let apparent_temp_datapoints = hourdata.map(hour=>{
+        return hour.apparentTemperature;
     })
 
-    let labels = hourdata.map(data=>{
-        let thisMoment = moment.tz(data.time * 1000, data.timezone);
+    let labels = hourdata.map(hour=>{
+        let thisMoment = moment.tz(hour.time * 1000, data.timezone);
         if (thisMoment.minute() === 0 && parseInt(thisMoment.hour())%6 == 0) {
             if (thisMoment.hour() != 0) {
                 return thisMoment.format("ha");

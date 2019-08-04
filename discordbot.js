@@ -3528,7 +3528,7 @@ commands.push(new Command({
         if (data.items.length<1) return `\`No videos found.\``;
         const voiceChannel = message.member&&message.member.voice?message.member.voice.channel:null;
         if (!voiceChannel) {
-            return [`${escapeMarkdownText(unescape(data.items[0].snippet.title))}\nhttps://youtu.be/${data.items[0].id.videoId}`];
+            return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];
         } else {
             let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {                                    
                 filter: 'audioonly',

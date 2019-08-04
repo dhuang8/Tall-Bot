@@ -3542,7 +3542,7 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "00:00am est",
-    regex: /(\d{1,2}):?(\d{2})? ?([ap]m)? ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt|gmt)/i,
+    regex: /(?:^|[^a-zA-Z0-9])(\d{1,2}):?(\d{2})? ?([ap]m)? ?(est|cst|pst|nzdt|jst|utc|edt|cdt|pdt|gmt)(?:$|[^a-zA-Z0-9])/i,
     prefix: "",
     testString: "blah blah blah 12:30am est blah blah blah",
     hidden: false,

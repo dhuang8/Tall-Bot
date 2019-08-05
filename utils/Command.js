@@ -157,7 +157,7 @@ class Command {
                                 message.channel.stopTyping();
                             }
                             if (e.code == 50035) {
-                                err(e, message);
+                                err(e);
                                 message.channel.send("`Error`").catch(err);
                             } else {
                                 err(e, message);

@@ -380,6 +380,7 @@ commands.push(new Command({
             if (message.mentions.users.get(bot.user.id)) {
                 msg += bot.users.get(config.adminID)
             }
+            if (msg.length>2000) msg = msg.slice(0,1997) + "...";
             guildchan.send(msg);
         })().catch(e=>{
             console.error(e);
@@ -451,7 +452,7 @@ commands.push(new Command({
 }))
 commands.push(new Command({
     name: "^",
-    regex: /^\^$/,
+    regex: /^\^+$/,
     shortDesc: "responds with ^",
     prefix: "",
     testString: "^",
@@ -460,7 +461,7 @@ commands.push(new Command({
     typing: false,
     points: 1,
     run: (message, args)=>{
-        return "^";
+        return "^".repeat(args[0].length+1).slice(0,2000);
     }
 }))
 commands.push(new Command({

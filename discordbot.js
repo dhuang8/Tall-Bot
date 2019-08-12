@@ -366,7 +366,7 @@ commands.push(new Command({
             let msgchannel = message.channel.id;
             let guildcat = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgguild && chan.type=="category");
             if (!guildcat) {
-                guildcat = await bot.guilds.get(config.guildID).channels.create(msgguild,"category");
+                guildcat = await bot.guilds.get(config.guildID).channels.create(msgguild,{type:"category"});
             }
             let guildchan = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgchannel && chan.type=="text");
             if (!guildchan) {
@@ -1032,6 +1032,12 @@ commands.push(new Command({
 
         function replaceIcons(text) {
             let icons = {
+                "{R/G}": `<:mtg_ur:609868515255517215>`,
+                "{U/R}": `<:mtg_ur:609868528182493186>`,
+                "{R/W}": `<:mtg_rw:609867524061921320>`,
+                "{W/B}": `<:mtg_wb:609867910772424748>`,
+                "{B/R}": `<:mtg_br:609867020770607104>`,
+                "{B/G}": `<:mtg_bg:609860420127424518>`,
                 "{E}": `<:mtg_e:584109084861530132>`,
                 "{W}": `<:mtg_w:584108894595448970>`,
                 "{U}": `<:mtg_u:584108894922735629>`,
@@ -1039,7 +1045,7 @@ commands.push(new Command({
                 "{R}": `<:mtg_r:584108894524276746>`,
                 "{G}": `<:mtg_g:584108863607930881>`,
                 "{B}": `<:mtg_b:584108877440876544>`,
-                "{C}": `<:mtg_b:584131157206237184>`,
+                "{C}": `<:mtg_c:584131157206237184>`,
                 "{X}": `:regional_indicator_x:`,
                 "{1}": `:one:`,
                 "{2}": `:two:`,
@@ -3526,7 +3532,7 @@ commands.push(new Command({
         let body = await urlpromise;
 
         let data = JSON.parse(body);
-        if (data.items.length<1) return `\`No videos found.\``;
+        if (data.items.length<1) return `\`No videos found\``;
         const voiceChannel = message.member&&message.member.voice?message.member.voice.channel:null;
         if (!voiceChannel) {
             return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];

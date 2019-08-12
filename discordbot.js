@@ -3184,7 +3184,7 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
             throw e;
         }
 
-        let data=JSON.parse(urlpromise)
+        let data= urlpromise;
         let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
         let extension = [".png",".jpg",".bmp",".gif"]
         if (data.items && data.items.length>0) {
@@ -3593,7 +3593,7 @@ lists recent changes`,
 07-28
 • .ff14 will now explain errors and estimate level, item level, and class job.
 • Added Engrish Notes to the default search of t7
-        
+
 07-11
 • Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.\``
     }

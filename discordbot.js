@@ -3085,7 +3085,18 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
         //args[1] = encodeURIComponent(args[1]);
         let safe = message.channel.nsfw?"":"&safe=active"
         //https://developers.google.com/custom-search/v1/cse/list
-        let urlpromise = await rp(`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`)
+        try {
+            let urlpromise = await rp({
+                url:`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`,
+                json: true
+            })
+        } catch (e) {
+            if (e.response && e.response.body && e.response.body.error && e.response.body.error.errors[0] && e.response.body.error.errors[0].reason && e.response.body.error.errors[0].reason === "dailyLimitExceeded") {
+                return "`Try again tomorrow`";
+            }
+            throw e;
+        }
+
         let data=JSON.parse(urlpromise)
         let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
         let extension = [".png",".jpg",".bmp",".gif"]

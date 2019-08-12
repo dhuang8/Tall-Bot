@@ -291,13 +291,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v7.28 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v8.12 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v7.28 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v8.12 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -319,6 +319,9 @@ fs.readFile("./config.json", "utf8", (e,data) => {
             })                
         })
         bot.login(config.token).catch(console.error);
+        new CronJob('0 0 0 * * 0', function() {
+            sql.prepare("UPDATE users SET points=points - points/10;").run();
+        }, null, true, 'America/New_York');
         if (config.weatherChannelID) {
             new CronJob('0 0 8 * * *', function() {
                 (async ()=>{
@@ -1102,6 +1105,83 @@ commands.push(new Command({
     }
 }))
 
+let teppen = null;        
+fs.readFile("./data/teppen.json", 'utf8', function (e, data) {
+    if (e) {
+        console.error("Teppen data not found");
+    } else {
+        teppen = JSON.parse(data);
+    }
+})
+
+commands.push(new Command({
+    name: "teppen",
+    regex: /^tep(?:pen)? (.+)$/i,
+    prefix: ".",
+    testString: ".teppen jill",
+    hidden: false,
+    requirePrefix: true,
+    req: ()=>{return teppen;},
+    shortDesc: "search for TEPPEN cards",
+    longDesc: `.teppen (search)`,
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) =>{
+        function simplifyname(s){
+            s = s.replace(/ /g,"");
+            s = s.replace(/-/g,"");
+            s = s.replace(/\./g,"");
+            s = s.toLowerCase();
+            return s;
+        }
+        function createRich(card) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(card.Name);
+            let desclines = [`**ID:** ${card["No."]}`];
+            if (card.Type) desclines.push(`**Type:** ${card.Type}`);
+            if (card.Rarity) desclines.push(`**Rarity:** ${card.Rarity}`);
+            if (card.Tribe) desclines.push(`**Tribe:** ${card.Tribe}`);
+            if (card.MP) desclines.push(`${card.MP} MP`);
+            if (card.Attack) {
+                let line = card.Attack;
+                if (card.HP) {
+                    line += "/" + card.HP;
+                }
+                desclines.push(line);
+            }
+            if (card.Effects) desclines.push(card.Effects);
+            rich.setDescription(desclines.join("\n"));
+            rich.setImage(`https://teppenthegame.com${card.Img}`)
+            return ["",{embed:rich}]
+        }
+        let perfectmatch = [];
+        let goodmatch = [];
+        Object.keys(teppen).forEach((key)=>{
+            let card = teppen[key]
+            let simplename = simplifyname(card.Name);
+            let searchsimple = simplifyname(args[1]);
+            if (simplename === searchsimple) perfectmatch.push([card.Name, createRich(card)]);
+            else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([card.Name,createRich(card)]);
+        })
+
+        function parselist(list) {
+            if (list.length == 1) {
+                return list[0][1];
+            } else if (list.length > 1) {
+                let rich = new Discord.RichEmbed({
+                    title: "Multiple cards found",
+                    description: createCustomNumCommand3(message,list)
+                })
+                return ["",{embed:rich}]
+            } else {
+                return false;
+            }
+        }
+
+        return parselist(perfectmatch) || parselist(goodmatch) || "`Card not found`";
+    }
+}))
 
 let gundam = null;        
 fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
@@ -1186,7 +1266,7 @@ commands.push(new Command({
     regex: /^(?:t7|tek) (\S+)(?: ([^\n\r]+?))?$/i,
     prefix: ".",
     requirePrefix: true,
-    req: ()=>{return t7;},
+    req: ()=>{return t7 && config.t7sheetid;},
     testString: ".t7 ak block=1",
     log: true,
     points: 1,
@@ -1310,7 +1390,8 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 //condition has to return true for at least 1 field:value
                                 return Object.entries(moveobj).some((field)=>{
                                     //field[0] is the field name and field[1] is the field value
-                                    if (field[0]!=="gfycat") {
+                                    //ignore gfycat and cell columns during comparison
+                                    if (field[0]!=="gfycat" && field[0]!=="cell") {
                                         return cur(field[0], field[1]);
                                     }
                                     return false;
@@ -1442,7 +1523,10 @@ multiple conditions can be linked together using condition1&condition2&condition
                 })
                 return ["", {embed: rich}]
             } else {
-                return [`\`Move not found\`\n<${char.link}>`];
+                let rich = new Discord.RichEmbed();
+                rich.setTitle(char.name)
+                rich.setDescription(`Move not found\n**[Help improve the frame data here](https://docs.google.com/spreadsheets/d/${config.t7sheetid}#gid=${char.sheet_id})**\n\n**[or search rbnorway](${char.link})**`)
+                return ["",{embed:rich}];
             }
         }
 
@@ -1450,10 +1534,13 @@ multiple conditions can be linked together using condition1&condition2&condition
             let gfycatlink = move.gfycat || "";
             let mes = `__**${char.name}**__\n`
             mes += Object.keys(move).filter((v) => {
-                return v!="gfycat" && v!="regexp";
+                return v!="gfycat" && v!="regexp" && v!="cell";
             }).map((key)=>{
                 return `**${key}**: ${move[key]}`
             }).join("\n");
+            if (move.cell) {
+                mes += `\n**Edit frame data:** <https://docs.google.com/spreadsheets/d/${config.t7sheetid}#gid=${char.sheet_id}&range=${move.cell}>`
+            }
             mes += "\n" + gfycatlink;
             return mes;
         }
@@ -1462,7 +1549,6 @@ multiple conditions can be linked together using condition1&condition2&condition
         return msg;
     }
 }))
-
 
 let sc6 = null;        
 fs.readFile("./data/sc6.json", 'utf8', function (e, data) {
@@ -3085,8 +3171,9 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
         //args[1] = encodeURIComponent(args[1]);
         let safe = message.channel.nsfw?"":"&safe=active"
         //https://developers.google.com/custom-search/v1/cse/list
+        let urlpromise;
         try {
-            let urlpromise = await rp({
+            urlpromise = await rp({
                 url:`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`,
                 json: true
             })
@@ -3496,27 +3583,19 @@ lists recent changes`,
     points: 1,
     typing: false,
     run: (message, args) =>{
-        return `\`v7.28
+        return `\`
+08-12
+• Added .teppen command.
+• Fixed .image.
+• Now you fuckers have no reason not to update the Tekken frame data.
+• My PayPal is somewhere...
+
+07-28
 • .ff14 will now explain errors and estimate level, item level, and class job.
 • Added Engrish Notes to the default search of t7
         
-v7.11
-• Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.
-• Unescaped text for yts results
-• Updated to library to latest version. Something is bound to break.
-• I will now send a "Bot is typing" packet before the actual message to let users know that a response is coming.
-
-v6.08
-• Added poe to search the PoE Wiki.
-• Implemented leaderboards. Use ".rank" to check your rank.
-
-v6.07
-• Added rss to post news for Steam games and other RSS feeds. Use ".rss help" for full list of options.
-• ygo's "no cards found" will not error out.
-
-v5.30
-• Added mtg, stock, news, ff14.
-• mtg, ygo, and art can now use "random".\``
+07-11
+• Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.\``
     }
 }))
 
@@ -3538,6 +3617,11 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: async (message, args) =>{
+        let re = /^yt (?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
+        let a = re.exec(args[1]);
+        if (a) {
+            return `\`Use .yt for youtube links\``;
+        }
         let search = encodeURIComponent(args[1]);
         let urlpromise = rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
         let body = await urlpromise;
@@ -3663,7 +3747,7 @@ commands.push(new Command({
         let thismsg = thismsgs.first();
         if (thismsg.content == "") return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
         else if (thismsg.author.id === message.author.id) return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
-        else return thismsg.content.toUpperCase();
+        else return "**"+thismsg.content.toUpperCase().replace(/\*\*/g,"")+"**";
     }
 }))
 

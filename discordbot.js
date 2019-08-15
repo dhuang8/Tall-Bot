@@ -1161,8 +1161,8 @@ commands.push(new Command({
             let card = teppen[key]
             let simplename = simplifyname(card.Name);
             let searchsimple = simplifyname(args[1]);
-            if (simplename === searchsimple) perfectmatch.push([card.Name, createRich(card)]);
-            else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([card.Name,createRich(card)]);
+            if (simplename === searchsimple) perfectmatch.push([`${card.Name} — ${card["No."]}`, createRich(card)]);
+            else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([`${card.Name} — ${card["No."]}`, createRich(card)]);
         })
 
         function parselist(list) {
@@ -1344,6 +1344,11 @@ multiple conditions can be linked together using condition1&condition2&condition
         else if (nameinput=="dvj") nameinput="devil"
         else if (nameinput=="panda") nameinput="kuma"
         else if (nameinput=="ak") nameinput="armor"
+
+        //special move conversions
+        if (args[2].toLowerCase() == "rd") args[2] = "rage drive"
+        else if (args[2].toLowerCase() == "ra") args[2] = "rage art"
+
         Object.keys(t7).forEach((v, i)=>{
             let charindex = v.indexOf(nameinput);
             if (charindex===0) charfound.push(v);
@@ -3617,7 +3622,7 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: async (message, args) =>{
-        let re = /^yt (?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
+        let re = /^(?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
         let a = re.exec(args[1]);
         if (a) {
             return `\`Use .yt for youtube links\``;
@@ -3825,11 +3830,9 @@ commands.push(new Command({
     }
 }))
 
-//might be too annoying now
-/*
 commands.push(new Command({
     name: "im blah",
-    regex: /(?:^|(?:\.|,) )(?:\w+ )?(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
+    regex: /(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
     prefix: "",
     testString: "im bored",
     hidden: true,
@@ -3837,35 +3840,21 @@ commands.push(new Command({
     shortDesc: "return hi blah",
     longDesc: ``,
     log: true,
+    typing: false,
     points: 1,
-    func: (message, args) =>{
-        (async()=>{
-            let greetings = ["Hello", "Hi", "Hey"]
-            let responses = ["Nice to see you.", ""]
-            if (message.guild.me.nickname) {
-                responses.push(`I'm ${message.guild.me.nickname}.`)
-            }
-            let response = responses[parseInt(Math.random() * responses.length)];
-            let greeting = greetings[parseInt(Math.random() * greetings.length)];
-            var msg = `${greeting}${args[1]}. ${response}`;
-            return [msg];
-        })().then(params=>{
-            message.channel.send.apply(message.channel, params).catch(e=>{
-                if (e.code == 50035) {
-                    message.channel.send("`Message too large`").catch(err);
-                } else {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
-                }
-            });
-        }).catch(e=>{
-            err(e);
-            message.channel.send("`Error`").catch(err);
-        })
-        return true;
+    run: (message, args) =>{
+        let greetings = ["Hello", "Hi", "Hey","Greetings"];
+        let responses = ["Nice to meet you.", ""];
+        if (message.guild.me && message.guild.me.displayName) {
+            responses.push(`I'm ${message.guild.me.displayName}.`)
+        }
+        let response = responses[parseInt(Math.random() * responses.length)];
+        let greeting = greetings[parseInt(Math.random() * greetings.length)];
+        var msg = `${greeting}${args[1]}. ${response}`;
+        return msg;
     }
 }))
-*/
+
 
 commands.push(new Command({
     name: "exit",

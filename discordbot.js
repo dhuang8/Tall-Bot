@@ -3832,7 +3832,7 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "im blah",
-    regex: /(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
+    regex: /^(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
     prefix: "",
     testString: "im bored",
     hidden: true,

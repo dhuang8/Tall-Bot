@@ -1022,7 +1022,7 @@ commands.push(new Command({
             let desc_lines = [];
             if (card.manaCost) desc_lines.push(`Mana Cost: ${replaceIcons(card.manaCost)}`)
             if (card.type) desc_lines.push(`**${replaceIcons(card.type)}**`)
-            if (card.text) desc_lines.push(escapeMarkdownText(replaceIcons(card.text)));
+            if (card.text) desc_lines.push(replaceIcons(escapeMarkdownText(card.text)));
             let stats = ""
             if (card.power) stats += card.power;
             if (card.toughness) stats += "/" + card.toughness;
@@ -1062,9 +1062,9 @@ commands.push(new Command({
             }
             Object.keys(icons).forEach(icon=>{
                 let literal = icon.replace(/\{/g,`\\{`).replace(/\}/g,`\\}`)
-                text = text.replace(new RegExp(literal, 'g'), icons[icon])
+                text = text.replace(new RegExp(literal, 'g'), icons[icon]+" ")
             })
-            return text
+            return text;
         }
 
         //https://docs.magicthegathering.io/#api_v1cards_list
@@ -1801,7 +1801,7 @@ fs.readFile("./data/sts.json", 'utf8', function (e, data) {
 
 commands.push(new Command({
     name: "sts",
-    regex: /^sts (\S+)$/i,
+    regex: /^sts (.+)$/i,
     prefix: ".",
     testString: ".sts apparition",
     req: ()=>{return sts;},
@@ -3832,7 +3832,7 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "im blah",
-    regex: /^(?:im|i'm)((?: \w+){1})(?:\.|$)/i,
+    regex: /^(?:im|i'm)( \w+)$/i,
     prefix: "",
     testString: "im bored",
     hidden: true,

@@ -1062,7 +1062,7 @@ commands.push(new Command({
             }
             Object.keys(icons).forEach(icon=>{
                 let literal = icon.replace(/\{/g,`\\{`).replace(/\}/g,`\\}`)
-                text = text.replace(new RegExp(literal, 'g'), icons[icon]+" ")
+                text = text.replace(new RegExp(literal, 'g'), icons[icon]);
             })
             return text;
         }
@@ -2297,6 +2297,7 @@ returns poe.trade based on item name or stats`,
             let stmt = sql.prepare("SELECT poeleague FROM users WHERE user_id = ?;")
             let poeleague = stmt.get(message.author.id).poeleague
             if (args[1].split("\n").length < 3) {
+            console.log(1)
                 poelinkid = await rp({
                     method: 'POST',
                     url: "http://poe.trade/search",
@@ -2311,6 +2312,8 @@ returns poe.trade based on item name or stats`,
                         online: online,
                         buyout: "x"
                     }
+                }).catch(e=>{
+                    return e.response;
                 })
             } else {
                 //parse multiline
@@ -2464,8 +2467,9 @@ returns poe.trade based on item name or stats`,
                         "Content-Type": "application/x-www-form-urlencoded"
                     },
                     body: formstring
-                });
-                
+                }).catch(e=>{
+                    return e.response;
+                });                
             }
             let link = poelinkid.headers.location;
             let body;
@@ -3705,7 +3709,7 @@ commands.push(new Command({
     points: 1,
     typing: false,
     prerun: (message, args) => {
-        return args[1].toLowerCase() !== "this" && args[1].toLowerCase() !== "that";
+        return args[1].toLowerCase() !== "this" && args[1].toLowerCase() !== "that" && args[1].toLowerCase() !== "off";
     },
     run: (message, args) =>{
         if (args[1].toLowerCase() === "you" || args[1].toLowerCase() === "u") {

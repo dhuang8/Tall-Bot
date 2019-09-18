@@ -291,13 +291,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v8.12 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v9.18 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v8.12 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v9.18 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -2111,16 +2111,41 @@ previous_nth_message - the number of messages to go back to reach the message yo
                     embed: richQuote(messages.array()[num])
                 }]
             }).catch(e => {
-                "`Message not found.`"
-            })
-        } else {
-            return await message.channel.messages.fetch(args[1]).then(message2 => {
-                return [message2.url, {
-                    embed: richQuote(message2)
-                }]
-            }).catch(e => {
                 return "`Message not found.`";
             })
+        } else {
+            async function findQuote(channel, messageid) {
+                return await channel.messages.fetch(messageid).then(message2 => {
+                    return [message2.url, {
+                        embed: richQuote(message2)
+                    }]
+                }).catch(e => {
+                    return null;
+                })
+            }
+            let quote = await findQuote(message.channel, args[1])
+            if (!quote) {
+                if (message.guild && message.guild.available) {
+                    return await Promise.all(
+                        message.guild.channels.filter(channel=>{
+                            return channel.id !== message.channel.id
+                        }).map(channel=>{
+                            return findQuote(channel, args[1]).then(quotefound=>{
+                                return Promise.reject(quotefound);
+                            }, e=>{
+                                console.log(6)
+                                return Promise.resolve();
+                            })
+                        })
+                    ).then(e=>{
+                        return "`Message not found`";
+                    }).catch(quotefound=>{
+                        return quotefound;
+                    })
+                }
+                return "`Message not found`";
+            }
+            return quote;
         }
     }
 }))
@@ -2489,7 +2514,7 @@ returns poe.trade based on item name or stats`,
                 })
             } catch (e) {
                 //console.error(e);
-                return setLeague("Update your league", null, message);
+                return setLeague("`Update your league`", null, message);
             }
             let $ = cheerio.load(body);
             let rich = new Discord.RichEmbed();
@@ -3593,11 +3618,13 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+09-18
+• .quote now works if the message is in a different channel. However the message must be in the same server.
+
 08-12
 • Added .teppen command.
 • Fixed .image.
 • Now you fuckers have no reason not to update the Tekken frame data.
-• My PayPal is somewhere...
 
 07-28
 • .ff14 will now explain errors and estimate level, item level, and class job.

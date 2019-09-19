@@ -2128,12 +2128,12 @@ previous_nth_message - the number of messages to go back to reach the message yo
                 if (message.guild && message.guild.available) {
                     return await Promise.all(
                         message.guild.channels.filter(channel=>{
-                            return channel.id !== message.channel.id
+                            return channel.id !== message.channel.id && channel.type == "text"
                         }).map(channel=>{
                             return findQuote(channel, args[1]).then(quotefound=>{
-                                return Promise.reject(quotefound);
-                            }, e=>{
-                                console.log(6)
+                                if (quotefound) {
+                                    return Promise.reject(quotefound);
+                                }
                                 return Promise.resolve();
                             })
                         })

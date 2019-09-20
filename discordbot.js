@@ -1537,7 +1537,7 @@ multiple conditions can be linked together using condition1&condition2&condition
 
         function createMoveMessage(char, move) {
             let gfycatlink = move.gfycat || "";
-            let mes = `__**${char.name}**__\n`
+            let mes = `>>> __**${char.name}**__\n`
             mes += Object.keys(move).filter((v) => {
                 return v!="gfycat" && v!="regexp" && v!="cell";
             }).map((key)=>{

@@ -291,13 +291,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v9.18 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v9.30 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v9.18 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v9.30 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -2637,7 +2637,7 @@ commands.push(new Command({
     testString: "",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "",
+    shortDesc: "search Path of Exile wiki",
     longDesc: {
         title:`.poe (search)`,
         description: `search poe wiki`,
@@ -3604,6 +3604,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+09-30
+• .reminder significantly improved
+
 09-18
 • .quote now works if the message is in a different channel. However the message must be in the same server.
 
@@ -3951,6 +3954,7 @@ returns a list of commands. respond with the number for details on a specific co
             title: "List of commands",
             description: mes
         })
+        rich.setFooter(`Respond with number or ".(commandname) help" for more info`)
         return rich;
     }
 }))

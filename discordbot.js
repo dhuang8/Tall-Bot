@@ -707,31 +707,14 @@ commands.push(new Command({
             }
             return `\`Failed to cancel reminder\``;
         }
-        let time;
-        a = /(?:(?:.*) |^)(a|\d+) ?((?:sec(?:ond)?|min(?:ute)?|hour|day|week|month|year)s?|[smhdwy])$/i.exec(args[1]);
-        if (a) {
-            if (a[1]==="a") {
-                a[1] === 1;
-            } else {
-                a[1] = parseInt(a[1]);
-            }
-            if (a[2] === "sec") a[2]="s"
-            else if (a[2] === "min") a[2]="m"
-            time = moment().tz("America/New_York").add(a[1],a[2]);
+        let ret = ""
+        if (process.platform == "linux") {
+            ret = execFileSync("python3.7", ["main.pyc", args[1].toUpperCase()],{cwd:"external_scripts/dateparse/", encoding:"utf8"})
         } else {
-            let a = /(.+) (est|cst|pst|edt|pdt|cdt|nzdt|jst|utc)(?:$| .+)/i.exec(args[1]);
-            let timezone_name="America/New_York"
-            if (a) {
-                timezone_name = convertTZ(a[2])
-                time = moment.tz(a[1], ["YYYY-MM-DD h:mm a", "M/DD/YYYY h:mm a", "M/DD h:mm a", "M-DD h:mm a", "M-DD h a", "M/DD h a", "h:mm a", "M/DD", "M-DD", "YYYY-MM-DD", "M/DD/YYYY"], timezone_name);
-            } else {
-                time = moment.tz(args[1], ["YYYY-MM-DD h:mm a", "M/DD/YYYY h:mm a", "M/DD h:mm a", "M-DD h:mm a", "M-DD h a", "M/DD h a", "h:mm a", "M/DD", "M-DD", "YYYY-MM-DD", "M/DD/YYYY"], timezone_name);
-            }
+            ret = execFileSync("py", ["-3", "main.pyc", args[1].toUpperCase()],{cwd:"external_scripts/dateparse/", encoding:"utf8"})
         }
-        let now = moment.tz();
-        if (!time.isValid()) return "`Could not parse time`"
-        if (now.isAfter(time)) return `\`Parsed time (${time.format("MMM D YYYY h:mm:ssa z")}) has passed\``;
-        return createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url);
+        let time = moment.unix(parseFloat(ret));
+        return ["", {embed:createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url)}]
     }
 }))
 
@@ -1310,6 +1293,9 @@ multiple conditions can be linked together using condition1&condition2&condition
             s = replaceAll(s, " ", "");
             s = replaceAll(s, "\\/", "");
             s = replaceAll(s, ",", "");
+            s = replaceAll(s, ":", "");
+            s = replaceAll(s, "~", "");
+            s = replaceAll(s, "*", "");
             s = replaceAll(s, "(\\D)\\+(\\d)", "$1$2");
             s = replaceAll(s, "(\\D)\\+(\\D)", "$1$2");
             if (s.indexOf("run")==0) s = "fff" + s.slice(3);

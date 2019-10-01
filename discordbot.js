@@ -1295,7 +1295,6 @@ multiple conditions can be linked together using condition1&condition2&condition
             s = replaceAll(s, ",", "");
             s = replaceAll(s, ":", "");
             s = replaceAll(s, "~", "");
-            s = replaceAll(s, "*", "");
             s = replaceAll(s, "(\\D)\\+(\\d)", "$1$2");
             s = replaceAll(s, "(\\D)\\+(\\D)", "$1$2");
             if (s.indexOf("run")==0) s = "fff" + s.slice(3);

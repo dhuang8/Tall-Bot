@@ -10,13 +10,14 @@ const execFileSync = require('child_process').execFileSync;
 const CronJob = require('cron').CronJob;
 const GIFEncoder = require('gifencoder');
 const { createCanvas, loadImage } = require('canvas');
-const RSSManager = require('./utils/RSSManager');
 const translate = require('@vitalets/google-translate-api');
 const Database = require("better-sqlite3");
 const { CanvasRenderService } = require('chartjs-node-canvas');
 const annotation = require('chartjs-plugin-annotation');
 const rp = require('request-promise');
 const unescape = require('unescape');
+const RSSManager = require('./utils/RSSManager');
+const Pokemon = require('./utils/Pokemon');
 
 moment.tz.setDefault("America/New_York");
 
@@ -291,13 +292,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v9.30 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.04 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v9.30 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.04 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -872,7 +873,7 @@ returns hearthstone card data`,
     }
 }))
 
-let art = null;        
+let art = null;
 fs.readFile("./data/artifact.json", 'utf8', function (e, data) {
     if (e) {
         console.error("Artifact card data not found");
@@ -1295,6 +1296,7 @@ multiple conditions can be linked together using condition1&condition2&condition
             s = replaceAll(s, ",", "");
             s = replaceAll(s, ":", "");
             s = replaceAll(s, "~", "");
+            s = s.replace(/\*/g, "");
             s = replaceAll(s, "(\\D)\\+(\\d)", "$1$2");
             s = replaceAll(s, "(\\D)\\+(\\D)", "$1$2");
             if (s.indexOf("run")==0) s = "fff" + s.slice(3);
@@ -1832,6 +1834,28 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
             })
             return msg;
         }
+    }
+}))
+
+commands.push(new Command({
+    name: "pokemon",
+    regex: /^(?:pokemon|pkmn) (.+)$/i,
+    prefix: ".",
+    testString: ".pokemon 25",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "return info on pokemon, moves, and abilities",
+    longDesc: {title:`.pokemon __search__`,
+        description: `return info on pokemon, moves, and abilities`,
+        fields: [{
+            name: `__search__`,
+            value: `search term for a pokemon name, move, or ability`
+        }]
+    },
+    log: true,
+    points: 1,
+    run: async (message, args) =>{
+        return await Pokemon.search(args[1]);
     }
 }))
 
@@ -3603,6 +3627,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+10-04
+• added .pokemon
+
 09-30
 • .reminder significantly improved
 
@@ -3915,7 +3942,8 @@ commands.push(new Command({
     points: 1,
     run: async (message, args) =>{
         return null;
-    }
+    },
+    typing: false,
 }))
 */
 commands.push(new Command({

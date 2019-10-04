@@ -164,7 +164,7 @@ Pokemon.getPokemonByID = async function(id) {
             pokeresponse.stats.reverse().forEach(stat=>{
                 desc += `${json.stats[stat.stat.name]}: ${stat.base_stat}\n`
             })
-            embed.image  = {url: `https://www.serebii.net/sunmoon/pokemon/${pokeresponse.id}.png`};
+            embed.image  = {url: `https://www.serebii.net/sunmoon/pokemon/${("00"+pokeresponse.id).slice(-3)}.png`};
         //}
         embed.description  = desc;
         let finalobj = {

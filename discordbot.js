@@ -1854,6 +1854,7 @@ commands.push(new Command({
     },
     log: true,
     points: 1,
+    typing: false,
     run: async (message, args) =>{
         return await Pokemon.search(args[1]);
     }

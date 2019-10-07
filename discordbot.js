@@ -374,7 +374,7 @@ commands.push(new Command({
             }
             let guildchan = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgchannel && chan.type=="text");
             if (!guildchan) {
-                guildchan = await bot.guilds.get(config.guildID).channels.create(msgchannel,"text");
+                guildchan = await bot.guilds.get(config.guildID).channels.create(msgchannel,{type:"text"});
                 guildchan.setParent(guildcat);
             }
             let msg= "`" + message.author.tag + ":` " + message.cleanContent

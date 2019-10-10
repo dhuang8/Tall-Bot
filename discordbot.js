@@ -388,6 +388,7 @@ commands.push(new Command({
             guildchan.send(msg);
         })().catch(e=>{
             console.error(e);
+            //throw e;
             err(e);
         })
         return false;

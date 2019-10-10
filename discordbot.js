@@ -3365,6 +3365,8 @@ returns price and chart of stock symbol`,
             }
         })
 
+        console.log(datapoints)
+
         let annotations = horizontal.map(label=>{
             return {
                 type: "line",

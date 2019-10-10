@@ -8,6 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/uws": "^11.149.1",
     "@vitalets/google-translate-api": "^2.7.0",
     "better-sqlite3": "^5.4.0",
     "bufferutil": "^4.0.1",
@@ -20,7 +21,7 @@
     "erlpack": "github:discordapp/erlpack",
     "gifencoder": "^2.0.1",
     "libsodium": "^0.7.3",
-    "libsodium-wrappers": "^0.7.3",
+    "libsodium-wrappers": "^0.7.5",
     "moment-timezone": "^0.5.23",
     "node-opus": "^0.3.1",
     "request": "^2.88.0",
@@ -29,8 +30,8 @@
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "ytdl-core": "^0.29.2",
-    "zlib-sync": "^0.1.4",
-    "zucc": "^0.1.0"
+    "zlib-sync": "^0.1.5",
+    "zucc": "^0.1.2"
   },
   "devDependencies": {},
   "description": ""

@@ -292,13 +292,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v10.04 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.17 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v10.04 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.17 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -796,7 +796,7 @@ returns yu-gi-oh card data`,
                 description: createCustomNumCommand3(message,card_list)
             })];
         } else {
-            return ["No cards found."];
+            return ["`No cards found`"];
         }
     }
 }))
@@ -1837,6 +1837,88 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
         }
     }
 }))
+
+let runeterra = null;        
+fs.readFile("./data/runeterra/data/set1-en_us.json", 'utf8', function (e, data) {
+    if (e) {
+        return console.error("Legends of Runeterra data not found");
+    } else {
+        runeterra = JSON.parse(data);
+    }
+})
+
+commands.push(new Command({
+    name: "lor",
+    regex: /^(?:runeterra|rune|lor)? (.+)$/i,
+    prefix: ".",
+    testString: ".lor karma",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "",
+    req: ()=>{return runeterra;},
+    longDesc: {title:`.runeterra __search_term or random__`,
+        description: `returns Legends of Runeterra card`,
+        fields: [{
+            name: `__search_term or random__`,
+            value: `search term for a Legends of Runeterra card name or a random card`
+        }]
+    },
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) =>{
+        function createCardEmbed(card){
+            let embed = new Discord.RichEmbed()
+            embed.setTitle(card.name)
+            let desclines = [];
+            if (card.supertype) desclines.push(`**Supertype:** ${card.supertype}`);
+            if (card.subtype) desclines.push(`**Subtype:** ${card.subtype}`);
+            if (card.rarity) desclines.push(`**Rarity:** ${card.rarity}`);
+            if (!card.collectible) desclines.push(`Non-collectible`);
+            if (card.region) desclines.push(`**Region:** ${card.region}`);
+            if (card.cost) desclines.push(`**Cost:** ${card.cost}`);
+            if (card.keywords && card.keywords.length>0) desclines.push(`${card.keywords.join(", ")}`);
+            if (card.attack && card.health) desclines.push(`${card.attack} | ${card.health}`);
+            desclines.push("");
+            if (card.description) {
+                desclines.push(card.description.replace(/<.+?>/g,"**").replace(/\*{3,}/g,"**"));
+            }
+            //if (card.descriptionRaw) desclines.push(card.descriptionRaw);
+            embed.addField(card.type, desclines.join("\n"));
+            let attach = new Discord.MessageAttachment(`./data/runeterra/${card.assets[0].gameAbsolutePath.replace("http://dd.b.pvp.net/Set1/en_us/","")}`,`${card.cardCode}.png`);
+            embed.attachFiles([attach]).setImage(`attachment://${card.cardCode}.png`);
+            embed.setFooter(card.flavorText);
+            return embed;
+        }
+        if (args[1].toLowerCase() == "random") {
+            return createCardEmbed(runeterra[Math.floor(Math.random()*runeterra.length)]);
+        }
+        let card_list = runeterra.filter(card=>{
+            return card.name.toLowerCase() == args[1].toLowerCase()
+        }).map(card=>{
+            return [`${card.name} — ${card.cardCode}`, ()=>createCardEmbed(card)]
+        })
+        if (card_list.length==0) {
+            card_list = runeterra.filter(card=>{
+                return card.name.toLowerCase().indexOf(args[1].toLowerCase())>-1;
+            }).map(card=>{
+                return [`${card.name} — ${card.cardCode}`, ()=>createCardEmbed(card)]
+            })
+        }
+
+        if (card_list.length==1) {
+            return card_list[0][1]();
+        } else if (card_list.length>1){
+            return new Discord.RichEmbed({
+                title:"Multiple cards found",
+                description: createCustomNumCommand3(message,card_list)
+            });
+        } else {
+            return ["`No cards found`"];
+        }
+    }
+}))
+
 
 commands.push(new Command({
     name: "pokemon",
@@ -3356,16 +3438,16 @@ returns price and chart of stock symbol`,
                 return data.time.format("ha");
             return "";
         })
-        let datapoints = stock_data.filter(data=>{
-            return data.close;
-        }).map((data)=>{
+        let datapoints = stock_data.map((data)=>{
             return {
                 x: data.index,
                 y: data.close
             }
+        }).filter(data=>{
+            return data.y;
         })
 
-        console.log(datapoints)
+        console.log(datapoints.slice(550))
 
         let annotations = horizontal.map(label=>{
             return {
@@ -3631,6 +3713,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+10-17
+• added .lor
+
 10-04
 • added .pokemon
 

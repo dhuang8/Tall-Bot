@@ -3771,19 +3771,7 @@ lists recent changes`,
 • .reminder significantly improved
 
 09-18
-• .quote now works if the message is in a different channel. However the message must be in the same server.
-
-08-12
-• Added .teppen command.
-• Fixed .image.
-• Now you fuckers have no reason not to update the Tekken frame data.
-
-07-28
-• .ff14 will now explain errors and estimate level, item level, and class job.
-• Added Engrish Notes to the default search of t7
-
-07-11
-• Added special exception to common character names with 2 words like ".t7 armor king move_name" for special people who can't keep names to 1 word.\``
+• .quote now works if the message is in a different channel. The message must still be in the same server.\``
     }
 }))
 

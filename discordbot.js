@@ -3487,16 +3487,17 @@ returns price and chart of stock symbol`,
             if (data.x<700) data.x-=100;
             return data;
         })
+        /*
         datapoints = [
             {x:0, y:100},
             {x:800, y:102}
-        ]
+        ]*/
 
-        console.log(datapoints.slice(datapoints.length-100))
+        //console.log(datapoints.slice(datapoints.length-100))
 
         let annotations = horizontal.map(label=>{
             return {
-                type: "scatter",
+                type: "line",
                 mode: "vertical",
                 scaleID: "x-axis-0",
                 value: label,
@@ -3506,7 +3507,7 @@ returns price and chart of stock symbol`,
         })
         //https://www.chartjs.org/docs/latest/configuration/
         const configuration = {
-            type: 'scatter',
+            type: 'line',
             data: {
                 labels: labels,
                 datasets: [{

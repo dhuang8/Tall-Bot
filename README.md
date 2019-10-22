@@ -44,6 +44,8 @@ returns a random card
 
 .mtg random
 
+## teppen
+.teppen (search)
 ## gundam
 .gundam (search)
 ## t7
@@ -128,10 +130,32 @@ multiple conditions can be linked together using condition1&condition2&condition
 .sts (card_name or relic_name)
 
 returns information on a Slay the Spire card or relic. Matches by substring
+## lor
+returns Legends of Runeterra card
+### .runeterra __search_term or random__
+#### __search_term or random__
+search term for a Legends of Runeterra card name or a random card
+
+## pokemon
+return info on pokemon, moves, and abilities
+### .pokemon __search__
+#### __search__
+search term for a pokemon name, move, or ability
+
 ## price
 .price \[amount] (from_symbol) \[to_symbol]
 
-returns a 30 hour graph of the price of a foreign currency or cryptocurrency
+returns a 30 hour graph of the price of a cryptocurrency
+
+amount (optional) - the amount of from_symbol currency. Default is 1.
+
+from_symbol - the currency symbol you are exchanging from. ex: BTC
+
+to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.
+## curr
+.curr \[amount] (from_symbol) \[to_symbol]
+
+returns of the price of a foreign currency
 
 amount (optional) - the amount of from_symbol currency. Default is 1.
 

@@ -292,13 +292,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v10.17 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.22 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v10.17 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v10.22 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -1885,8 +1885,11 @@ commands.push(new Command({
             }
             //if (card.descriptionRaw) desclines.push(card.descriptionRaw);
             embed.addField(card.type, desclines.join("\n"));
+            /*
             let attach = new Discord.MessageAttachment(`./data/runeterra/${card.assets[0].gameAbsolutePath.replace("http://dd.b.pvp.net/Set1/en_us/","")}`,`${card.cardCode}.png`);
             embed.attachFiles([attach]).setImage(`attachment://${card.cardCode}.png`);
+            */
+            embed.setImage(`https://cdn-lor.mobalytics.gg/latest/images/set1/en_us/img/card/game/${card.cardCode}.png`);
             embed.setFooter(card.flavorText);
             return embed;
         }
@@ -1963,11 +1966,11 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     points: 1,
-    shortDesc: "returns the exchange rate and graph of the price of a foreign currency or cryptocurrency",
+    shortDesc: "returns the exchange rate and graph of the price of a cryptocurrency",
     longDesc: `.price [amount] (from_symbol) [to_symbol]
-returns a 30 hour graph of the price of a foreign currency or cryptocurrency
+returns a 30 hour graph of the price of a cryptocurrency
 amount (optional) - the amount of from_symbol currency. Default is 1.
-from_symbol - the currency symbol you are exchanging from. ex: CAD
+from_symbol - the currency symbol you are exchanging from. ex: BTC
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.`,
     run: async (message, args) =>{
         let amt = 1;
@@ -2041,6 +2044,41 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         rich.setFooter("Time is in EDT, the only relevant timezone.");
 
         return rich;
+    }
+}))
+
+commands.push(new Command({
+    name: "curr",
+    regex: /^curr (.+)$/i,
+    prefix: ".",
+    testString: ".curr 10 cad",
+    hidden: false,
+    requirePrefix: true,
+    req: ()=>{return config.api.datafixer;},
+    log: true,
+    points: 1,
+    shortDesc: "returns the exchange rate and graph of the price of a foreign currency",
+    longDesc: `.curr [amount] (from_symbol) [to_symbol]
+returns of the price of a foreign currency
+amount (optional) - the amount of from_symbol currency. Default is 1.
+from_symbol - the currency symbol you are exchanging from. ex: CAD
+to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.`,
+    run: async (message, args) =>{
+        let a;
+        if (a = /(?:(\d*(?:\.\d+)?) )?(\w+)(?: (\w+))?$/.exec(args[1])) {
+            let amt = parseFloat(a[1]) || 1;
+            let from = a[2].toUpperCase();
+            let to = a[3]?a[3].toUpperCase():"USD";
+            const response = await rp({
+                url:`http://data.fixer.io/api/latest?access_key=60f56846eb49204d79b8398921edb041`,
+                json:true
+            })
+            if (response.error) return "`" + response.error.info + "`";
+            if (!response.rates[to] || !response.rates[from]) return "`You have provided one or more invalid Currency Codes. [Required format: currencies=EUR,USD,GBP,...]`"
+            let rate = response.rates[to]/response.rates[from];
+            return `\`${amt} ${from} = ${Math.round(amt*rate*1000000)/1000000} ${to}\``
+        }
+        return "`Wrong format. .curr help for additional information`"
     }
 }))
 
@@ -3445,13 +3483,20 @@ returns price and chart of stock symbol`,
             }
         }).filter(data=>{
             return data.y;
+        }).map(data=>{
+            if (data.x<700) data.x-=100;
+            return data;
         })
+        datapoints = [
+            {x:0, y:100},
+            {x:800, y:102}
+        ]
 
-        console.log(datapoints.slice(550))
+        console.log(datapoints.slice(datapoints.length-100))
 
         let annotations = horizontal.map(label=>{
             return {
-                type: "line",
+                type: "scatter",
                 mode: "vertical",
                 scaleID: "x-axis-0",
                 value: label,
@@ -3461,7 +3506,7 @@ returns price and chart of stock symbol`,
         })
         //https://www.chartjs.org/docs/latest/configuration/
         const configuration = {
-            type: 'line',
+            type: 'scatter',
             data: {
                 labels: labels,
                 datasets: [{
@@ -3713,6 +3758,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+10-22
+• added .curr
+
 10-17
 • added .lor
 

@@ -26,6 +26,7 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "rss-parser": "^3.6.2",
+    "simple-oauth2": "^3.0.1",
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "ytdl-core": "^0.29.2",

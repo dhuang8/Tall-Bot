@@ -18,6 +18,7 @@ const rp = require('request-promise');
 const unescape = require('unescape');
 const RSSManager = require('./utils/RSSManager');
 const Pokemon = require('./utils/Pokemon');
+const oauth2 = require('simple-oauth2')
 
 moment.tz.setDefault("America/New_York");
 
@@ -800,6 +801,9 @@ returns yu-gi-oh card data`,
         }
     }
 }))
+
+let token;
+let meta;
 commands.push(new Command({
     name: "hs",
     regex: /^hs (.+)$/i,
@@ -809,67 +813,87 @@ commands.push(new Command({
     shortDesc: "returns hearthstone card data",
     longDesc: `.hs (card name)
 returns hearthstone card data`,
-    req: ()=>{return config.api.hearthstone;},
+    req: ()=>{return config.api.blizzard;},
     log: true,
     points: 1,
     run: async (message, args)=>{
-        let body = await rp({
-            url: `https://omgvamp-hearthstone-v1.p.mashape.com/cards/search/${encodeURIComponent(args[1])}`,
-            headers: {
-                "X-Mashape-Key": config.api.hearthstone
+        const credentials = {
+            client: {
+                id: config.api.blizzard.id,
+                secret: config.api.blizzard.secret
+            },
+            auth: {
+                tokenHost: 'https://us.battle.net/oauth/token'
             }
-        })
-        let results = JSON.parse(body);
+        };
+        if (!token || token.expired()) {
+            const thisoauth = oauth2.create(credentials);
+            const result = await thisoauth.clientCredentials.getToken();
+            token = thisoauth.accessToken.create(result);
+        }
+        let cardsprom = rp({
+            url:`https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&access_token=${token.token.access_token}`,
+            json: true
+        });
+        if (!meta) {
+            meta = await rp({
+                url:`https://us.api.blizzard.com/hearthstone/metadata?locale=en_US&access_token=${token.token.access_token}`,
+                json: true
+            });
+        }
+        let cards = await cardsprom;
         function cardRich(card) {
             let rich = new Discord.RichEmbed();
-            rich.setTitle(escapeMarkdownText(card.name));
-            rich.setImage(card.img);
-            let desc = "";
-            if (card.playerClass) desc += "**Class: **" + card.playerClass + "\n";
-            if (card.cardSet) desc += "**Set: **" + card.cardSet + "\n";
-            if (card.artist) desc += "**Artist: **" + card.artist + "\n";
-            if (card.collectible) desc += "**Collectible**" + "\n";
-            else desc += "**Uncollectible**" + "\n";
-            if (card.cost) desc += `${card.cost} mana\n`;
-            if (card.attack && card.health) desc += `${card.attack}/${card.health}\n`;
+            rich.setTitle(card.name);
+            rich.setImage(card.image);
+            let desc_lines = [];
+            if (card.classId) {
+                let class2 = meta.classes.find(class3=>{
+                    return class3.id==card.classId;
+                });
+                desc_lines.push(`**Class:** ${class2.name}`);
+            }
+            if (card.cardSetId) {
+                let set = meta.sets.find(set=>{
+                    return set.name.id==set.classId;
+                });
+                desc_lines.push(`**Set:** ${set.name}`);
+            }
+            if (card.collectible!=1) desc_lines.push("**Uncollectible**");
+            if (card.manaCost) desc_lines.push(`**Cost:** ${card.manaCost}`);
+            if (card.attack && card.health) desc_lines.push(`${card.attack}/${card.health}`);
+            desc_lines.push("");
             if (card.text) {
-                let $ = cheerio.load(card.text.replace(/\[x\]/gi, "").replace(/\\n/gi, " ").replace(/<br\s*[\/]?>/gi, "\n").replace(/<\/?b>/gi, "**"))
-                desc += `${$("body").text()}\n`;
+                card.text = card.text.replace(/\*/g, "\\*");
+                card.text = card.text.replace(/<i>/g, "*");
+                card.text = card.text.replace(/<\/i>/g, "*");
+                card.text = card.text.replace(/<b>/g, "**");
+                card.text = card.text.replace(/<\/b>/g, "**");
+                desc_lines.push(card.text);
             }
-            if (card.flavor) {
-                let flavor = escapeMarkdownText(card.flavor);
-                flavor = replaceAll(flavor, "\\*", "\\*");
-                flavor = replaceAll(flavor, "\\\\n", "\n");
-                flavor = replaceAll(flavor, "<i>", "*");
-                flavor = replaceAll(flavor, "</i>", "*");
-                flavor = replaceAll(flavor, "<b>", "**");
-                flavor = replaceAll(flavor, "</b>", "**");
-                desc += "\n" + flavor;
+            if (card.flavorText) {
+                card.flavorText = card.flavorText.replace(/<i>/g, "");
+                card.flavorText = card.flavorText.replace(/<\/i>/g, "");
+                card.flavorText = card.flavorText.replace(/<b>/g, "");
+                card.flavorText = card.flavorText.replace(/<\/b>/g, "");
             }
-            rich.setDescription(desc);
+            rich.setDescription(desc_lines.join("\n"));
+            rich.setFooter(card.flavorText);
             return rich;
         }
-        if (results.length < 1) {
+        cards = cards.cards.map(card=>{
+            return [card.name, ()=>{return cardRich(card)}]
+        })
+        if (cards.length < 1) {
             return "`No results`";
-        } else if (results.length == 1) {
-            let rich = cardRich(results[0]);
-            return rich;
+        } else if (cards.length == 1) {
+            return cards[0][1]();
         } else {
-            let msg = "```" + results.map((v, i) => {
-                let title = v.name;
-                if (v.type == "Hero") title += " (Hero)"
-                return `${i + 1}. ${title}`
-            }).join("\n") + "```";
-            extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
-                var num = parseInt(message.content) - 1;
-                if (num < results.length && num > -1) {
-                    let rich = cardRich(results[num]);
-                    message.channel.send("", { embed: rich });
-                    return true;
-                }
-                return false;
+            let rich = new Discord.RichEmbed({
+                title: "",
+                description: createCustomNumCommand3(message,cards)
             })
-            return msg;
+            return rich;
         }
     }
 }))
@@ -2323,7 +2347,7 @@ async function weather(location_name){
     let summary = data.daily.summary
     if (data.alerts) {
         let alertstring = data.alerts.map((alert)=>{
-            return `[**ALERT**](${alert.uri}}): ${alert.description}`
+            return `[**ALERT**](${alert.uri}): ${alert.description}`
         }).join("\n")
         summary = summary + "\n\n" + alertstring;
     }
@@ -4027,6 +4051,22 @@ commands.push(new Command({
     }
 }))
 
+commands.push(new Command({
+    name: "play death stranding",
+    regex: /(?:play|like) death stranding/i,
+    prefix: "",
+    testString: "something something play death stranding something",
+    hidden: true,
+    requirePrefix: false,
+    shortDesc: "",
+    longDesc: "",
+    log: true,
+    points: 1,
+    run: (message, args) =>{
+        return `It's Death Stranding. You don't "play" it and you don't "like" it. It transcends those social constructs you fuckin swine. That's how I know you're not ready for Kojimas Brilliance. Using words like "play" and "like" when talking about Death Stranding. \*SPITS\* FUCK YOU. You have no idea what this is really about. The metaphysical meaning, the deep and subtle vicissitudes that Kojima was able to expertly weave into this piece of art that transcends the basic human cognisense. He's a damn near omniscient being and to that its a standing ovation. To anyone with an IQ over 500.`;
+    },
+    typing: false,
+}))
 
 commands.push(new Command({
     name: "exit",

@@ -2477,10 +2477,9 @@ returns poe.trade based on item name or stats`,
             let stmt = sql.prepare("SELECT poeleague FROM users WHERE user_id = ?;")
             let poeleague = stmt.get(message.author.id).poeleague
             if (args[1].split("\n").length < 3) {
-            console.log(1)
                 poelinkid = await rp({
                     method: 'POST',
-                    url: "http://poe.trade/search",
+                    url: "https://poe.trade/search",
                     followRedirect: false,
                     //proxy:'http://localhost:8888',
                     headers: {
@@ -2640,7 +2639,7 @@ returns poe.trade based on item name or stats`,
                 
                 poelinkid = await rp({
                     method: 'POST',
-                    url: "http://poe.trade/search",
+                    url: "https://poe.trade/search",
                     followRedirect: false,
                     //proxy:'http://localhost:8888',
                     headers: {
@@ -2669,7 +2668,7 @@ returns poe.trade based on item name or stats`,
                 })
             } catch (e) {
                 //console.error(e);
-                return setLeague("`Update your league`", null, message);
+                return setLeague("Update your league", null, message);
             }
             let $ = cheerio.load(body);
             let rich = new Discord.RichEmbed();
@@ -2714,35 +2713,24 @@ returns poe.trade based on item name or stats`,
                 if (!solo) data.push(data2[i]);
             }
             */
-            data.forEach((leag)=>{
-                let istradeleague = leag.rules.every((rule)=>{
+           leaguelist = data.filter((leag)=>{
+                return leag.rules.every((rule)=>{
                     return rule.id !== "NoParties";
                 })
-                if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
-                    if (thismess.author.id !== message.author.id) return false;
-                    (async ()=>{
-                        let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
-                        stmt.run(message.author.id, leag.id)
-
-                        let itemsearch = await poesearch(thismess,args)
-                        thismess.channel.send.apply(thismess.channel, itemsearch).catch(e=>{
-                            if (e.code == 50035) {
-                                message.channel.send("`Message too large`").catch(err);
-                            } else {
-                                err(e);
-                                message.channel.send("`Error`").catch(err);
-                            }
-                        });
-                    })().catch( e=> {
-                        err(e);
-                        message.channel.send("`Error`").catch(err);
-                    })
-                    return true;
-                }]);
+            }).map(leag=>{
+                return [leag.id,async(thismess)=>{
+                    if (thismess.author.id !== message.author.id) return "";
+                    let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
+                    stmt.run(message.author.id, leag.id)
+                    let itemsearch = await poesearch(message,args)
+                    return itemsearch;
+                }]
             })
-
-            let msg = top + createCustomNumCommand(message,leaguelist);
-            return msg;
+            
+            let rich = new Discord.RichEmbed()
+                .setTitle(top)
+                .setDescription(createCustomNumCommand3(message, leaguelist))
+            return rich;
         }
         return await poesearch(message, args);
     }

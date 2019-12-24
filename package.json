@@ -29,8 +29,9 @@
     "simple-oauth2": "^3.0.1",
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
+    "utf-8-validate": "^5.0.2",
     "ytdl-core": "^1.0.4",
-    "zlib-sync": "^0.1.5",
+    "zlib-sync": "^0.1.6",
     "zucc": "^0.1.2"
   },
   "devDependencies": {},

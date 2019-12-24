@@ -19,8 +19,6 @@ const unescape = require('unescape');
 const RSSManager = require('./utils/RSSManager');
 const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
-const m3u8stream = require('m3u8stream');
-const parseTime   = require('m3u8stream/dist/parse-time');
 
 moment.tz.setDefault("America/New_York");
 
@@ -295,13 +293,13 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v10.22 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v12.23 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v10.22 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v12.23 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
         });
         bot.once("ready", ()=>{
             console.log("ready")
@@ -2179,8 +2177,9 @@ youtube_id - can either be the full YouTube URL or the unique 11 characters at t
         if (!voiceChannel) {
             return [`get in a voice channel`,{reply: message.author}];
         }
+
         let stream = ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
- //           filter: 'audioonly',
+            filter: 'audioonly',
             quality: 'highestaudio'
         });
         playSound(voiceChannel, stream);
@@ -2228,6 +2227,7 @@ number_of_results - the number of results to return. Default is 6.`,
                         return false;
                     }
                     let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num-1].id.videoId, {
+                        filter: 'audioonly',
                         quality: 'highestaudio'
                     });
                     playSound(voiceChannel, stream);
@@ -3773,6 +3773,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) =>{
         return `\`
+12-23
+• fixed youtube playback errors
+
 10-22
 • added .curr
 
@@ -3823,8 +3826,8 @@ commands.push(new Command({
         if (!voiceChannel) {
             return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];
         } else {
-            console.log(data.items[0].id.videoId)
             let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {
+                filter: 'audioonly',
                 quality: 'highestaudio'                         
             });
             playSound(voiceChannel, stream);

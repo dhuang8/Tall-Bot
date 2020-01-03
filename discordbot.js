@@ -23,7 +23,7 @@ const oauth2 = require('simple-oauth2')
 moment.tz.setDefault("America/New_York");
 
 const bot = new Discord.Client({
-//    apiRequestMethod: "burst"
+    //    apiRequestMethod: "burst"
 });
 
 let config = {
@@ -34,10 +34,10 @@ let config = {
     weatherChannelID: null,
     guildID: null,
     api: {
-        youtube:null,
-        darksky:null,
-        battlerite:null,
-        hearthstone:null
+        youtube: null,
+        darksky: null,
+        battlerite: null,
+        hearthstone: null
     },
     token: null
 };
@@ -46,7 +46,7 @@ const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/
 sql.prepare("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, points INTEGER, poeleague TEXT) WITHOUT ROWID;").run();
 sql.prepare("CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, channel_id TEXT, message_text TEXT, message_id TEXT, time DATETIME, original_time DATETIME, url TEXT, triggered BOOLEAN DEFAULT(FALSE), FOREIGN KEY(user_id) REFERENCES users(user_id));").run();
 
-let globalvars = {bot, config, sql}
+let globalvars = { bot, config, sql }
 module.exports = globalvars
 const Command = require('./utils/Command');
 
@@ -80,7 +80,7 @@ Discord.RichEmbed = function (data) {
 function richQuote(message) {
     try {
         let rich = new Discord.RichEmbed();
-        let username = (message.member && message.member.nickname) ? message.member.nickname: message.author.username;
+        let username = (message.member && message.member.nickname) ? message.member.nickname : message.author.username;
         rich.setAuthor(username, message.author.displayAvatarURL(), message.url);
         rich.setDescription(message.content);
         rich.setTimestamp(message.createdAt);
@@ -145,16 +145,16 @@ CustomCommand.prototype.onMessage = function (message) {
 }
 
 //data_array is in the format [[title1,return_data1],[title2,return_data2]]
-function createCustomNumCommand (message, data_array) {
+function createCustomNumCommand(message, data_array) {
     let mes = "```";
-    mes += data_array.map((cur, index)=>{
-        return `${index+1}. ${cur[0]}`;
+    mes += data_array.map((cur, index) => {
+        return `${index + 1}. ${cur[0]}`;
     }).join("\n");
     mes += "```";
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
         if (num < data_array.length && num > -1) {
-            if (typeof data_array[num][1] == "function"){
+            if (typeof data_array[num][1] == "function") {
                 data_array[num][1](message);
             } else {
                 message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
@@ -167,21 +167,21 @@ function createCustomNumCommand (message, data_array) {
 }
 
 //data_array is in the format [[title1,return_data1],[title2,return_data2]]
-function createCustomNumCommand2 (message, data_array) {
-    let mes = data_array.map((cur, index)=>{
-        return `**${index+1}**. ${cur[0]}`;
+function createCustomNumCommand2(message, data_array) {
+    let mes = data_array.map((cur, index) => {
+        return `**${index + 1}**. ${cur[0]}`;
     }).join("\n");
 
-    if (mes.length>2048) {
-        while (mes.length>2048-4) {
-            mes = mes.replace(/\n.+$/,"")
+    if (mes.length > 2048) {
+        while (mes.length > 2048 - 4) {
+            mes = mes.replace(/\n.+$/, "")
         }
         mes = mes + "\n...";
     }
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
         if (num < data_array.length && num > -1) {
-            if (typeof data_array[num][1] == "function"){
+            if (typeof data_array[num][1] == "function") {
                 data_array[num][1](message);
             } else {
                 message.channel.send.apply(message.channel, data_array[num][1]).catch(err);
@@ -194,14 +194,14 @@ function createCustomNumCommand2 (message, data_array) {
 }
 
 //data_array is in the format [[title1,return_data1],[title2,return_data2]]
-function createCustomNumCommand3 (message, data_array) {
-    let mes = data_array.map((cur, index)=>{
-        return `**${index+1}**. ${cur[0]}`;
+function createCustomNumCommand3(message, data_array) {
+    let mes = data_array.map((cur, index) => {
+        return `**${index + 1}**. ${cur[0]}`;
     }).join("\n");
 
-    if (mes.length>2048) {
-        while (mes.length>2048-4) {
-            mes = mes.replace(/\n.+$/,"")
+    if (mes.length > 2048) {
+        while (mes.length > 2048 - 4) {
+            mes = mes.replace(/\n.+$/, "")
         }
         mes = mes + "\n...";
     }
@@ -209,12 +209,12 @@ function createCustomNumCommand3 (message, data_array) {
     extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
         var num = parseInt(message.content) - 1;
         if (num < data_array.length && num > -1) {
-            if (typeof data_array[num][1] == "function"){
-                (async()=>{
+            if (typeof data_array[num][1] == "function") {
+                (async () => {
                     return await data_array[num][1](message);
-                })().then(params=>{
+                })().then(params => {
                     if (Array.isArray(params)) {
-                        message.channel.send.apply(message.channel, params).catch(e=>{
+                        message.channel.send.apply(message.channel, params).catch(e => {
                             if (e.code == 50035) {
                                 message.channel.send("`Message too large`").catch(err);
                             } else {
@@ -223,7 +223,7 @@ function createCustomNumCommand3 (message, data_array) {
                             }
                         });
                     } else {
-                        message.channel.send(params).catch(e=>{
+                        message.channel.send(params).catch(e => {
                             if (e.code == 50035) {
                                 message.channel.send("`Message too large`").catch(err);
                             } else {
@@ -232,7 +232,7 @@ function createCustomNumCommand3 (message, data_array) {
                             }
                         });
                     }
-                }).catch(e=>{
+                }).catch(e => {
                     if (e.code == 50035) {
                         message.channel.send("`Message too large`").catch(err);
                     } else {
@@ -250,9 +250,9 @@ function createCustomNumCommand3 (message, data_array) {
     return mes;
 }
 
-function wordWrap(str,length){
-    let regex = new RegExp(`(?=(.{1,${length}}(?: |$)))\\1`,"g");
-    return str.replace(regex,"$1\n");
+function wordWrap(str, length) {
+    let regex = new RegExp(`(?=(.{1,${length}}(?: |$)))\\1`, "g");
+    return str.replace(regex, "$1\n");
 }
 
 function convertTZ(s) {
@@ -272,17 +272,17 @@ function convertTZ(s) {
     return timezone[s];
 }
 
-function escapeMarkdownText(str, noemotes=true) {
+function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
-        return str.replace(/([\\\(\)*_~<>`])/g,'\\\$1')
+        return str.replace(/([\\\(\)*_~<>`])/g, '\\\$1')
     } else {
-        return str.replace(/([\\\(\)*_~`])/g,'\\\$1')
+        return str.replace(/([\\\(\)*_~`])/g, '\\\$1')
     }
     return str;
 }
 
 let rss;
-fs.readFile("./config.json", "utf8", (e,data) => {
+fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
         fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
             console.error(e);
@@ -293,22 +293,22 @@ fs.readFile("./config.json", "utf8", (e,data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v12.23 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v12.23 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v12.23 .help for list of commands',{type: "PLAYING"}).catch(bot.err)
+            bot.user.setActivity('v12.23 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
-        bot.once("ready", ()=>{
+        bot.once("ready", () => {
             console.log("ready")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
             let rows = sql.prepare("SELECT * FROM reminders WHERE triggered=false").all();
-            rows.forEach(row=>{
+            rows.forEach(row => {
                 setReminder(row.id, row.user_id, row.channel_id, row.message_text, row.message_id, row.time, row.original_time, row.url);
             })
-            fs.readFile("./data/RSS.json", "utf8", (err,data) => {
+            fs.readFile("./data/RSS.json", "utf8", (err, data) => {
                 if (err && err.code === "ENOENT") {
                     console.error("No RSS json file");
                 } else {
@@ -318,28 +318,28 @@ fs.readFile("./config.json", "utf8", (e,data) => {
                         console.error(e);
                     };
                 }
-            })                
+            })
         })
         bot.login(config.token).catch(console.error);
-        new CronJob('0 0 0 * * 0', function() {
+        new CronJob('0 0 0 * * 0', function () {
             sql.prepare("UPDATE users SET points=points - points/10;").run();
         }, null, true, 'America/New_York');
         if (config.weatherChannelID) {
-            new CronJob('0 0 8 * * *', function() {
-                (async ()=>{
+            new CronJob('0 0 8 * * *', function () {
+                (async () => {
                     return await weather("nyc");
-                })().then(params=>{
+                })().then(params => {
                     bot.channels.get(config.weatherChannelID).send(params).catch(err);
-                }).catch(e=>{
+                }).catch(e => {
                     err(e);
                 })
             }, null, true, 'America/New_York');
-            
+
         }
     }
 })
 
-let commands = [];    
+let commands = [];
 let extraCommand = [];
 
 commands.push(new Command({
@@ -348,10 +348,10 @@ commands.push(new Command({
     prefix: "",
     log: false,
     points: 0,
-    prerun: (message)=>{
+    prerun: (message) => {
         return message.author.bot;
     },
-    run: (message, args)=>{
+    run: (message, args) => {
         return null;
     }
 }))
@@ -359,42 +359,42 @@ commands.push(new Command({
 commands.push(new Command({
     name: "log outside messages and pings",
     hidden: true,
-    req: ()=>{return config.adminID && config.guildID},
-    prerun: (message)=>{
+    req: () => { return config.adminID && config.guildID },
+    prerun: (message) => {
         return message.author.bot;
     },
     log: false,
     points: 0,
-    prerun: (message)=>{
-        (async()=>{
-            let msgguild = message.guild?message.guild.id:"whispers";
+    prerun: (message) => {
+        (async () => {
+            let msgguild = message.guild ? message.guild.id : "whispers";
             let msgchannel = message.channel.id;
-            let guildcat = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgguild && chan.type=="category");
+            let guildcat = bot.guilds.get(config.guildID).channels.find(chan => chan.name == msgguild && chan.type == "category");
             if (!guildcat) {
-                guildcat = await bot.guilds.get(config.guildID).channels.create(msgguild,{type:"category"});
+                guildcat = await bot.guilds.get(config.guildID).channels.create(msgguild, { type: "category" });
             }
-            let guildchan = bot.guilds.get(config.guildID).channels.find(chan=>chan.name==msgchannel && chan.type=="text");
+            let guildchan = bot.guilds.get(config.guildID).channels.find(chan => chan.name == msgchannel && chan.type == "text");
             if (!guildchan) {
-                guildchan = await bot.guilds.get(config.guildID).channels.create(msgchannel,{type:"text"});
+                guildchan = await bot.guilds.get(config.guildID).channels.create(msgchannel, { type: "text" });
                 guildchan.setParent(guildcat);
             }
-            let msg= "`" + message.author.tag + ":` " + message.cleanContent
+            let msg = "`" + message.author.tag + ":` " + message.cleanContent
             message.attachments.forEach(attach => {
                 msg += "\n" + attach.proxyURL;
             })
             if (message.mentions.users.get(bot.user.id)) {
                 msg += bot.users.get(config.adminID)
             }
-            if (msg.length>2000) msg = msg.slice(0,1997) + "...";
+            if (msg.length > 2000) msg = msg.slice(0, 1997) + "...";
             guildchan.send(msg);
-        })().catch(e=>{
+        })().catch(e => {
             console.error(e);
             //throw e;
             err(e);
         })
         return false;
     },
-    run: (message, args)=>{
+    run: (message, args) => {
         return null;
     }
 }))
@@ -402,13 +402,13 @@ commands.push(new Command({
 commands.push(new Command({
     name: "send bot messages",
     hidden: true,
-    req: ()=>{return config.adminID && config.guildID},
+    req: () => { return config.adminID && config.guildID },
     log: false,
     points: 0,
     prerun: (message) => {
         return message.channel.guild && message.channel.guild.id == config.guildID && message.author.id == config.adminID
     },
-    run: async (message, args)=>{
+    run: async (message, args) => {
         bot.channels.get(message.channel.name).send(message.content);
     }
 }))
@@ -418,11 +418,11 @@ commands.push(new Command({
     prefix: "",
     log: false,
     points: 0,
-    req: ()=>{return config.botChannelID && config.errorChannelID},
+    req: () => { return config.botChannelID && config.errorChannelID },
     prerun: (message) => {
-       return message.channel.id === config.botChannelID || message.channel.id === config.errorChannelID
+        return message.channel.id === config.botChannelID || message.channel.id === config.errorChannelID
     },
-    run: async (message, args)=>{
+    run: async (message, args) => {
         message.delete().catch(err);
         return null;
     }
@@ -435,7 +435,7 @@ commands.push(new Command({
     prefix: "",
     log: false,
     points: 0,
-    prerun: (message, args)=>{
+    prerun: (message, args) => {
         if (extraCommand[message.channel.id] != null) {
             return extraCommand[message.channel.id].onMessage(message);
         }
@@ -451,8 +451,8 @@ commands.push(new Command({
     shortDesc: "pong",
     longDesc: "pong",
     typing: false,
-    points:0,
-    run: (message, args)=>{
+    points: 0,
+    run: (message, args) => {
         return "pong";
     }
 }))
@@ -466,8 +466,8 @@ commands.push(new Command({
     log: true,
     typing: false,
     points: 1,
-    run: (message, args)=>{
-        return "^".repeat(args[0].length+1).slice(0,2000);
+    run: (message, args) => {
+        return "^".repeat(args[0].length + 1).slice(0, 2000);
     }
 }))
 commands.push(new Command({
@@ -481,7 +481,7 @@ commands.push(new Command({
     log: true,
     typing: false,
     points: 1,
-    run: (message, args)=>{
+    run: (message, args) => {
         return `You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside`;
     }
 }))
@@ -496,7 +496,7 @@ commands.push(new Command({
     log: true,
     typing: false,
     points: 1,
-    run: (message, args)=>{
+    run: (message, args) => {
         let fullZones = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         //msg += fullName;
         let inputTime = moment();
@@ -519,7 +519,7 @@ returns shadowverse card info`,
     requirePrefix: true,
     log: true,
     points: 1,
-    run: async (message, args)=>{
+    run: async (message, args) => {
         let body = await rp({
             url: "https://shadowverse-portal.com/cards?card_name=" + encodeURIComponent(args[1]),
             headers: {
@@ -580,12 +580,12 @@ returns shadowverse card info`,
     }
 }))
 
-let timeouts=[];
+let timeouts = [];
 
 function createReminder(user_id, channel_id, message_text, message_id, time, original_time, url) {
     try {
         let info = sql.prepare("INSERT INTO reminders(user_id, channel_id, message_text, message_id, time, original_time, url) VALUES (?,?,?,?,?,?,?)").run(user_id, channel_id, message_text, message_id, time.valueOf(), original_time, url);
-        if (info.changes<1) throw new Error("Could not create reminder");
+        if (info.changes < 1) throw new Error("Could not create reminder");
         let now = moment();
         let rich = Discord.RichEmbed();
         rich.setTitle(message_text);
@@ -594,7 +594,7 @@ function createReminder(user_id, channel_id, message_text, message_id, time, ori
         setReminder(info.lastInsertRowid, user_id, channel_id, message_text, message_id, time.valueOf(), original_time, url);
         return rich;
     } catch (e) {
-        err (e)
+        err(e)
     }
 }
 
@@ -611,16 +611,16 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
 
         timeouts[id] = bot.setTimeout(function () {
             let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
-            if (info.changes<1) throw new Error("Could not modify reminder");
+            if (info.changes < 1) throw new Error("Could not modify reminder");
             let rich = new Discord.RichEmbed();
-            let member = channel.members?channel.members.get(user):null
+            let member = channel.members ? channel.members.get(user) : null
             let username;
             if (member && member.nickname) {
                 username = member.nickname;
             } else {
                 username = user.username;
             }
-            rich.setAuthor(username, user.displayAvatarURL() );
+            rich.setAuthor(username, user.displayAvatarURL());
             rich.setDescription(message_text);
             rich.setTimestamp(original_time);
             bot.channels.get(channel_id).send(`reminder: ${message_text}\n${url}`, {
@@ -629,7 +629,7 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
             });
         }, wait)
     } catch (e) {
-        err (e)
+        err(e)
     }
 }
 
@@ -637,7 +637,7 @@ function cancelReminder(id) {
     let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
     if (timeouts[id]) bot.clearTimeout(timeouts[id]);
     timeouts[id] = null;
-    if (info.changes<1) return false;
+    if (info.changes < 1) return false;
     return true
 }
 
@@ -650,7 +650,7 @@ commands.push(new Command({
     testString: '.reminder this is a test message 5 seconds',
     shortDesc: "sends a message to yourself at a later time",
     longDesc: {
-        title:`.reminder (message_with_timestring) or .reminder (action) (arg) or .reminder (message) (num) (unit_of_time)`,
+        title: `.reminder (message_with_timestring) or .reminder (action) (arg) or .reminder (message) (num) (unit_of_time)`,
         description: `returns nothing`,
         fields: [{
             name: `message_with_timestring`,
@@ -675,16 +675,16 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: (message, args)=>{
+    run: (message, args) => {
         function listReminders() {
             let rows = sql.prepare("SELECT * FROM reminders WHERE user_id=? AND triggered=false AND channel_id=?").all(message.author.id, message.channel.id);
-            if (rows.length<1) {
+            if (rows.length < 1) {
                 let rich = new Discord.RichEmbed()
                     .setTitle("No reminders left")
                 return rich;
-            } 
-            let lines = rows.map((reminder,index)=>{
-                return `**${index+1}.** ${reminder.message_text}`
+            }
+            let lines = rows.map((reminder, index) => {
+                return `**${index + 1}.** ${reminder.message_text}`
             })
             let rich = new Discord.RichEmbed()
                 .setTitle("Reminders")
@@ -712,12 +712,12 @@ commands.push(new Command({
         }
         let ret = ""
         if (process.platform == "linux") {
-            ret = execFileSync("python3.7", ["main.pyc", args[1].toUpperCase()],{cwd:"external_scripts/dateparse/", encoding:"utf8"})
+            ret = execFileSync("python3.7", ["main.pyc", args[1].toUpperCase()], { cwd: "external_scripts/dateparse/", encoding: "utf8" })
         } else {
-            ret = execFileSync("py", ["-3", "main.pyc", args[1].toUpperCase()],{cwd:"external_scripts/dateparse/", encoding:"utf8"})
+            ret = execFileSync("py", ["-3", "main.pyc", args[1].toUpperCase()], { cwd: "external_scripts/dateparse/", encoding: "utf8" })
         }
         let time = moment.unix(parseFloat(ret));
-        return ["", {embed:createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url)}]
+        return ["", { embed: createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url) }]
     }
 }))
 
@@ -734,12 +734,12 @@ commands.push(new Command({
 returns yu-gi-oh card data`,
     log: true,
     points: 1,
-    run: async (message, args)=>{
+    run: async (message, args) => {
         let response;
         if (args[1] === "random") {
-            response = await rp(`https://db.ygoprodeck.com/api/v4/randomcard.php`).catch(e=>{return {error: "`No cards found`"}})
+            response = await rp(`https://db.ygoprodeck.com/api/v4/randomcard.php`).catch(e => { return { error: "`No cards found`" } })
         } else {
-            response = await rp(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`).catch(e=>{return {error: "`No cards found`"}})
+            response = await rp(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`).catch(e => { return { error: "`No cards found`" } })
         }
         if (response.error) return response.error;
         response = JSON.parse(response);
@@ -764,10 +764,10 @@ returns yu-gi-oh card data`,
                     "Bottom-Left": ":arrow_lower_left:",
                     "Bottom-Right": ":arrow_lower_right:"
                 };
-                let links = card.linkmarkers.split(",").map(dir=>{
+                let links = card.linkmarkers.split(",").map(dir => {
                     return ascii_arrows[dir];
                 }).join(" ")
-                
+
                 desc_lines.push(`LINK: ${links}`);
             }
             let race_type = []
@@ -778,23 +778,23 @@ returns yu-gi-oh card data`,
             let atk_def = []
             if (card.atk) atk_def.push(`ATK/ ${card.atk}`);
             if (card.def) atk_def.push(`DEF/ ${card.def}`);
-            if (card.linkval && card.linkval>0) atk_def.push(`LINK-${card.linkval}`);
-            if (atk_def.length>0) desc_lines.push(`**${atk_def.join("  ")}**`)
-            if (card.tcgplayer_price) desc_lines.push(`Price: $${parseFloat(card.tcgplayer_price).toFixed(2)}`);                
+            if (card.linkval && card.linkval > 0) atk_def.push(`LINK-${card.linkval}`);
+            if (atk_def.length > 0) desc_lines.push(`**${atk_def.join("  ")}**`)
+            if (card.tcgplayer_price) desc_lines.push(`Price: $${parseFloat(card.tcgplayer_price).toFixed(2)}`);
             rich.setDescription(desc_lines.join("\n"));
             return rich;
         }
 
-        let card_list = response[0].map(card=>{
-            return [card.name, ()=>{return cardRich(card)}]
+        let card_list = response[0].map(card => {
+            return [card.name, () => { return cardRich(card) }]
         })
 
-        if (card_list.length==1) {
+        if (card_list.length == 1) {
             return card_list[0][1]();
-        } else if (card_list.length>1){
+        } else if (card_list.length > 1) {
             return ["", new Discord.RichEmbed({
-                title:"Multiple cards found",
-                description: createCustomNumCommand3(message,card_list)
+                title: "Multiple cards found",
+                description: createCustomNumCommand3(message, card_list)
             })];
         } else {
             return ["`No cards found`"];
@@ -813,10 +813,10 @@ commands.push(new Command({
     shortDesc: "returns hearthstone card data",
     longDesc: `.hs (card name)
 returns hearthstone card data`,
-    req: ()=>{return config.api.blizzard;},
+    req: () => { return config.api.blizzard; },
     log: true,
     points: 1,
-    run: async (message, args)=>{
+    run: async (message, args) => {
         const credentials = {
             client: {
                 id: config.api.blizzard.id,
@@ -832,12 +832,12 @@ returns hearthstone card data`,
             token = thisoauth.accessToken.create(result);
         }
         let cardsprom = rp({
-            url:`https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&access_token=${token.token.access_token}`,
+            url: `https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&access_token=${token.token.access_token}`,
             json: true
         });
         if (!meta) {
             meta = await rp({
-                url:`https://us.api.blizzard.com/hearthstone/metadata?locale=en_US&access_token=${token.token.access_token}`,
+                url: `https://us.api.blizzard.com/hearthstone/metadata?locale=en_US&access_token=${token.token.access_token}`,
                 json: true
             });
         }
@@ -848,18 +848,18 @@ returns hearthstone card data`,
             rich.setImage(card.image);
             let desc_lines = [];
             if (card.classId) {
-                let class2 = meta.classes.find(class3=>{
-                    return class3.id==card.classId;
+                let class2 = meta.classes.find(class3 => {
+                    return class3.id == card.classId;
                 });
                 desc_lines.push(`**Class:** ${class2.name}`);
             }
             if (card.cardSetId) {
-                let set = meta.sets.find(set=>{
-                    return set.name.id==set.classId;
+                let set = meta.sets.find(set => {
+                    return set.name.id == set.classId;
                 });
                 desc_lines.push(`**Set:** ${set.name}`);
             }
-            if (card.collectible!=1) desc_lines.push("**Uncollectible**");
+            if (card.collectible != 1) desc_lines.push("**Uncollectible**");
             if (card.manaCost) desc_lines.push(`**Cost:** ${card.manaCost}`);
             if (card.attack && card.health) desc_lines.push(`${card.attack}/${card.health}`);
             desc_lines.push("");
@@ -881,8 +881,8 @@ returns hearthstone card data`,
             rich.setFooter(card.flavorText);
             return rich;
         }
-        cards = cards.cards.map(card=>{
-            return [card.name, ()=>{return cardRich(card)}]
+        cards = cards.cards.map(card => {
+            return [card.name, () => { return cardRich(card) }]
         })
         if (cards.length < 1) {
             return "`No results`";
@@ -891,7 +891,7 @@ returns hearthstone card data`,
         } else {
             let rich = new Discord.RichEmbed({
                 title: "",
-                description: createCustomNumCommand3(message,cards)
+                description: createCustomNumCommand3(message, cards)
             })
             return rich;
         }
@@ -914,16 +914,16 @@ commands.push(new Command({
     testString: ".art meepo",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return art;},
+    req: () => { return art; },
     shortDesc: "return artifact cards",
     longDesc: `.art (search_term or random)
 return artifact cards`,
     log: true,
     points: 1,
-    run: async (message, args) =>{
-        function simplifyname(s){
-            s = replaceAll(s," ","");
-            s = replaceAll(s,"-","");
+    run: async (message, args) => {
+        function simplifyname(s) {
+            s = replaceAll(s, " ", "");
+            s = replaceAll(s, "-", "");
             s = s.toLowerCase()
             return s;
         }
@@ -933,14 +933,14 @@ return artifact cards`,
             let keys = Object.keys(art)
             let rand = Math.floor(keys.length * Math.random())
             let card = art[keys[rand]]
-            perfectmatch.push([card.card_name, async()=>await createMessage(card)])
+            perfectmatch.push([card.card_name, async () => await createMessage(card)])
         } else {
-            Object.keys(art).forEach((key)=>{
+            Object.keys(art).forEach((key) => {
                 let card = art[key]
                 let cardsimplename = simplifyname(card.card_name);
                 let searchsimple = simplifyname(args[1]);
-                if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, async()=>await createMessage(card)]);
-                else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name,async()=>await createMessage(card)]);
+                if (cardsimplename === searchsimple) perfectmatch.push([card.card_name, async () => await createMessage(card)]);
+                else if (cardsimplename.indexOf(searchsimple) > -1) goodmatch.push([card.card_name, async () => await createMessage(card)]);
             })
         }
 
@@ -950,9 +950,9 @@ return artifact cards`,
             } else if (list.length > 1) {
                 let rich = new Discord.RichEmbed({
                     title: "Multiple cards found",
-                    description: createCustomNumCommand3(message,list)
+                    description: createCustomNumCommand3(message, list)
                 })
-                return ["",{embed:rich}]
+                return ["", { embed: rich }]
             } else {
                 return false;
             }
@@ -976,12 +976,12 @@ return artifact cards`,
             if (card.card_text) {
                 rich.addField(card.card_type, escapeMarkdownText(card.card_text));
             } else {
-                rich.setDescription("**"+card.card_type+"**");
+                rich.setDescription("**" + card.card_type + "**");
             }
             if (card.rarity) rich.addField("Rarity", card.rarity)
             if (card.set) rich.addField("Set", card.set)
-            if (card.references.length>0) {
-                let reflist = card.references.map((ref)=>{
+            if (card.references.length > 0) {
+                let reflist = card.references.map((ref) => {
                     return art[ref.card_id].card_name;
                 }).join("\n");
                 rich.addField("Includes", reflist)
@@ -989,7 +989,7 @@ return artifact cards`,
             if (price) rich.addField("Price", price)
             if (link) rich.setURL(link)
             rich.setImage(card.image)
-            return ["",{embed:rich}]
+            return ["", { embed: rich }]
         }
 
         return await parselist(perfectmatch) || await parselist(goodmatch) || "`No cards found`"
@@ -1004,15 +1004,16 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "returns Magic the Gathering card",
-    longDesc: {title:`.mtg __search_term or random__`,
+    longDesc: {
+        title: `.mtg __search_term or random__`,
         description: `returns Magic the Gathering card`,
         fields: [{
             name: `search_term`,
             value: `The card name. For split, double-faced and flip cards, just the name of one side of the card. Basically each ‘sub-card’ has its own record.`
-        },{
+        }, {
             name: `random`,
             value: `returns a random card`
-        },{
+        }, {
             name: `Examples`,
             value: `.mtg saheeli
 .mtg random`
@@ -1020,7 +1021,7 @@ commands.push(new Command({
     },
     log: true,
     points: 1,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         function cardRich(card) {
             let rich = new Discord.RichEmbed()
                 .setTitle(card.name)
@@ -1069,8 +1070,8 @@ commands.push(new Command({
                 "{8}": `:eight:`,
                 "{9}": `:nine:`,
             }
-            Object.keys(icons).forEach(icon=>{
-                let literal = icon.replace(/\{/g,`\\{`).replace(/\}/g,`\\}`)
+            Object.keys(icons).forEach(icon => {
+                let literal = icon.replace(/\{/g, `\\{`).replace(/\}/g, `\\}`)
                 text = text.replace(new RegExp(literal, 'g'), icons[icon]);
             })
             return text;
@@ -1081,7 +1082,7 @@ commands.push(new Command({
         if (args[1].toLowerCase() === "random") {
             response = await rp(`https://api.magicthegathering.io/v1/cards?random=true&pageSize=100`)
             response = JSON.parse(response);
-            response.cards = [response.cards.find(card=>{
+            response.cards = [response.cards.find(card => {
                 return card.multiverseid !== undefined;
             })]
         } else {
@@ -1090,14 +1091,14 @@ commands.push(new Command({
         }
         let card_list = {}
 
-        response.cards.forEach((card)=>{
+        response.cards.forEach((card) => {
             card.checkid = card.multiverseid || 0;
             if (!card_list[card.name]) card_list[card.name] = card;
             else if (card_list[card.name].checkid < card.checkid) card_list[card.name] = card
         })
 
-        card_list = Object.values(card_list).map(card=>{
-            return [card.name, ()=>{return [cardRich(card)]}]
+        card_list = Object.values(card_list).map(card => {
+            return [card.name, () => { return [cardRich(card)] }]
         })
 
         if (card_list.length < 1) {
@@ -1107,14 +1108,14 @@ commands.push(new Command({
         } else {
             let rich = new Discord.RichEmbed({
                 title: "Multiple cards found",
-                description: createCustomNumCommand3(message,card_list)
+                description: createCustomNumCommand3(message, card_list)
             })
             return rich;
         }
     }
 }))
 
-let teppen = null;        
+let teppen = null;
 fs.readFile("./data/teppen.json", 'utf8', function (e, data) {
     if (e) {
         console.error("Teppen data not found");
@@ -1130,17 +1131,17 @@ commands.push(new Command({
     testString: ".teppen jill",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return teppen;},
+    req: () => { return teppen; },
     shortDesc: "search for TEPPEN cards",
     longDesc: `.teppen (search)`,
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
-        function simplifyname(s){
-            s = s.replace(/ /g,"");
-            s = s.replace(/-/g,"");
-            s = s.replace(/\./g,"");
+    run: async (message, args) => {
+        function simplifyname(s) {
+            s = s.replace(/ /g, "");
+            s = s.replace(/-/g, "");
+            s = s.replace(/\./g, "");
             s = s.toLowerCase();
             return s;
         }
@@ -1162,11 +1163,11 @@ commands.push(new Command({
             if (card.Effects) desclines.push(card.Effects);
             rich.setDescription(desclines.join("\n"));
             rich.setImage(`https://teppenthegame.com${card.Img}`)
-            return ["",{embed:rich}]
+            return ["", { embed: rich }]
         }
         let perfectmatch = [];
         let goodmatch = [];
-        Object.keys(teppen).forEach((key)=>{
+        Object.keys(teppen).forEach((key) => {
             let card = teppen[key]
             let simplename = simplifyname(card.Name);
             let searchsimple = simplifyname(args[1]);
@@ -1180,9 +1181,9 @@ commands.push(new Command({
             } else if (list.length > 1) {
                 let rich = new Discord.RichEmbed({
                     title: "Multiple cards found",
-                    description: createCustomNumCommand3(message,list)
+                    description: createCustomNumCommand3(message, list)
                 })
-                return ["",{embed:rich}]
+                return ["", { embed: rich }]
             } else {
                 return false;
             }
@@ -1192,7 +1193,7 @@ commands.push(new Command({
     }
 }))
 
-let gundam = null;        
+let gundam = null;
 fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
     if (e) {
         console.error("gundam data not found");
@@ -1208,27 +1209,27 @@ commands.push(new Command({
     testString: ".gundam rx",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return gundam;},
+    req: () => { return gundam; },
     shortDesc: "you get gundam stuff back",
     longDesc: `.gundam (search)`,
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
-        function simplifyname(s){
-            s = replaceAll(s," ","");
-            s = replaceAll(s,"-","");
+    run: async (message, args) => {
+        function simplifyname(s) {
+            s = replaceAll(s, " ", "");
+            s = replaceAll(s, "-", "");
             s = s.toLowerCase()
             return s;
         }
         let perfectmatch = [];
         let goodmatch = [];
-        Object.keys(gundam).forEach((key)=>{
+        Object.keys(gundam).forEach((key) => {
             let thisgundam = gundam[key]
             let simplename = simplifyname(thisgundam.Model);
             let searchsimple = simplifyname(args[1]);
             if (simplename === searchsimple) perfectmatch.push([thisgundam.Model, createMessage(thisgundam)]);
-            else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([thisgundam.Model,createMessage(thisgundam)]);
+            else if (simplename.indexOf(searchsimple) > -1) goodmatch.push([thisgundam.Model, createMessage(thisgundam)]);
         })
 
         function parselist(list) {
@@ -1237,9 +1238,9 @@ commands.push(new Command({
             } else if (list.length > 1) {
                 let rich = new Discord.RichEmbed({
                     title: "Multiple gundams found",
-                    description: createCustomNumCommand3(message,list)
+                    description: createCustomNumCommand3(message, list)
                 })
-                return ["",{embed:rich}]
+                return ["", { embed: rich }]
             } else {
                 return false;
             }
@@ -1254,14 +1255,14 @@ commands.push(new Command({
             rich.addField("Release Date", thisgundam["Release Date"])
             rich.addField("Notes", thisgundam.Notes)
             rich.setImage(thisgundam.image)
-            return ["",{embed:rich}]
+            return ["", { embed: rich }]
         }
 
         return parselist(perfectmatch) || parselist(goodmatch) || "`Gundam not found`";
     }
 }))
 
-let t7 = null;        
+let t7 = null;
 fs.readFile("./data/t7.json", 'utf8', function (e, data) {
     if (e) {
         console.error("Tekken 7 data not found");
@@ -1275,18 +1276,19 @@ commands.push(new Command({
     regex: /^(?:t7|tek) (\S+)(?: ([^\n\r]+?))?$/i,
     prefix: ".",
     requirePrefix: true,
-    req: ()=>{return t7 && config.t7sheetid;},
+    req: () => { return t7 && config.t7sheetid; },
     testString: ".t7 ak block=1",
     log: true,
     points: 1,
     typing: false,
     shortDesc: "returns info on Tekken 7 moves",
-    longDesc: {title:`.t7 __character_name__ __condition__`,
+    longDesc: {
+        title: `.t7 __character_name__ __condition__`,
         description: `returns information on a Tekken 7 character's move string`,
         fields: [{
             name: `character_name`,
             value: `full or part of a character's name`
-        },{
+        }, {
             name: `**condition**`,
             value: `**__commandstring__ or __movename__** - returns moves which contain the commandstring or movename. same as command:commandstring or name:movename
 **__fieldname__>__searchstring__** - fieldname begins with searchstring
@@ -1298,7 +1300,7 @@ commands.push(new Command({
 **__fieldname__=__num__** - the value of fieldname is equal to num
 **i__num__** - same as startup=__num__
 multiple conditions can be linked together using condition1&condition2&condition3...`
-        },{
+        }, {
             name: "Examples",
             value: `**.t7 aku 11** - returns information on Akuma's 1,1
 **.t7 aku com:11** - returns strings that contains 1,1
@@ -1312,7 +1314,7 @@ multiple conditions can be linked together using condition1&condition2&condition
 **.t7 aku block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid`
         }]
     },
-    run: async (message, args)=>{
+    run: async (message, args) => {
 
         function simplifyMove(s) {
             s = s.toLowerCase();
@@ -1324,15 +1326,15 @@ multiple conditions can be linked together using condition1&condition2&condition
             s = s.replace(/\*/g, "");
             s = replaceAll(s, "(\\D)\\+(\\d)", "$1$2");
             s = replaceAll(s, "(\\D)\\+(\\D)", "$1$2");
-            if (s.indexOf("run")==0) s = "fff" + s.slice(3);
-            if (s.indexOf("running")==0) s = "fff" + s.slice(6);
-            if (s.indexOf("wr")==0) s = "fff" + s.slice(2);
-            if (s.indexOf("cd")==0) s = "fnddf" + s.slice(2);
-            if (s.indexOf("rds")==0) s = "bt" + s.slice(3);
-            if (s.indexOf("qcf")==0) s = "ddff" + s.slice(3);
-            if (s.indexOf("qcb")==0) s = "ddbb" + s.slice(3);
-            if (s.indexOf("hcf")==0) s = "bdbddff" + s.slice(3);
-            if (s.indexOf("hcb")==0) s = "fdfddbb" + s.slice(3);
+            if (s.indexOf("run") == 0) s = "fff" + s.slice(3);
+            if (s.indexOf("running") == 0) s = "fff" + s.slice(6);
+            if (s.indexOf("wr") == 0) s = "fff" + s.slice(2);
+            if (s.indexOf("cd") == 0) s = "fnddf" + s.slice(2);
+            if (s.indexOf("rds") == 0) s = "bt" + s.slice(3);
+            if (s.indexOf("qcf") == 0) s = "ddff" + s.slice(3);
+            if (s.indexOf("qcb") == 0) s = "ddbb" + s.slice(3);
+            if (s.indexOf("hcf") == 0) s = "bdbddff" + s.slice(3);
+            if (s.indexOf("hcb") == 0) s = "fdfddbb" + s.slice(3);
             return s;
         }
         function simplifyfield(s) {
@@ -1348,28 +1350,28 @@ multiple conditions can be linked together using condition1&condition2&condition
         let nameinput = args[1].toLowerCase();
         args[2] = args[2] || " ";
         let double_names = ["armor king", "lucky chloe", "devil jin", "master raven", "jack 7"]
-        if (double_names.indexOf((args[1] + " " + args[2].split(" ",1)[0]).toLowerCase()) > -1){
-            args[2] = args[2].slice(args[2].split(" ",1)[0].length+1);
+        if (double_names.indexOf((args[1] + " " + args[2].split(" ", 1)[0]).toLowerCase()) > -1) {
+            args[2] = args[2].slice(args[2].split(" ", 1)[0].length + 1);
         }
-        else if (nameinput=="dj") nameinput="devil"
-        else if (nameinput=="djin") nameinput="devil"
-        else if (nameinput=="dvj") nameinput="devil"
-        else if (nameinput=="panda") nameinput="kuma"
-        else if (nameinput=="ak") nameinput="armor"
+        else if (nameinput == "dj") nameinput = "devil"
+        else if (nameinput == "djin") nameinput = "devil"
+        else if (nameinput == "dvj") nameinput = "devil"
+        else if (nameinput == "panda") nameinput = "kuma"
+        else if (nameinput == "ak") nameinput = "armor"
 
         //special move conversions
         if (args[2].toLowerCase() == "rd") args[2] = "rage drive"
         else if (args[2].toLowerCase() == "ra") args[2] = "rage art"
 
-        Object.keys(t7).forEach((v, i)=>{
+        Object.keys(t7).forEach((v, i) => {
             let charindex = v.indexOf(nameinput);
-            if (charindex===0) charfound.push(v);
-            else if(charindex>0) charfoundmid.push(v);
+            if (charindex === 0) charfound.push(v);
+            else if (charindex > 0) charfoundmid.push(v);
         })
 
         function parseCharList(charfound) {
-            if (charfound.length ==1) return getMove(charfound[0], args[2]);
-            else if (charfound.length>1) {
+            if (charfound.length == 1) return getMove(charfound[0], args[2]);
+            else if (charfound.length > 1) {
                 extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
                     var num = parseInt(message.content) - 1;
                     if (num < charfound.length && num > -1) {
@@ -1378,13 +1380,13 @@ multiple conditions can be linked together using condition1&condition2&condition
                     }
                     return false;
                 })
-                let msg = charfound.map((e, i)=>{
-                    return `**${i+1}**. ${t7[e].name}`
+                let msg = charfound.map((e, i) => {
+                    return `**${i + 1}**. ${t7[e].name}`
                 }).join("\n");
                 let rich = new Discord.RichEmbed();
                 rich.setDescription(msg);
                 rich.setTitle("Choose your fighter")
-                return ["",rich];
+                return ["", rich];
             }
             return false;
         }
@@ -1399,16 +1401,16 @@ multiple conditions can be linked together using condition1&condition2&condition
                 function getMoveList(conditions) {
                     let movelist = []
                     //for each {moveshorthand:[array of moves]}
-                    Object.entries(char.moves).forEach((entry)=>{
+                    Object.entries(char.moves).forEach((entry) => {
                         //for each move {command, name, etc}
                         entry[1].forEach((moveobj) => {
                             //check if move satisfies all conditions
-                            let match = conditions.every((cur)=>{
+                            let match = conditions.every((cur) => {
                                 //condition has to return true for at least 1 field:value
-                                return Object.entries(moveobj).some((field)=>{
+                                return Object.entries(moveobj).some((field) => {
                                     //field[0] is the field name and field[1] is the field value
                                     //ignore gfycat and cell columns during comparison
-                                    if (field[0]!=="gfycat" && field[0]!=="cell") {
+                                    if (field[0] !== "gfycat" && field[0] !== "cell") {
                                         return cur(field[0], field[1]);
                                     }
                                     return false;
@@ -1419,7 +1421,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                             if (match) {
                                 movelist.push(moveobj)
                             };
-                            
+
                         })
                     })
                     return movelist;
@@ -1429,36 +1431,36 @@ multiple conditions can be linked together using condition1&condition2&condition
                 function parseConditionArgs(userfield, comparison, uservalue) {
 
                     //compares the field value to the given value
-                    function comparefunc(value,comparison,valuestring,isnumfield) {
+                    function comparefunc(value, comparison, valuestring, isnumfield) {
                         if (isnumfield) {
-                            if (comparison=="<") {
+                            if (comparison == "<") {
                                 return value < valuestring;
-                            } else if (comparison==">"){
+                            } else if (comparison == ">") {
                                 return value > valuestring;
-                            } else if (comparison=="=" || comparison==":"){
+                            } else if (comparison == "=" || comparison == ":") {
                                 return value == valuestring;
-                            } else if (comparison=="<="){
+                            } else if (comparison == "<=") {
                                 return value <= valuestring;
-                            } else if (comparison==">="){
+                            } else if (comparison == ">=") {
                                 return value >= valuestring;
                             }
                             return false;
                         }
-                        
-                        if (comparison=="<" || comparison=="<="){
+
+                        if (comparison == "<" || comparison == "<=") {
                             return value.endsWith(valuestring);
-                        } else if (comparison=="="){
+                        } else if (comparison == "=") {
                             return value == valuestring;
-                        } else if (comparison==">" || comparison==">="){
+                        } else if (comparison == ">" || comparison == ">=") {
                             return value.startsWith(valuestring);
-                        } else if (comparison==":"){
+                        } else if (comparison == ":") {
                             return value.indexOf(valuestring) > -1;
                         }
                     }
 
-                    function checkregex(thisvalue,comparison,uservalue) {
-                        if (comparison=="="){
-                            let reg = new RegExp("^"+thisvalue+"$");
+                    function checkregex(thisvalue, comparison, uservalue) {
+                        if (comparison == "=") {
+                            let reg = new RegExp("^" + thisvalue + "$");
                             if (reg.test(uservalue)) return true;
                             return false
                         }
@@ -1469,16 +1471,16 @@ multiple conditions can be linked together using condition1&condition2&condition
                         thisfield = simplifyfield(thisfield);
                         userfield = simplifyfield(userfield);
                         //special case of comparing a command value to the regexp value of the move
-                        
+
                         if (thisfield == "regexp" && "command".indexOf(userfield) > -1) {
                             uservalue = simplifyMove(uservalue);
-                            let check = checkregex(thisvalue,comparison,uservalue);
+                            let check = checkregex(thisvalue, comparison, uservalue);
                             return check;
                         }
-                        
-                        
-                        if (thisfield.indexOf(userfield) !== 0) return false; 
-                        let numfields = ["damage","startupframe","blockframe","hitframe","counterhitframe","post-techframes","speed"];
+
+
+                        if (thisfield.indexOf(userfield) !== 0) return false;
+                        let numfields = ["damage", "startupframe", "blockframe", "hitframe", "counterhitframe", "post-techframes", "speed"];
                         let isnumfield = false;
                         let tmpthisvalue;
                         let tmpuservalue;
@@ -1487,7 +1489,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                             tmpthisvalue = parseInt(thisvalue);
                             tmpuservalue = parseInt(uservalue);
                         } else {
-                            if (thisfield.indexOf("command")== 0) {
+                            if (thisfield.indexOf("command") == 0) {
                                 tmpthisvalue = simplifyMove(thisvalue);
                                 tmpuservalue = simplifyMove(uservalue);
                             } else {
@@ -1495,31 +1497,31 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 tmpuservalue = simplifyfield(uservalue);
                             }
                         }
-                        if (comparefunc(tmpthisvalue,comparison,tmpuservalue,isnumfield)) {
+                        if (comparefunc(tmpthisvalue, comparison, tmpuservalue, isnumfield)) {
                             return true;
                         }
                         return false;
                     }
                 }
 
-                let conditions = [(arg1, arg2)=>{
-                    return parseConditionArgs("command","=",move)(arg1, arg2);
+                let conditions = [(arg1, arg2) => {
+                    return parseConditionArgs("command", "=", move)(arg1, arg2);
                 }]
                 poslist = getMoveList(conditions);
 
                 if (poslist.length < 1) {
                     let conditionstring = move.split("&");
-                    
 
-                    conditions = conditionstring.map((cur)=>{
+
+                    conditions = conditionstring.map((cur) => {
                         let b;
                         if (b = /^(.+?)([<>]=|[:=<>])(.+)$/.exec(cur)) {
-                            return parseConditionArgs(b[1],b[2],b[3]);
+                            return parseConditionArgs(b[1], b[2], b[3]);
                         } else if (b = /^i(\d+)$/i.exec(cur)) {
-                            return parseConditionArgs("startupframe",":",b[1]);
+                            return parseConditionArgs("startupframe", ":", b[1]);
                         } else {
-                            return (arg1, arg2)=>{
-                                return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2) || parseConditionArgs("notes",":",cur)(arg1, arg2) || parseConditionArgs("engrish",":",cur)(arg1, arg2);
+                            return (arg1, arg2) => {
+                                return parseConditionArgs("command", ":", cur)(arg1, arg2) || parseConditionArgs("name", ":", cur)(arg1, arg2) || parseConditionArgs("notes", ":", cur)(arg1, arg2) || parseConditionArgs("engrish", ":", cur)(arg1, arg2);
                                 //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
                             }
                         }
@@ -1536,14 +1538,14 @@ multiple conditions can be linked together using condition1&condition2&condition
                 })
                 let rich = new Discord.RichEmbed({
                     title: "Multiple moves found",
-                    description: createCustomNumCommand3(message,data_array)
+                    description: createCustomNumCommand3(message, data_array)
                 })
-                return ["", {embed: rich}]
+                return ["", { embed: rich }]
             } else {
                 let rich = new Discord.RichEmbed();
                 rich.setTitle(char.name)
                 rich.setDescription(`Move not found\n**[Help improve the frame data here](https://docs.google.com/spreadsheets/d/${config.t7sheetid}#gid=${char.sheet_id})**\n\n**[or search rbnorway](${char.link})**`)
-                return ["",{embed:rich}];
+                return ["", { embed: rich }];
             }
         }
 
@@ -1551,8 +1553,8 @@ multiple conditions can be linked together using condition1&condition2&condition
             let gfycatlink = move.gfycat || "";
             let mes = `>>> __**${char.name}**__\n`
             mes += Object.keys(move).filter((v) => {
-                return v!="gfycat" && v!="regexp" && v!="cell";
-            }).map((key)=>{
+                return v != "gfycat" && v != "regexp" && v != "cell";
+            }).map((key) => {
                 return `**${key}**: ${move[key]}`
             }).join("\n");
             if (move.cell) {
@@ -1567,7 +1569,7 @@ multiple conditions can be linked together using condition1&condition2&condition
     }
 }))
 
-let sc6 = null;        
+let sc6 = null;
 fs.readFile("./data/sc6.json", 'utf8', function (e, data) {
     if (e) {
         console.error("Soulcalibur 6 data not found");
@@ -1583,17 +1585,18 @@ commands.push(new Command({
     testString: ".sc6 ivy ivy",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return sc6;},
+    req: () => { return sc6; },
     log: true,
     points: 1,
     typing: false,
     shortDesc: "returns info on Soulcalibur 6 moves",
-    longDesc: {title:`.sc6 __character_name__ __condition__`,
+    longDesc: {
+        title: `.sc6 __character_name__ __condition__`,
         description: `returns information about a Soulcalibur 6 character's attack string`,
         fields: [{
             name: `character_name`,
             value: `full or part of a character's name`
-        },{
+        }, {
             name: `**condition**`,
             value: `**__commandstring__ or __movename__** - returns moves which contain the commandstring or movename. same as command:commandstring or attack:movename
 **__fieldname__>__searchstring__** - the field begins with searchstring
@@ -1604,7 +1607,7 @@ commands.push(new Command({
 **__fieldname__=__num__** - the value of fieldname is equal to num
 **i__num__** - same as imp=__num__
 multiple conditions can be linked together using condition1&condition2&condition3...`
-        },{
+        }, {
             name: "Examples",
             value: `**.sc6 tal aaba** - returns information on Talim's AABA
 **.sc6 ivy ivy** - returns Ivy moves where the name contains "ivy"
@@ -1612,7 +1615,7 @@ multiple conditions can be linked together using condition1&condition2&condition
 **.sc6 nigh hit level<m&hit level>h** - returns Nightmare moves that begin with a mid and end with a low`
         }]
     },
-    run: async (message, args) =>{
+    run: async (message, args) => {
         function simplifyMove(s) {
             s = s.toLowerCase();
             s = s.trim();
@@ -1631,21 +1634,21 @@ multiple conditions can be linked together using condition1&condition2&condition
         }
 
         //find character
-        
+
         let charfound = [];
         let charfoundmid = [];
-        Object.keys(sc6).forEach((v, i)=>{
+        Object.keys(sc6).forEach((v, i) => {
             let thisname = simplifyfield(v);
             let nameinput = simplifyfield(args[1]);
             let charindex = thisname.indexOf(nameinput);
-            if (charindex===0) charfound.push(v);
-            else if(charindex>0) charfoundmid.push(v);
+            if (charindex === 0) charfound.push(v);
+            else if (charindex > 0) charfoundmid.push(v);
         })
-        
+
 
         function parseCharList(charfound) {
-            if (charfound.length ==1) return getMove(charfound[0], args[2]);
-            else if (charfound.length>1) {
+            if (charfound.length == 1) return getMove(charfound[0], args[2]);
+            else if (charfound.length > 1) {
                 extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
                     var num = parseInt(message.content) - 1;
                     if (num < charfound.length && num > -1) {
@@ -1656,11 +1659,11 @@ multiple conditions can be linked together using condition1&condition2&condition
                 })
                 let rich = new Discord.RichEmbed({
                     title: "Character not found",
-                    description: charfound.map((e, i)=>{
-                        return `${i+1}. ${sc6[e].name}`
+                    description: charfound.map((e, i) => {
+                        return `${i + 1}. ${sc6[e].name}`
                     }).join("\n")
                 })
-                return ["", {embed:rich}];
+                return ["", { embed: rich }];
             }
             return false;
         }
@@ -1679,25 +1682,25 @@ multiple conditions can be linked together using condition1&condition2&condition
                 function parseConditionArgs(userfield, comparison, uservalue) {
 
                     //compares the field value to the given value
-                    function comparefunc(value,comparison,valuestring,isnumfield) {
+                    function comparefunc(value, comparison, valuestring, isnumfield) {
                         if (isnumfield) {
-                            if (comparison=="<") {
+                            if (comparison == "<") {
                                 return value < valuestring;
-                            } else if (comparison==">"){
+                            } else if (comparison == ">") {
                                 return value > valuestring;
-                            } else if (comparison=="=" || comparison==":"){
+                            } else if (comparison == "=" || comparison == ":") {
                                 return value == valuestring;
                             }
                             return false;
                         }
-                        
-                        if (comparison=="<"){
+
+                        if (comparison == "<") {
                             return value.endsWith(valuestring);
-                        } else if (comparison=="="){
+                        } else if (comparison == "=") {
                             return value.indexOf(valuestring) > -1;
-                        } else if (comparison==">"){
+                        } else if (comparison == ">") {
                             return value.startsWith(valuestring);
-                        } else if (comparison==":"){
+                        } else if (comparison == ":") {
                             return value.indexOf(valuestring) > -1;
                         }
                     }
@@ -1705,15 +1708,15 @@ multiple conditions can be linked together using condition1&condition2&condition
                     return (thisfield, thisvalue) => {
                         thisfield = simplifyfield(thisfield);
                         userfield = simplifyfield(userfield);
-                        if (thisfield.indexOf(userfield) < 0) return false; 
-                        let numfields = ["imp","dmg","chip","grd","hit","ch","gb"];
+                        if (thisfield.indexOf(userfield) < 0) return false;
+                        let numfields = ["imp", "dmg", "chip", "grd", "hit", "ch", "gb"];
                         let isnumfield = false;
                         if (numfields.indexOf(thisfield) > -1 && !isNaN(uservalue)) {
                             isnumfield = true;
                             thisvalue = parseInt(thisvalue);
                             uservalue = parseInt(uservalue);
                         } else {
-                            if (thisfield.indexOf("Command")== 0) {
+                            if (thisfield.indexOf("Command") == 0) {
                                 thisvalue = simplifyMove(thisvalue);
                                 uservalue = simplifyMove(uservalue);
                             } else {
@@ -1721,37 +1724,37 @@ multiple conditions can be linked together using condition1&condition2&condition
                                 uservalue = simplifyfield(uservalue);
                             }
                         }
-                        if (comparefunc(thisvalue,comparison,uservalue,isnumfield)) {
+                        if (comparefunc(thisvalue, comparison, uservalue, isnumfield)) {
                             return true;
                         }
                         return false;
                     }
                 }
 
-                let conditions = conditionstring.map((cur)=>{
+                let conditions = conditionstring.map((cur) => {
                     let b;
                     if (b = /^(.+)([=<>])(.+)$/.exec(cur)) {
-                        return parseConditionArgs(b[1],b[2],b[3]);
+                        return parseConditionArgs(b[1], b[2], b[3]);
                     } else if (b = /^i(\d+)$/i.exec(cur)) {
-                        return parseConditionArgs("imp",":",b[1]);
+                        return parseConditionArgs("imp", ":", b[1]);
                     } else {
                         //return parseConditionArgs("command","=",cur) || parseConditionArgs("attack","=",cur);
-                        
-                        return (arg1, arg2)=>{
-                            return parseConditionArgs("command","=",cur)(arg1, arg2) || parseConditionArgs("attack","=",cur)(arg1, arg2);
+
+                        return (arg1, arg2) => {
+                            return parseConditionArgs("command", "=", cur)(arg1, arg2) || parseConditionArgs("attack", "=", cur)(arg1, arg2);
                         }
                     }
                 })
 
                 //for each {moveshorthand:[array of moves]}
-                Object.entries(char.moves).forEach((entry)=>{
+                Object.entries(char.moves).forEach((entry) => {
                     //for each move {command, name, etc}
                     entry[1].forEach((moveobj) => {
                         //check if move satisfies all contitons
-                        let match = conditions.every((cur)=>{
+                        let match = conditions.every((cur) => {
                             //condition has to return true for at least 1 field:value
-                            return Object.entries(moveobj).some((field)=>{
-                                if (field[0]!=="gfycat") {
+                            return Object.entries(moveobj).some((field) => {
+                                if (field[0] !== "gfycat") {
                                     return cur(field[0], field[1]);
                                 }
                                 return false;
@@ -1762,7 +1765,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                         if (match) {
                             poslist.push(moveobj)
                         };
-                        
+
                     })
                 })
             }
@@ -1775,9 +1778,9 @@ multiple conditions can be linked together using condition1&condition2&condition
                 })
                 let rich = new Discord.RichEmbed({
                     title: "Multiple moves found",
-                    description:createCustomNumCommand2(message, data_array)
+                    description: createCustomNumCommand2(message, data_array)
                 })
-                return ["",{embed:rich}];
+                return ["", { embed: rich }];
             } else {
                 return [`\`Move not found\`\n<${char.link}>`];
             }
@@ -1788,13 +1791,13 @@ multiple conditions can be linked together using condition1&condition2&condition
                 title: char.name,
                 url: char.link,
                 description: Object.keys(move).filter((v) => {
-                    return move[v]!="";
-                }).map((key)=>{
+                    return move[v] != "";
+                }).map((key) => {
                     return `**${key}**: ${move[key]}`
                 }).join("\n")
             })
             //mes += gfycatlink;
-            return ["",{embed:rich}];
+            return ["", { embed: rich }];
         }
 
         let msg = parseCharList(charfound) || parseCharList(charfoundmid) || "`Character not found`"
@@ -1802,7 +1805,7 @@ multiple conditions can be linked together using condition1&condition2&condition
     }
 }))
 
-let sts = null;        
+let sts = null;
 fs.readFile("./data/sts.json", 'utf8', function (e, data) {
     if (e) {
         return console.error("STS data not found");
@@ -1816,7 +1819,7 @@ commands.push(new Command({
     regex: /^sts (.+)$/i,
     prefix: ".",
     testString: ".sts apparition",
-    req: ()=>{return sts;},
+    req: () => { return sts; },
     hidden: false,
     requirePrefix: true,
     log: true,
@@ -1825,7 +1828,7 @@ commands.push(new Command({
     shortDesc: "returns info on Slay the Spire cards and relics",
     longDesc: `.sts (card_name or relic_name)
 returns information on a Slay the Spire card or relic. Matches by substring`,
-    run: (message, args) =>{
+    run: (message, args) => {
         let results = [];
         sts.forEach((element) => {
             if (element.title.toLowerCase().indexOf(args[1].toLowerCase()) > -1) {
@@ -1862,7 +1865,7 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
     }
 }))
 
-let runeterra = null;        
+let runeterra = null;
 fs.readFile("./data/runeterra/data/set1-en_us.json", 'utf8', function (e, data) {
     if (e) {
         return console.error("Legends of Runeterra data not found");
@@ -1879,8 +1882,9 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "",
-    req: ()=>{return runeterra;},
-    longDesc: {title:`.runeterra __search_term or random__`,
+    req: () => { return runeterra; },
+    longDesc: {
+        title: `.runeterra __search_term or random__`,
         description: `returns Legends of Runeterra card`,
         fields: [{
             name: `__search_term or random__`,
@@ -1890,8 +1894,8 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
-        function createCardEmbed(card){
+    run: async (message, args) => {
+        function createCardEmbed(card) {
             let embed = new Discord.RichEmbed()
             embed.setTitle(card.name)
             let desclines = [];
@@ -1901,11 +1905,11 @@ commands.push(new Command({
             if (!card.collectible) desclines.push(`Non-collectible`);
             if (card.region) desclines.push(`**Region:** ${card.region}`);
             if (card.cost) desclines.push(`**Cost:** ${card.cost}`);
-            if (card.keywords && card.keywords.length>0) desclines.push(`${card.keywords.join(", ")}`);
+            if (card.keywords && card.keywords.length > 0) desclines.push(`${card.keywords.join(", ")}`);
             if (card.attack && card.health) desclines.push(`${card.attack} | ${card.health}`);
             desclines.push("");
             if (card.description) {
-                desclines.push(card.description.replace(/<.+?>/g,"**").replace(/\*{3,}/g,"**"));
+                desclines.push(card.description.replace(/<.+?>/g, "**").replace(/\*{3,}/g, "**"));
             }
             //if (card.descriptionRaw) desclines.push(card.descriptionRaw);
             embed.addField(card.type, desclines.join("\n"));
@@ -1918,27 +1922,27 @@ commands.push(new Command({
             return embed;
         }
         if (args[1].toLowerCase() == "random") {
-            return createCardEmbed(runeterra[Math.floor(Math.random()*runeterra.length)]);
+            return createCardEmbed(runeterra[Math.floor(Math.random() * runeterra.length)]);
         }
-        let card_list = runeterra.filter(card=>{
+        let card_list = runeterra.filter(card => {
             return card.name.toLowerCase() == args[1].toLowerCase()
-        }).map(card=>{
-            return [`${card.name} — ${card.cardCode}`, ()=>createCardEmbed(card)]
+        }).map(card => {
+            return [`${card.name} — ${card.cardCode}`, () => createCardEmbed(card)]
         })
-        if (card_list.length==0) {
-            card_list = runeterra.filter(card=>{
-                return card.name.toLowerCase().indexOf(args[1].toLowerCase())>-1;
-            }).map(card=>{
-                return [`${card.name} — ${card.cardCode}`, ()=>createCardEmbed(card)]
+        if (card_list.length == 0) {
+            card_list = runeterra.filter(card => {
+                return card.name.toLowerCase().indexOf(args[1].toLowerCase()) > -1;
+            }).map(card => {
+                return [`${card.name} — ${card.cardCode}`, () => createCardEmbed(card)]
             })
         }
 
-        if (card_list.length==1) {
+        if (card_list.length == 1) {
             return card_list[0][1]();
-        } else if (card_list.length>1){
+        } else if (card_list.length > 1) {
             return new Discord.RichEmbed({
-                title:"Multiple cards found",
-                description: createCustomNumCommand3(message,card_list)
+                title: "Multiple cards found",
+                description: createCustomNumCommand3(message, card_list)
             });
         } else {
             return ["`No cards found`"];
@@ -1955,7 +1959,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "return info on pokemon, moves, and abilities",
-    longDesc: {title:`.pokemon __search__`,
+    longDesc: {
+        title: `.pokemon __search__`,
         description: `return info on pokemon, moves, and abilities`,
         fields: [{
             name: `__search__`,
@@ -1965,7 +1970,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         return await Pokemon.search(args[1]);
     }
 }))
@@ -1985,7 +1990,7 @@ commands.push(new Command({
     regex: /^price(?: (\d*(?:\.\d+)?))? (\S+)(?: (\w+))?$/i,
     prefix: ".",
     testString: ".price 10 btc cad",
-    req: ()=>{return coin;},
+    req: () => { return coin; },
     hidden: false,
     requirePrefix: true,
     log: true,
@@ -1996,7 +2001,7 @@ returns a 30 hour graph of the price of a cryptocurrency
 amount (optional) - the amount of from_symbol currency. Default is 1.
 from_symbol - the currency symbol you are exchanging from. ex: BTC
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let amt = 1;
         if (args[1]) amt = parseFloat(args[1]);
         let from = args[2].toUpperCase();
@@ -2006,16 +2011,16 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         let body = await rp(`https://min-api.cryptocompare.com/data/histominute?fsym=${encodeURIComponent(from)}&tsym=${encodeURIComponent(to)}&limit=144&aggregate=10`)
         let res = JSON.parse(body);
         if (res.Response && res.Response === "Error") {
-            return "`"+res.Message+"`";
+            return "`" + res.Message + "`";
         }
 
-        let datapoints = res.Data.map(data=>{
+        let datapoints = res.Data.map(data => {
             return data.close;
         })
 
-        let labels = res.Data.map(data=>{
+        let labels = res.Data.map(data => {
             let thisMoment = moment.tz(data.time * 1000, "America/New_York");
-            if (thisMoment.minute() == 0 && thisMoment.hour()%3 == 0) {
+            if (thisMoment.minute() == 0 && thisMoment.hour() % 3 == 0) {
                 if (thisMoment.hour() == 0) return thisMoment.format("ddd");
                 return thisMoment.format("ha");
             } else {
@@ -2037,14 +2042,14 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         };
         let stream = createChartStream(configuration);
         let rich = new Discord.RichEmbed();
-        rich.attachFiles([{attachment: stream, name: `chart.png`}])
+        rich.attachFiles([{ attachment: stream, name: `chart.png` }])
         rich.setImage(`attachment://chart.png`)
 
         body = await price_prom;
         res = JSON.parse(body);
         if (res.Response && res.Response === "Error") {
             let msg = res.Message;
-            return "`"+msg+"`";
+            return "`" + msg + "`";
         }
         let fromsym = res.DISPLAY[from][to].FROMSYMBOL;
         if (fromsym == from) fromsym = "";
@@ -2078,7 +2083,7 @@ commands.push(new Command({
     testString: ".curr 10 cad",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return config.api.datafixer;},
+    req: () => { return config.api.datafixer; },
     log: true,
     points: 1,
     shortDesc: "returns the exchange rate and graph of the price of a foreign currency",
@@ -2087,20 +2092,20 @@ returns of the price of a foreign currency
 amount (optional) - the amount of from_symbol currency. Default is 1.
 from_symbol - the currency symbol you are exchanging from. ex: CAD
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let a;
         if (a = /(?:(\d*(?:\.\d+)?) )?(\w+)(?: (\w+))?$/.exec(args[1])) {
             let amt = parseFloat(a[1]) || 1;
             let from = a[2].toUpperCase();
-            let to = a[3]?a[3].toUpperCase():"USD";
+            let to = a[3] ? a[3].toUpperCase() : "USD";
             const response = await rp({
-                url:`http://data.fixer.io/api/latest?access_key=60f56846eb49204d79b8398921edb041`,
-                json:true
+                url: `http://data.fixer.io/api/latest?access_key=60f56846eb49204d79b8398921edb041`,
+                json: true
             })
             if (response.error) return "`" + response.error.info + "`";
             if (!response.rates[to] || !response.rates[from]) return "`You have provided one or more invalid Currency Codes. [Required format: currencies=EUR,USD,GBP,...]`"
-            let rate = response.rates[to]/response.rates[from];
-            return `\`${amt} ${from} = ${Math.round(amt*rate*1000000)/1000000} ${to}\``
+            let rate = response.rates[to] / response.rates[from];
+            return `\`${amt} ${from} = ${Math.round(amt * rate * 1000000) / 1000000} ${to}\``
         }
         return "`Wrong format. .curr help for additional information`"
     }
@@ -2134,11 +2139,11 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                         const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('end', leave);
                     });
                     thisDispatch.end();
-                //sitting in channel without playing sound
+                    //sitting in channel without playing sound
                 } else {
                     channel.guild.voice.connection.play(URL, stream_options).on('end', leave);
                 }
-            //if in another voice channel
+                //if in another voice channel
             } else {
                 channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
                 channel.guild.voice.connection.dispatcher.end();
@@ -2146,7 +2151,7 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                     const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
                 }).catch(err);
             }
-        //not in a voice channel
+            //not in a voice channel
         } else {
             channel.join().then(connnection => {
                 const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
@@ -2172,10 +2177,10 @@ commands.push(new Command({
     longDesc: `.yt (youtube_id)
 plays audio from a YouTube link in a voice channel
 youtube_id - can either be the full YouTube URL or the unique 11 characters at the end of the URL`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let voiceChannel = message.member.voice.channel;
         if (!voiceChannel) {
-            return [`get in a voice channel`,{reply: message.author}];
+            return [`get in a voice channel`, { reply: message.author }];
         }
 
         let stream = ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
@@ -2194,7 +2199,7 @@ commands.push(new Command({
     testString: ".yts blood drain again",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return config.api.youtube;},
+    req: () => { return config.api.youtube; },
     log: true,
     points: 1,
     typing: true,
@@ -2202,7 +2207,7 @@ commands.push(new Command({
     longDesc: `.yts (search_turn) [number_of_results]
 returns list of YouTube videos based on the search term
 number_of_results - the number of results to return. Default is 6.`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         args[1] = encodeURIComponent(args[1]);
         var max = 6;
         if (args[2] && parseInt(args[2]) > 0 && parseInt(args[2]) < 51) max = parseInt(args[2]);
@@ -2223,10 +2228,10 @@ number_of_results - the number of results to return. Default is 6.`,
                 try {
                     const voiceChannel = message.member.voice.channel;
                     if (!voiceChannel) {
-                        message.channel.send(`https://youtu.be/${data.items[num-1].id.videoId}`).catch(err);
+                        message.channel.send(`https://youtu.be/${data.items[num - 1].id.videoId}`).catch(err);
                         return false;
                     }
-                    let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num-1].id.videoId, {
+                    let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
                         filter: 'audioonly',
                         quality: 'highestaudio'
                     });
@@ -2258,7 +2263,7 @@ commands.push(new Command({
 returns a link to and a quote of a past message
 message_id - get the id by selecting "copy id" from the settings of the message
 previous_nth_message - the number of messages to go back to reach the message you want to quote. 1 is the last message, 2 is the one before, etc`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         if (parseInt(args[1]) < 200) {
             let num = parseInt(args[1]);
             return await message.channel.messages.fetch({
@@ -2284,19 +2289,19 @@ previous_nth_message - the number of messages to go back to reach the message yo
             if (!quote) {
                 if (message.guild && message.guild.available) {
                     return await Promise.all(
-                        message.guild.channels.filter(channel=>{
+                        message.guild.channels.filter(channel => {
                             return channel.id !== message.channel.id && channel.type == "text"
-                        }).map(channel=>{
-                            return findQuote(channel, args[1]).then(quotefound=>{
+                        }).map(channel => {
+                            return findQuote(channel, args[1]).then(quotefound => {
                                 if (quotefound) {
                                     return Promise.reject(quotefound);
                                 }
                                 return Promise.resolve();
                             })
                         })
-                    ).then(e=>{
+                    ).then(e => {
                         return "`Message not found`";
-                    }).catch(quotefound=>{
+                    }).catch(quotefound => {
                         return quotefound;
                     })
                 }
@@ -2319,16 +2324,16 @@ commands.push(new Command({
     shortDesc: "",
     longDesc: ``,
     typing: true,
-    req: () => {return config.adminID},
-    prerun: (message) => {return message.author.id === config.adminID},
-    run: async (message, args) =>{
+    req: () => { return config.adminID },
+    prerun: (message) => { return message.author.id === config.adminID },
+    run: async (message, args) => {
         let output = eval(args[1]);
-        if (output.length<1) output = "`No output`"
+        if (output.length < 1) output = "`No output`"
         return output;
     }
 }))
 
-async function weather(location_name){
+async function weather(location_name) {
     let body = await rp(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
     let data = JSON.parse(body);
     for (var i = 0; i < data.RESULTS.length; i++) {
@@ -2341,19 +2346,19 @@ async function weather(location_name){
     body = await rp(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
     data = JSON.parse(body);
     let tM;
-    (data.flags.units == "us") ? tM = "°F": tM = "°C";
+    (data.flags.units == "us") ? tM = "°F" : tM = "°C";
     let iconNames = ["clear-day", "clear-night", "rain", "snow", "sleet", "wind", "fog", "cloudy", "partly-cloudy-day", "partly-cloudy-night"];
     let iconEmote = [":sunny:", ":crescent_moon:", ":cloud_rain:", ":cloud_snow:", ":cloud_snow:", ":wind_blowing_face:", ":fog:", ":cloud:", ":partly_sunny:", ":cloud:"];
     let rich = new Discord.RichEmbed();
     rich.setTitle("Powered by Dark Sky");
     let summary = data.daily.summary
     if (data.alerts) {
-        let alertstring = data.alerts.map((alert)=>{
+        let alertstring = data.alerts.map((alert) => {
             return `[**ALERT**](${alert.uri}): ${alert.description}`
         }).join("\n")
         summary = summary + "\n\n" + alertstring;
     }
-    rich.setDescription(summary.slice(0,2048));
+    rich.setDescription(summary.slice(0, 2048));
     rich.setURL("https://darksky.net/poweredby/");
     rich.setAuthor(locName, "", `https://darksky.net/forecast/${lat},${lon}`);
     let iconIndex;
@@ -2368,24 +2373,24 @@ async function weather(location_name){
 
         let dayDesc = `\n**${data.daily.data[i].temperatureMin}${tM}**/**${data.daily.data[i].temperatureMax}${tM}**`;
         dayDesc += `\nFeels like **${data.daily.data[i].apparentTemperatureMin}${tM}**/**${data.daily.data[i].apparentTemperatureMax}${tM}**`;
-        if (i<data.daily.data.length-1) dayDesc += `\n${wordWrap(data.daily.data[i].summary,33)}`;
+        if (i < data.daily.data.length - 1) dayDesc += `\n${wordWrap(data.daily.data[i].summary, 33)}`;
         else dayDesc += `\n${data.daily.data[i].summary}`;
         rich.addField(`${dayIcon}${dayName}`, dayDesc, true)
     }
 
     let hourdata = data.hourly.data;
 
-    let temp_datapoints = hourdata.map(hour=>{
+    let temp_datapoints = hourdata.map(hour => {
         return hour.temperature;
     })
 
-    let apparent_temp_datapoints = hourdata.map(hour=>{
+    let apparent_temp_datapoints = hourdata.map(hour => {
         return hour.apparentTemperature;
     })
 
-    let labels = hourdata.map(hour=>{
+    let labels = hourdata.map(hour => {
         let thisMoment = moment.tz(hour.time * 1000, data.timezone);
-        if (thisMoment.minute() === 0 && parseInt(thisMoment.hour())%6 == 0) {
+        if (thisMoment.minute() === 0 && parseInt(thisMoment.hour()) % 6 == 0) {
             if (thisMoment.hour() != 0) {
                 return thisMoment.format("ha");
             } else {
@@ -2394,7 +2399,7 @@ async function weather(location_name){
         }
         return "";
     })
-    
+
     //https://www.chartjs.org/docs/latest/configuration/
     const configuration = {
         type: 'line',
@@ -2406,7 +2411,7 @@ async function weather(location_name){
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 2,
                 pointRadius: 0
-            },{
+            }, {
                 label: "Apparent Temp",
                 data: apparent_temp_datapoints,
                 borderColor: 'rgba(99, 132, 255, 1)',
@@ -2424,12 +2429,12 @@ async function weather(location_name){
                         callback: (value) => value + tM
                     }
                 }]
-            }            
+            }
         }
     };
-    
+
     let stream = createChartStream(configuration);
-    rich.attachFiles([{attachment: stream, name: `chart.png`}])
+    rich.attachFiles([{ attachment: stream, name: `chart.png` }])
     rich.setImage(`attachment://chart.png`)
     return rich;
 }
@@ -2441,14 +2446,14 @@ commands.push(new Command({
     testString: ".weather nyc",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return config.api.darksky;},
+    req: () => { return config.api.darksky; },
     log: true,
     points: 1,
     shortDesc: "returns 8 day forecast and chart of the temp for the next 2 days",
     longDesc: `.weather (location)
 returns the 8 day forecast and a chart of the temperature for the next 2 days
 location - can be several things like the name of a city or a zip code`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         return await weather(args[1]);
     }
 }))
@@ -2457,7 +2462,7 @@ let poe_stats = {};
 rp({
     url: "https://www.pathofexile.com/api/trade/data/stats",
     json: true
-}).then(json=>{
+}).then(json => {
     poe_stats = json;
 })
 
@@ -2465,8 +2470,8 @@ let poe_leagues = [];
 rp({
     url: "https://www.pathofexile.com/api/trade/data/leagues",
     json: true
-}).then(json=>{
-    poe_leagues = json.result.map(leag=>{
+}).then(json => {
+    poe_leagues = json.result.map(leag => {
         return leag.id
     });
 })
@@ -2491,33 +2496,33 @@ can paste item text after copying it from poe. add x at the end of the item text
 
 async function poesearch(message, args) {
     function getModID(str, label) {
-        let list = poe_stats.result.find(list=>{
+        let list = poe_stats.result.find(list => {
             return list.label === label
         })
         if (!list) return [];
-        let mods = list.entries.filter(mod=>{
-            let compare_str = mod.text.replace(/-?\d+/g,"#").replace(/\+/g,"").replace(/ \(Local\)/g,"");
-            return compare_str === str.replace(/-?\d+/g,"#").replace(/\+/g,"");
+        let mods = list.entries.filter(mod => {
+            let compare_str = mod.text.replace(/-?\d+/g, "#").replace(/\+/g, "").replace(/ \(Local\)/g, "");
+            return compare_str === str.replace(/-?\d+/g, "#").replace(/\+/g, "");
         })
         if (mods.length < 0) {
             return [];
         } else {
-            return mods.map(mod=>{
+            return mods.map(mod => {
                 let arr = mod.text.match(/-?\d+|#/g);
                 if (arr) {
-                    let is_num = arr.map(s=>{
-                        if (s=="#") return true;
+                    let is_num = arr.map(s => {
+                        if (s == "#") return true;
                         return false
                     })
                     let sum = 0;
                     let count = 0;
-                    str.match(/-?\d+|#/g).forEach((s,i)=>{
+                    str.match(/-?\d+|#/g).forEach((s, i) => {
                         if (is_num[i]) {
                             sum += parseInt(s);
                             count++;
                         }
                     })
-                    return [mod.id, mod.text, sum/count];
+                    return [mod.id, mod.text, sum / count];
                 }
                 return [mods[0].id, mods[0].text, null];
             })
@@ -2526,22 +2531,22 @@ async function poesearch(message, args) {
     let stmt = sql.prepare("SELECT poeleague FROM users WHERE user_id = ?;")
     let poeleague = stmt.get(message.author.id).poeleague
 
-    if (poe_leagues.indexOf(poeleague)<0) {
-        return setLeague("Update your league", message, async()=>{
-            let itemsearch = await poesearch(message,args);
+    if (poe_leagues.indexOf(poeleague) < 0) {
+        return setLeague("Update your league", message, async () => {
+            let itemsearch = await poesearch(message, args);
             return itemsearch;
         });
     }
 
     let body = {
         "query": {
-            "status": {"option":"online"},
-            "term":args[1],
-            "stats":[
-                {"type":"and","filters":[]}
+            "status": { "option": "online" },
+            "term": args[1],
+            "stats": [
+                { "type": "and", "filters": [] }
             ]
         },
-        "sort":{"price":"asc"}
+        "sort": { "price": "asc" }
     }
     let rich = new Discord.RichEmbed();
     let desc_list = []
@@ -2553,9 +2558,9 @@ async function poesearch(message, args) {
         if (group[0][0] === "Rarity: Unique") {
             body.query.term = group[0][group[0].length - 2] + " " + group[0][group[0].length - 1]
             body.query.filters = {
-                type_filters:{
-                    filters:{
-                        rarity:{
+                type_filters: {
+                    filters: {
+                        rarity: {
                             option: "unique"
                         }
                     }
@@ -2613,9 +2618,9 @@ async function poesearch(message, args) {
                             }
                             body.query.stats[0].filters.push(modobj)
                             desc_list.push(line);
-                        } else if (found.length>1) {
+                        } else if (found.length > 1) {
                             desc_list.push(`Either`);
-                            let filters = found.map(mod=>{
+                            let filters = found.map(mod => {
                                 let modobj = {
                                     id: mod[0]
                                 }
@@ -2657,7 +2662,7 @@ async function poesearch(message, args) {
                         else {
                             if (!formose && (b = /^(.*) \(implicit\)$/.exec(e))) {
                                 let found = getModID(b[1], "Implicit");
-                                addToFilter("(implicit) ",found)
+                                addToFilter("(implicit) ", found)
                             }
                         }
                         itemlevel++;
@@ -2684,18 +2689,18 @@ async function poesearch(message, args) {
                             else {
                                 if (!formose) {
                                     let found = getModID(e, "Explicit");
-                                    addToFilter("",found)
+                                    addToFilter("", found)
                                 }
                             }
                         })
                     }
-                    
+
                     if (formose) {
                         if (totalresist + totalhealth > 0) {
                             body.query.stats.push({
-                                filters:[{
+                                filters: [{
                                     id: "pseudo.pseudo_total_resistance"
-                                },{
+                                }, {
                                     id: "pseudo.pseudo_total_life"
                                 }],
                                 type: "weight",
@@ -2712,7 +2717,7 @@ async function poesearch(message, args) {
                         if (totalresist != 0) {
                             body.query.stats[0].filters.push({
                                 id: "pseudo.pseudo_total_elemental_resistance",
-                                value:{
+                                value: {
                                     min: totalresist
                                 }
                             })
@@ -2721,7 +2726,7 @@ async function poesearch(message, args) {
                         if (totalhealth != 0) {
                             body.query.stats[0].filters.push({
                                 id: "pseudo.pseudo_total_life",
-                                value:{
+                                value: {
                                     min: totalhealth
                                 }
                             })
@@ -2739,22 +2744,22 @@ async function poesearch(message, args) {
         body: body,
         json: true
     })
-    
+
     rich.setURL(`https://www.pathofexile.com/trade/search/${encodeURIComponent(poeleague)}/${data.id}`);
     rich.setTitle("Results - " + poeleague);
     rich.setFooter('Type "setpoeleague" to change your PoE league')
 
-    if (data.total < 1){
+    if (data.total < 1) {
         rich.setDescription(desc_list.join("\n") + "\n\n**No results found**")
         return rich;
     }
-    
-    let hashstring = data.result.slice(0,6).join(",");
+
+    let hashstring = data.result.slice(0, 6).join(",");
     data = await rp({
-        url:`https://www.pathofexile.com/api/trade/fetch/${hashstring}`,
+        url: `https://www.pathofexile.com/api/trade/fetch/${hashstring}`,
         json: true
     });
-    data.result.forEach(ele=>{
+    data.result.forEach(ele => {
         let time = moment(ele.listing.indexed).fromNow();
         let status = "offline"
         if (ele.listing.account.online) {
@@ -2769,7 +2774,7 @@ async function poesearch(message, args) {
         let desc = `${time}\n${status}`
         if (ele.listing.price) {
             desc = `${ele.listing.price.amount} ${ele.listing.price.currency}\n${desc}`
-        } 
+        }
         rich.addField(escapeMarkdownText(`${ele.item.name} ${ele.item.typeLine}`), escapeMarkdownText(desc), true);
     })
     return rich;
@@ -2787,7 +2792,7 @@ commands.push(new Command({
     shortDesc: "returns poe.trade based on item name or stats",
     longDesc: `.pt2 (item)
 returns poe.trade based on item name or stats`,
-    func: async (message, args) =>{
+    func: async (message, args) => {
         return await poesearch2(message, args);
     }
 }))
@@ -2819,7 +2824,7 @@ async function poesearch2(message, args) {
                 online: online,
                 buyout: "x"
             }
-        }).catch(e=>{
+        }).catch(e => {
             return e.response;
         })
     } else {
@@ -2964,7 +2969,7 @@ async function poesearch2(message, args) {
                 }
             }
         }
-        
+
         poelinkid = await rp({
             method: 'POST',
             url: "https://poe.trade/search",
@@ -2974,9 +2979,9 @@ async function poesearch2(message, args) {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
             body: formstring
-        }).catch(e=>{
+        }).catch(e => {
             return e.response;
-        });                
+        });
     }
     let link = poelinkid.headers.location;
     let body;
@@ -2996,8 +3001,8 @@ async function poesearch2(message, args) {
         })
     } catch (e) {
         //console.error(e);
-        return setLeague2("Update your league", message, async()=>{
-            let itemsearch = await poesearch(message,args);
+        return setLeague2("Update your league", message, async () => {
+            let itemsearch = await poesearch(message, args);
             return itemsearch;
         });
     }
@@ -3024,7 +3029,7 @@ async function poesearch2(message, args) {
     }];
 }
 
-async function setLeague(top, message, callback){
+async function setLeague(top, message, callback) {
     let data;
     try {
         data = await rp({
@@ -3034,25 +3039,25 @@ async function setLeague(top, message, callback){
     } catch (e) {
         return ["`Error loading PoE API`"]
     }
-    poe_leagues = data.result.map(leag=>{
+    poe_leagues = data.result.map(leag => {
         return leag.id
     });
-    let leaguelist = data.result.map(leag=>{
-        return [leag.id,async(thismess)=>{
+    let leaguelist = data.result.map(leag => {
+        return [leag.id, async (thismess) => {
             if (thismess.author.id !== message.author.id) return "";
             let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
             stmt.run(message.author.id, leag.id)
             return await callback();
         }]
     })
-    
+
     let rich = new Discord.RichEmbed()
         .setTitle(top)
         .setDescription(createCustomNumCommand3(message, leaguelist))
     return rich;
 }
 
-async function setLeague2(top, message, callback){
+async function setLeague2(top, message, callback) {
     let body;
     try {
         body = await rp("http://api.pathofexile.com/leagues?type=main&compact=0");
@@ -3060,19 +3065,19 @@ async function setLeague2(top, message, callback){
         return ["`Error loading PoE API`"]
     }
     let data = JSON.parse(body);
-    let leaguelist = data.filter((leag)=>{
-        return leag.rules.every((rule)=>{
+    let leaguelist = data.filter((leag) => {
+        return leag.rules.every((rule) => {
             return rule.id !== "NoParties";
         })
-    }).map(leag=>{
-        return [leag.id,async(thismess)=>{
+    }).map(leag => {
+        return [leag.id, async (thismess) => {
             if (thismess.author.id !== message.author.id) return "";
             let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
             stmt.run(message.author.id, leag.id)
             return await callback();
         }]
     })
-    
+
     let rich = new Discord.RichEmbed()
         .setTitle(top)
         .setDescription(createCustomNumCommand3(message, leaguelist))
@@ -3091,7 +3096,7 @@ commands.push(new Command({
 sets your PoE league for .pt`,
     log: true,
     points: 1,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let body;
         try {
             body = await rp("http://api.pathofexile.com/leagues?type=main&compact=0");
@@ -3100,16 +3105,16 @@ sets your PoE league for .pt`,
         }
         let data = JSON.parse(body);
         let leaguelist = [];
-        data.forEach((leag)=>{
-            let istradeleague = leag.rules.every((rule)=>{
+        data.forEach((leag) => {
+            let istradeleague = leag.rules.every((rule) => {
                 return rule.id !== "NoParties";
             })
-            if (istradeleague) leaguelist.push([leag.id, (thismess)=>{
+            if (istradeleague) leaguelist.push([leag.id, (thismess) => {
                 if (thismess.author.id !== message.author.id) return false;
-                (async ()=>{
+                (async () => {
                     let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
                     stmt.run(message.author.id, leag.id)
-                    thismess.channel.send(`\`PoE league set to ${leag.id}\``).catch(e=>{
+                    thismess.channel.send(`\`PoE league set to ${leag.id}\``).catch(e => {
                         if (e.code == 50035) {
                             message.channel.send("`Message too large`").catch(err);
                         } else {
@@ -3117,7 +3122,7 @@ sets your PoE league for .pt`,
                             message.channel.send("`Error`").catch(err);
                         }
                     });
-                })().catch( e=> {
+                })().catch(e => {
                     err(e);
                     message.channel.send("`Error`").catch(err);
                 })
@@ -3125,7 +3130,7 @@ sets your PoE league for .pt`,
             }]);
         })
 
-        let msg = createCustomNumCommand(message,leaguelist);
+        let msg = createCustomNumCommand(message, leaguelist);
         return msg;
     }
 }))
@@ -3139,42 +3144,42 @@ commands.push(new Command({
     requirePrefix: true,
     shortDesc: "search Path of Exile wiki",
     longDesc: {
-        title:`.poe (search)`,
+        title: `.poe (search)`,
         description: `search poe wiki`,
         fields: []
     },
     log: true,
     points: 1,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         //https://pathofexile.gamepedia.com/api.php
         //https://github.com/ha107642/RedditPoEBot/blob/master/redditbot.py
         async function createItemRich(item_name, url) {
             let response = await rp(`https://pathofexile.gamepedia.com/api.php?action=cargoquery&tables=items&fields=items.html,items.name&where=items.name=${encodeURIComponent(`"${item_name}"`)}&format=json`)
             response = JSON.parse(response);
-            if (response.cargoquery.length>0) {
+            if (response.cargoquery.length > 0) {
                 let html = unescape(response.cargoquery[0].title.html)
 
-                    //<span class=group>
-                html = html.replace(/<span [^>]*?class="group.+?>/g,"\n\n")
+                //<span class=group>
+                html = html.replace(/<span [^>]*?class="group.+?>/g, "\n\n")
                     //<br>
-                    .replace(/<br>/g,"\n")
+                    .replace(/<br>/g, "\n")
                     //&ndash;
-                    .replace(/&ndash;/g,"-")
+                    .replace(/&ndash;/g, "-")
                     //<div>
-                    .replace(/<(\w+?).+?>/g,"")
+                    .replace(/<(\w+?).+?>/g, "")
                     //</div>
-                    .replace(/<\/(\w+?)>/g,"")
+                    .replace(/<\/(\w+?)>/g, "")
                     //[[File:asdf.png]]
-                    .replace(/\[\[File:(.+)\]\]/g,"")
+                    .replace(/\[\[File:(.+)\]\]/g, "")
                     //[[:asdf:asdf|asdf]]
-                    .replace(/\[\[:\w+:.+?\|(.+?)\]\]/g,"$1")
+                    .replace(/\[\[:\w+:.+?\|(.+?)\]\]/g, "$1")
                     //[[asdf|asdf]]
-                    .replace(/\[\[[^\]\r\n]+?\|(.+?)\]\]/g,"$1")
+                    .replace(/\[\[[^\]\r\n]+?\|(.+?)\]\]/g, "$1")
                     //[[asdf]]
-                    .replace(/\[\[([^\]\r\n]+?)\]\]/g,"$1")
+                    .replace(/\[\[([^\]\r\n]+?)\]\]/g, "$1")
 
                 let lines = html.split("\n");
-                while (lines[0]==="" || lines[0]===item_name) {
+                while (lines[0] === "" || lines[0] === item_name) {
                     lines.shift();
                 }
                 let rich = new Discord.RichEmbed()
@@ -3190,11 +3195,11 @@ commands.push(new Command({
         let response = await rp(`https://pathofexile.gamepedia.com/api.php?action=opensearch&search=${encodeURIComponent(args[1])}&format=json`)
         response = JSON.parse(response)
         //convert to {name, url}
-        let items = response[1].map((item_name,index)=>{
-            return {name:item_name, url:response[3][index]}
+        let items = response[1].map((item_name, index) => {
+            return { name: item_name, url: response[3][index] }
         })
-        let list = items.map((item)=>{
-            return [item.name, async ()=>{return createItemRich(item.name, item.url)}];
+        let list = items.map((item) => {
+            return [item.name, async () => { return createItemRich(item.name, item.url) }];
         })
         switch (list.length) {
             case 0:
@@ -3222,15 +3227,15 @@ commands.push(new Command({
     shortDesc: "returns urban dictionary definition",
     longDesc: `define (term)
 returns urban dictionary definition`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let num = parseInt(args[2]) || 0;
         let data = JSON.parse(await rp(`http://api.urbandictionary.com/v0/define?term=${encodeURIComponent(args[1])}`));
         if (data.list[num]) {
             let rich = new Discord.RichEmbed();
             rich.setTitle(escapeMarkdownText(data.list[num].word));
-            let desc = escapeMarkdownText(data.list[num].definition.replace(/[\[\]]/g,""));
+            let desc = escapeMarkdownText(data.list[num].definition.replace(/[\[\]]/g, ""));
             if (data.list[num].example) {
-                desc += "\n\n*" + escapeMarkdownText(data.list[num].example.replace(/[\[\]]/g,"")) + "*";
+                desc += "\n\n*" + escapeMarkdownText(data.list[num].example.replace(/[\[\]]/g, "")) + "*";
             }
             rich.setDescription(desc);
             return rich;
@@ -3250,18 +3255,19 @@ commands.push(new Command({
     points: 1,
     typing: false,
     shortDesc: "rolls dice",
-    longDesc: {title:`.roll [(num_dice)d](max_num)[+(add)]`,
+    longDesc: {
+        title: `.roll [(num_dice)d](max_num)[+(add)]`,
         description: `rolls dice between 1 and max_num`,
-        fields:[{
+        fields: [{
             name: `num_dice`,
             value: `number of dice to roll`
-        },{
+        }, {
             name: `max`,
             value: `the max roll`
-        },{
+        }, {
             name: `add`,
             value: `number to add at the end`
-        },{
+        }, {
             name: `Examples`,
             value: `**.roll 6** - rolls a die between 1 to 6 inclusive
 **.roll d6** - same as .roll d6
@@ -3269,23 +3275,23 @@ commands.push(new Command({
 **.roll 10d6+10** - rolls 10 6-sided dice and then adds 10 to the total`
         }]
     },
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let num_dice = parseInt(args[1]) || 1;
         let max = parseInt(args[2]);
         let add = parseInt(args[3]) || 0;
-        if (max<1) return ["`Dice side must be > 0`"];
-        if (num_dice<1) return ["`Number of dice must be > 0`"];
-        if (num_dice>300) return ["`Number of dice must be <= 300`"];
+        if (max < 1) return ["`Dice side must be > 0`"];
+        if (num_dice < 1) return ["`Number of dice must be > 0`"];
+        if (num_dice > 300) return ["`Number of dice must be <= 300`"];
         let rolls = [];
         for (let n = 0; n < num_dice; n++) {
             rolls.push(Math.floor(Math.random() * max) + 1);
         }
-        if (rolls.length===1 && add===0) return [`\`${rolls[0]}\``];
+        if (rolls.length === 1 && add === 0) return [`\`${rolls[0]}\``];
         let msg = "`(" + rolls.join(" + ") + ")";
         let total = rolls.reduce((acc, cur) => acc + cur, 0);
-        if (add !==0) {
+        if (add !== 0) {
             total += add;
-            if (add>0) msg += "+" + add;
+            if (add > 0) msg += "+" + add;
             else msg += add;
         }
         msg += "`= " + total;
@@ -3305,7 +3311,8 @@ commands.push(new Command({
     typing: false,
     points: 1,
     shortDesc: "returns posted feeds",
-    longDesc: {title:`.rss (action) (args)`,
+    longDesc: {
+        title: `.rss (action) (args)`,
         description: `Subscribing to a feed will allow me to automatically post when updates occur`,
         fields: [{
             name: `rss add (rss_link or any type of steam_page_url)`,
@@ -3313,21 +3320,21 @@ commands.push(new Command({
 **Examples**
 __.rss add [https]()://steamcommunity.com/games/389730/__ - subscribes to Tekken 7 steam news
 __.rss add [http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top stories (enjoy the spam)`
-        },{
+        }, {
             name: `rss subs`,
             value: `Lists all subscriptions`
-        },{
+        }, {
             name: `rss list`,
             value: `Lists all recent news from subscriptions`
-        },{
+        }, {
             name: `rss remove (num)`,
             value: `Remove a subscription from this channel. Get the number from ".rss subs"`
-        },{
+        }, {
             name: `rss test`,
             value: `Returns the latest feed`
         }]
     },
-    func: async (message, args) =>{
+    func: async (message, args) => {
         if (args[1] === "add") {
             return await rss.add(message, args[2]);
         } else if (args[1] === "subs" || args[1] === "sub") {
@@ -3336,7 +3343,7 @@ __.rss add [http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top 
             return await rss.list(message);
         } else if (args[1] === "remove" || args[1] === "rem") {
             return await rss.remove(message, args[2]);
-        } else if (args[1] === "test" ) {
+        } else if (args[1] === "test") {
             return await rss.test(message);
         } else {
             return ["`unknown action`"];
@@ -3356,13 +3363,13 @@ commands.push(new Command({
     shortDesc: "turns image into a spinning cogwheel",
     longDesc: `.cog (imageurl) or .cog (emoji) or .cog while attaching an image
 returns a gif of the image in a spinning cogwheel`,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         function toCodePoint(unicodeSurrogates, sep) {
             var
-            r = [],
-            c = 0,
-            p = 0,
-            i = 0;
+                r = [],
+                c = 0,
+                p = 0,
+                i = 0;
             while (i < unicodeSurrogates.length) {
                 c = unicodeSurrogates.charCodeAt(i++);
                 if (p) {
@@ -3376,111 +3383,111 @@ returns a gif of the image in a spinning cogwheel`,
             }
             return r.join(sep || '-');
         };
-        async function getImage (s) {
+        async function getImage(s) {
             //if (args[1].includes('%')) args[1] = decodeURIComponent(args[1]);
             const emoji_match = args[1].match(/<?(a)?:?(\w{2,32}):(\d{17,19})>?/);
             if (emoji_match) {
                 let emoji_object = { animated: Boolean(emoji_match[1]), name: emoji_match[2], id: emoji_match[3] };
-                if (emoji_object.animated) return {error: '`Cannot be an animated emoji`'};
+                if (emoji_object.animated) return { error: '`Cannot be an animated emoji`' };
                 let emoji = new Discord.Emoji(bot, emoji_object);
-                return {image: await loadImage(emoji.url)};
+                return { image: await loadImage(emoji.url) };
             }
-            if (message.attachments.size>0) {
-                return {image: await loadImage(message.attachments.first().url)};
+            if (message.attachments.size > 0) {
+                return { image: await loadImage(message.attachments.first().url) };
             }
-            if (args[1].length<7) {
+            if (args[1].length < 7) {
                 let url = `https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`
                 let head = await rp.head(url);
-                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
                 if (validmime.indexOf(head['content-type']) > -1) {
-                    return {image: await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`)};
+                    return { image: await loadImage(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/11.3.0/2/72x72/${toCodePoint(args[1])}.png`) };
                 }
             }
             try {
                 let url = new URL(args[1]);
                 let head = await rp.head(args[1]);
-                let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
+                let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
                 if (validmime.indexOf(head['content-type']) > -1) {
-                    return {image: await loadImage(args[1])};
+                    return { image: await loadImage(args[1]) };
                 }
             } catch (e) {
             }
-            return {error: "`Must be a non-animated emoji, URL, or contain an uploaded image`"};
+            return { error: "`Must be a non-animated emoji, URL, or contain an uploaded image`" };
         };
         let image_obj = await getImage(args[1]);
         if (image_obj.error) return image_obj.error;
         let image = image_obj.image;
-        
+
         let size = 320
-        let transparentcolor="#fffffc"
-        let cogcolor="#b0c4de"
+        let transparentcolor = "#fffffc"
+        let cogcolor = "#b0c4de"
         const encoder = new GIFEncoder(size, size);
         let stream = encoder.createReadStream()
         encoder.start();
         encoder.setRepeat(0);   // 0 for repeat, -1 for no-repeat
-        encoder.setDelay(1000/60*2);  // frame delay in ms
+        encoder.setDelay(1000 / 60 * 2);  // frame delay in ms
         encoder.setQuality(10); // image quality. 10 is default.
         encoder.setTransparent(transparentcolor); //
         const canvas = createCanvas(size, size);
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = transparentcolor;
 
-        function cog(ctx){
-            ctx.globalCompositeOperation='destination-in';
-            let cx      = 320/2,                    // center x
-            cy      = 320/2,                    // center y
-            notches = 8,                      // num. of notches
-            radiusO = 160,                    // outer radius
-            radiusI = 120,                    // inner radius
-            taperO  = 50,                     // outer taper %
-            taperI  = 35,                     // inner taper %
-            // pre-calculate values for loop
-            pi2     = 2 * Math.PI,            // cache 2xPI (360deg)
-            angle   = pi2 / (notches * 2),    // angle between notches
-            taperAI = angle * taperI * 0.005, // inner taper offset (100% = half notch)
-            taperAO = angle * taperO * 0.005, // outer taper offset
-            a       = angle,                  // iterator (angle)
-            toggle  = false;                  // notch radius level (i/o)
+        function cog(ctx) {
+            ctx.globalCompositeOperation = 'destination-in';
+            let cx = 320 / 2,                    // center x
+                cy = 320 / 2,                    // center y
+                notches = 8,                      // num. of notches
+                radiusO = 160,                    // outer radius
+                radiusI = 120,                    // inner radius
+                taperO = 50,                     // outer taper %
+                taperI = 35,                     // inner taper %
+                // pre-calculate values for loop
+                pi2 = 2 * Math.PI,            // cache 2xPI (360deg)
+                angle = pi2 / (notches * 2),    // angle between notches
+                taperAI = angle * taperI * 0.005, // inner taper offset (100% = half notch)
+                taperAO = angle * taperO * 0.005, // outer taper offset
+                a = angle,                  // iterator (angle)
+                toggle = false;                  // notch radius level (i/o)
             ctx.beginPath();
             ctx.moveTo(cx + radiusO * Math.cos(taperAO), cy + radiusO * Math.sin(taperAO));
-            for (; a <= pi2+.01; a += angle) {
+            for (; a <= pi2 + .01; a += angle) {
                 // draw inner to outer line
                 if (toggle) {
                     ctx.lineTo(cx + radiusI * Math.cos(a - taperAI),
-                            cy + radiusI * Math.sin(a - taperAI));
+                        cy + radiusI * Math.sin(a - taperAI));
                     ctx.lineTo(cx + radiusO * Math.cos(a + taperAO),
-                            cy + radiusO * Math.sin(a + taperAO));
+                        cy + radiusO * Math.sin(a + taperAO));
                 }
                 // draw outer to inner line
                 else {
                     ctx.lineTo(cx + radiusO * Math.cos(a - taperAO),  // outer line
-                            cy + radiusO * Math.sin(a - taperAO));
+                        cy + radiusO * Math.sin(a - taperAO));
                     ctx.lineTo(cx + radiusI * Math.cos(a + taperAI),  // inner line
-                            cy + radiusI * Math.sin(a + taperAI));
+                        cy + radiusI * Math.sin(a + taperAI));
                 }
                 // switch level
                 toggle = !toggle;
             }
             ctx.closePath();
             ctx.fill();
-            ctx.globalCompositeOperation='source-over';
+            ctx.globalCompositeOperation = 'source-over';
         }
         function spin(angle) {
             ctx.restore();
             ctx.fillStyle = cogcolor;
             ctx.fillRect(0, 0, 320, 320);
             ctx.fillStyle = transparentcolor;
-            ctx.translate(320/2, 320/2);
-            ctx.rotate(angle*Math.PI/180);
-            ctx.translate(-320/2, -320/2);
-            ctx.drawImage(image,0,0,320,320)
+            ctx.translate(320 / 2, 320 / 2);
+            ctx.rotate(angle * Math.PI / 180);
+            ctx.translate(-320 / 2, -320 / 2);
+            ctx.drawImage(image, 0, 0, 320, 320)
             cog(ctx);
             encoder.addFrame(ctx);
         }
 
         async function animate(frames) {
-            for (let i=0;i<frames;i++) {
-                await spin(360/frames);
+            for (let i = 0; i < frames; i++) {
+                await spin(360 / frames);
             }
         }
 
@@ -3611,8 +3618,8 @@ commands.push(new Command({
     shortDesc: "translate a string to english",
     longDesc: `.translate (string)
 translate a string to english`,
-    run: async (message, args) =>{
-        return (await translate(args[1], {to: 'en'})).text
+    run: async (message, args) => {
+        return (await translate(args[1], { to: 'en' })).text
     }
 }))
 
@@ -3629,10 +3636,10 @@ commands.push(new Command({
     shortDesc: "returns user power level",
     longDesc: `.level
 returns user power level`,
-    run: (message, args) =>{
+    run: (message, args) => {
         let stmt = sql.prepare("SELECT points FROM users WHERE user_id = ?;")
         let points = stmt.get(message.author.id).points
-        let level = Math.floor(Math.pow(points,0.5))
+        let level = Math.floor(Math.pow(points, 0.5))
         return `\`Your power level is ${level}.\``;
     }
 }))
@@ -3650,21 +3657,21 @@ commands.push(new Command({
     shortDesc: "have a trophy",
     longDesc: `.rank
 have a trophy`,
-    run: (message, args) =>{
+    run: (message, args) => {
         let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users) WHERE user_id = ?;")
         let rank = stmt.get(message.author.id).rank
         let url = "";
-        if (rank<4) {
+        if (rank < 4) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/a/a4/League_division_S.png";
-        } else if (rank<10) {
+        } else if (rank < 10) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/c/c3/League_division_A.png";
-        } else if (rank<20) {
+        } else if (rank < 20) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/6/6b/League_division_B.png";
-        } else if (rank<30) {
+        } else if (rank < 30) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/4/43/League_division_C.png";
-        } else if (rank<40) {
+        } else if (rank < 40) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/2/23/League_division_D.png";
-        } else if (rank<60) {
+        } else if (rank < 60) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/9/9c/League_division_E.png";
         } else {
             url = "https://vignette.wikia.nocookie.net/sonic/images/c/cd/League_division_F.png";
@@ -3681,20 +3688,20 @@ commands.push(new Command({
     testString: ".image cat",
     hidden: false,
     requirePrefix: true,
-    hardAsserts: ()=>{return config.api.image;},
+    hardAsserts: () => { return config.api.image; },
     shortDesc: "returns the first image search result",
     longDesc: `.image (term)
 returns the first image result. safesearch is off if the channel is nsfw. add gif to the search if you want gifs`,
     log: true,
     points: 1,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         //args[1] = encodeURIComponent(args[1]);
-        let safe = message.channel.nsfw?"":"&safe=active"
+        let safe = message.channel.nsfw ? "" : "&safe=active"
         //https://developers.google.com/custom-search/v1/cse/list
         let urlpromise;
         try {
             urlpromise = await rp({
-                url:`https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`,
+                url: `https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`,
                 json: true
             })
         } catch (e) {
@@ -3704,19 +3711,19 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
             throw e;
         }
 
-        let data= urlpromise;
-        let validmime = ["image/png","image/jpeg","image/bmp","image/gif"]
-        let extension = [".png",".jpg",".bmp",".gif"]
-        if (data.items && data.items.length>0) {
-            let imageitems = data.items.filter(element=>{
-                return validmime.indexOf(element.mime)>-1;
+        let data = urlpromise;
+        let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
+        let extension = [".png", ".jpg", ".bmp", ".gif"]
+        if (data.items && data.items.length > 0) {
+            let imageitems = data.items.filter(element => {
+                return validmime.indexOf(element.mime) > -1;
             })
-            for (let i=0;i<imageitems.length;i++) {
+            for (let i = 0; i < imageitems.length; i++) {
                 let imagedata = imageitems[i];
-                if (imagedata.image.byteSize<8388608){
+                if (imagedata.image.byteSize < 8388608) {
                     try {
-                        let head = await rp.head(imagedata.link, {timeout: 1000})
-                        let attach = new Discord.MessageAttachment(imagedata.link,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
+                        let head = await rp.head(imagedata.link, { timeout: 1000 })
+                        let attach = new Discord.MessageAttachment(imagedata.link, `${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
                         return attach;
                     } catch (e) {
                         //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
@@ -3734,15 +3741,15 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
 
 function createChartStream(configuration) {
     const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
-    //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
+        //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
         ChartJS.defaults.global.legend.display = false;
         ChartJS.defaults.global.legend.labels.fontStyle = "bold";
         ChartJS.defaults.global.legend.labels.fontSize = 10;
         ChartJS.defaults.global.showLines = true;
         ChartJS.defaults.global.elements.line.tension = 0;
         ChartJS.defaults.line.scales.xAxes[0].ticks = {
-            callback: (tick)=>{
-                if (tick=="") return undefined;
+            callback: (tick) => {
+                if (tick == "") return undefined;
                 return tick;
             },
             fontStyle: "bold",
@@ -3766,7 +3773,7 @@ function createChartStream(configuration) {
     const chart = canvasRenderService.renderChart(configuration);
     const canvas = chart.canvas;
     let PNGStream = canvas.createPNGStream();
-    PNGStream.on("end", ()=>{
+    PNGStream.on("end", () => {
         chart.destroy();
     })
     return PNGStream;
@@ -3779,13 +3786,13 @@ commands.push(new Command({
     testString: ".stock aapl",
     hidden: false,
     requirePrefix: true,
-    req: ()=>{return config.api.stock;},
+    req: () => { return config.api.stock; },
     shortDesc: ".returns price and chart of stock symbol",
     longDesc: `.stock (symbol)
 returns price and chart of stock symbol`,
     log: true,
     points: 1,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         //https://iexcloud.io/console/usage
         //https://iexcloud.io/docs/api/#historical-prices
         let base = `https://cloud.iexapis.com/stable/`
@@ -3796,14 +3803,14 @@ returns price and chart of stock symbol`,
         response = JSON.parse(response);
         let promprice = rp(`${base}stock/${symbol}/quote?token=${token}`)
         let promlist = [];
-        response.forEach(data=>{
-            promlist.push(rp(`${base}stock/${symbol}/chart/date/${data.date.replace(/-/g,"")}?token=${token}&chartInterval=1`))
+        response.forEach(data => {
+            promlist.push(rp(`${base}stock/${symbol}/chart/date/${data.date.replace(/-/g, "")}?token=${token}&chartInterval=1`))
         })
         response = await rp(`${base}stock/${symbol}/intraday-prices?token=${token}&chartInterval=1`)
         response = JSON.parse(response);
         let stock_data = response;
-        let thisdate = stock_data.length>0?stock_data[0].date:"";
-        for (let promnum=1; promnum<promlist.length; promnum++) {
+        let thisdate = stock_data.length > 0 ? stock_data[0].date : "";
+        for (let promnum = 1; promnum < promlist.length; promnum++) {
             response = await promlist[promnum]
             response = JSON.parse(response);
             if (response[0].date == thisdate) {
@@ -3811,7 +3818,7 @@ returns price and chart of stock symbol`,
             }
             stock_data = response.concat(stock_data);
         }
-        stock_data = stock_data.map((data,index)=>{
+        stock_data = stock_data.map((data, index) => {
             return {
                 close: data.close,
                 index: index,
@@ -3820,26 +3827,26 @@ returns price and chart of stock symbol`,
         })
         let stock_price = JSON.parse(await promprice);
         let horizontal = []
-        let labels = stock_data.map((data, ind, arr)=>{
-            if (data.time.minute()==30 && data.time.hour()==9) {
+        let labels = stock_data.map((data, ind, arr) => {
+            if (data.time.minute() == 30 && data.time.hour() == 9) {
                 horizontal.push(data.time.format("MMM D"));
                 return data.time.format("MMM D")
-            } else if (ind == arr.length-1 && data.time.minute()==59 && data.time.hour()==15) {
+            } else if (ind == arr.length - 1 && data.time.minute() == 59 && data.time.hour() == 15) {
                 return "4pm"
             }
-            if (data.time.minute()==0 && (data.time.hour()==12 || data.time.hour()==14))
+            if (data.time.minute() == 0 && (data.time.hour() == 12 || data.time.hour() == 14))
                 return data.time.format("ha");
             return "";
         })
-        let datapoints = stock_data.map((data)=>{
+        let datapoints = stock_data.map((data) => {
             return {
                 x: data.index,
                 y: data.close
             }
-        }).filter(data=>{
+        }).filter(data => {
             return data.y;
-        }).map(data=>{
-            if (data.x<700) data.x-=100;
+        }).map(data => {
+            if (data.x < 700) data.x -= 100;
             return data;
         })
         /*
@@ -3850,7 +3857,7 @@ returns price and chart of stock symbol`,
 
         //console.log(datapoints.slice(datapoints.length-100))
 
-        let annotations = horizontal.map(label=>{
+        let annotations = horizontal.map(label => {
             return {
                 type: "line",
                 mode: "vertical",
@@ -3887,7 +3894,7 @@ returns price and chart of stock symbol`,
         let rich = new Discord.RichEmbed();
         rich.setTitle(escapeMarkdownText(stock_price.companyName));
         rich.setDescription(`${stock_price.symbol} $${stock_price.latestPrice} (${updown}${Math.abs(stock_price.change)}%)`);
-        rich.attachFiles([{attachment: stream, name: `${stock_price.symbol}.png`}])
+        rich.attachFiles([{ attachment: stream, name: `${stock_price.symbol}.png` }])
         rich.setImage(`attachment://${stock_price.symbol}.png`)
         return rich;
     }
@@ -3900,9 +3907,10 @@ commands.push(new Command({
     testString: ".news trump",
     hidden: false,
     requirePrefix: true,
-    hardAsserts: ()=>{return config.api.news;},
+    hardAsserts: () => { return config.api.news; },
     shortDesc: "searches news articles",
-    longDesc: {title:`.news __search_term__`,
+    longDesc: {
+        title: `.news __search_term__`,
         description: `returns news articles containing search term`,
         fields: [{
             name: `search_term`,
@@ -3910,7 +3918,7 @@ commands.push(new Command({
 Prepend words or phrases that must appear with a + symbol. Eg: +bitcoin
 Prepend words that must not appear with a - symbol. Eg: -bitcoin
 Alternatively you can use the AND / OR / NOT keywords, and optionally group these with parenthesis. Eg: crypto AND (ethereum OR litecoin) NOT bitcoin.`
-        },{
+        }, {
             name: `Examples`,
             value: `.news trump - returns news containing "trump"
 .news "yang gang" - return news containing the phrase "yang gang"`
@@ -3918,7 +3926,7 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
     },
     log: true,
     points: 1,
-    func: async (message, args) =>{
+    func: async (message, args) => {
         //https://newsapi.org/docs/endpoints/everything
         async function smmry(e) {
             let summary = JSON.parse(await rp(`http://api.smmry.com/&SM_API_KEY=${config.api.smmry}&SM_WITH_BREAK=true&SM_URL=${e.url}`)).sm_api_content;
@@ -3936,23 +3944,23 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
             response = await rp(`https://newsapi.org/v2/top-headlines?apiKey=${config.api.news}&pageSize=20&language=en`)
         }
         response = JSON.parse(response);
-        let desc = response.articles.filter((e,i,arr)=>{
-            return arr.findIndex((that_e)=>{
+        let desc = response.articles.filter((e, i, arr) => {
+            return arr.findIndex((that_e) => {
                 return that_e.title.toLowerCase() === e.title.toLowerCase();
             }) === i;
-        }).map(e=>{
-            return [`${e.source.name}: **[${escapeMarkdownText(e.title)}](${escapeMarkdownText(e.url)})**`, async()=>{return smmry(e)}];
+        }).map(e => {
+            return [`${e.source.name}: **[${escapeMarkdownText(e.title)}](${escapeMarkdownText(e.url)})**`, async () => { return smmry(e) }];
         })
-        
 
-        if (desc.length==1) {
+
+        if (desc.length == 1) {
             return await desc[0][1]()
-        } else if (desc.length<1) {
+        } else if (desc.length < 1) {
             return "`No results found`";
         } else {
             let rich = new Discord.RichEmbed()
-            rich.setTitle(`Recent News${args[1]?`: ${escapeMarkdownText(args[1])}`:""}`);
-            rich.setDescription(createCustomNumCommand3(message,desc));
+            rich.setTitle(`Recent News${args[1] ? `: ${escapeMarkdownText(args[1])}` : ""}`);
+            rich.setDescription(createCustomNumCommand3(message, desc));
             return rich;
         }
     }
@@ -3966,7 +3974,8 @@ commands.push(new Command({
     hidden: false,
     requirePrefix: true,
     shortDesc: "returns FFXIV Lodestone character data",
-    longDesc: {title:`.ff14 __character_name__ __server_name_or_data_center__`,
+    longDesc: {
+        title: `.ff14 __character_name__ __server_name_or_data_center__`,
         description: `returns character data`,
         fields: [{
             name: `character_name`,
@@ -3978,18 +3987,18 @@ commands.push(new Command({
     },
     log: true,
     points: 1,
-    func: async (message, args) =>{
+    func: async (message, args) => {
         let names = args[1].split(" ");
-        if (names.length>3) return "`Incorrect arguments. Should be .ff14 (character_name) [server_name]`";
-        
+        if (names.length > 3) return "`Incorrect arguments. Should be .ff14 (character_name) [server_name]`";
+
         //https://xivapi.com/servers
         //https://xivapi.com/servers/dc
         let server = "";
         let char_name = args[1];
         if (names.length == 3) {
-            const servers = ["_dc_Aether","_dc_Chaos","_dc_Crystal","_dc_Elemental","_dc_Gaia","_dc_Light","_dc_Mana","_dc_Primal","Adamantoise","Aegis","Alexander","Anima","Asura","Atomos","Bahamut","Balmung","Behemoth","Belias","Brynhildr","Cactuar","Carbuncle","Cerberus","Chocobo","Coeurl","Diabolos","Durandal","Excalibur","Exodus","Faerie","Famfrit","Fenrir","Garuda","Gilgamesh","Goblin","Gungnir","Hades","Hyperion","Ifrit","Ixion","Jenova","Kujata","Lamia","Leviathan","Lich","Louisoix","Malboro","Mandragora","Masamune","Mateus","Midgardsormr","Moogle","Odin","Omega","Pandaemonium","Phoenix","Ragnarok","Ramuh","Ridill","Sargatanas","Shinryu","Shiva","Siren","Tiamat","Titan","Tonberry","Typhon","Ultima","Ultros","Unicorn","Valefor","Yojimbo","Zalera","Zeromus","Zodiark","Spriggan","Twintania"];
-            let matches = servers.filter((server)=>{
-                return server.toLowerCase().indexOf(names[2].toLowerCase())>-1;
+            const servers = ["_dc_Aether", "_dc_Chaos", "_dc_Crystal", "_dc_Elemental", "_dc_Gaia", "_dc_Light", "_dc_Mana", "_dc_Primal", "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos", "Bahamut", "Balmung", "Behemoth", "Belias", "Brynhildr", "Cactuar", "Carbuncle", "Cerberus", "Chocobo", "Coeurl", "Diabolos", "Durandal", "Excalibur", "Exodus", "Faerie", "Famfrit", "Fenrir", "Garuda", "Gilgamesh", "Goblin", "Gungnir", "Hades", "Hyperion", "Ifrit", "Ixion", "Jenova", "Kujata", "Lamia", "Leviathan", "Lich", "Louisoix", "Malboro", "Mandragora", "Masamune", "Mateus", "Midgardsormr", "Moogle", "Odin", "Omega", "Pandaemonium", "Phoenix", "Ragnarok", "Ramuh", "Ridill", "Sargatanas", "Shinryu", "Shiva", "Siren", "Tiamat", "Titan", "Tonberry", "Typhon", "Ultima", "Ultros", "Unicorn", "Valefor", "Yojimbo", "Zalera", "Zeromus", "Zodiark", "Spriggan", "Twintania"];
+            let matches = servers.filter((server) => {
+                return server.toLowerCase().indexOf(names[2].toLowerCase()) > -1;
             })
             if (matches.length == 1) {
                 server = matches[0];
@@ -4027,11 +4036,11 @@ commands.push(new Command({
             let genders = ["Male", "Female"]
             //https://xivapi.com/race
             let races = ["Hyur", "Elezen", "Lalafell", "Miqo'te", "Roegadyn", "Au Ra", "Hrothgar", "Viera"]
-            desc_lines.push(`**${genders[char_data.Gender-1]} ${races[char_data.Race-1]}**`)
+            desc_lines.push(`**${genders[char_data.Gender - 1]} ${races[char_data.Race - 1]}**`)
 
             if (char_data.ActiveClassJob) {
                 //https://xivapi.com/ClassJob
-                const jobs = ["Adventurer","Gladiator","Pugilist","Marauder","Lancer","Archer","Conjurer","Thaumaturge","Carpenter","Blacksmith","Armorer","Goldsmith","Leatherworker","Weaver","Alchemist","Culinarian","Miner","Botanist","Fisher","Paladin","Monk","Warrior","Dragoon","Bard","White Mage","Black Mage","Arcanist","Summoner","Scholar","Rogue","Ninja","Machinist","Dark Knight","Astrologian","Samurai","Red Mage","Blue Mage","Gunbreaker","Dancer"]
+                const jobs = ["Adventurer", "Gladiator", "Pugilist", "Marauder", "Lancer", "Archer", "Conjurer", "Thaumaturge", "Carpenter", "Blacksmith", "Armorer", "Goldsmith", "Leatherworker", "Weaver", "Alchemist", "Culinarian", "Miner", "Botanist", "Fisher", "Paladin", "Monk", "Warrior", "Dragoon", "Bard", "White Mage", "Black Mage", "Arcanist", "Summoner", "Scholar", "Rogue", "Ninja", "Machinist", "Dark Knight", "Astrologian", "Samurai", "Red Mage", "Blue Mage", "Gunbreaker", "Dancer"]
                 //const job_data = JSON.parse(await rp(`https://xivapi.com/ClassJob/${char_data.ActiveClassJob.JobID}?columns=NameEnglish`));
                 //const job = job_data.NameEnglish;
                 desc_lines.push(`Level ${char_data.ActiveClassJob.Level} ${jobs[char_data.ActiveClassJob.JobID]}`);
@@ -4039,9 +4048,9 @@ commands.push(new Command({
             }
 
             if (char_data.GearSet.Gear) {
-                const slots = ["Body","Bracelets","Earrings","Feet","Hands","Head","Legs","MainHand","Necklace","OffHand","Ring1","Ring2","Waist"]
+                const slots = ["Body", "Bracelets", "Earrings", "Feet", "Hands", "Head", "Legs", "MainHand", "Necklace", "OffHand", "Ring1", "Ring2", "Waist"]
                 let item_ids = [];
-                slots.forEach(slot=>{
+                slots.forEach(slot => {
                     if (char_data.GearSet.Gear[slot]) item_ids.push(char_data.GearSet.Gear[slot].ID);
                 })
                 let post_body = {
@@ -4058,14 +4067,14 @@ commands.push(new Command({
                     }
                 }
                 let results = JSON.parse(await rp.post("https://xivapi.com/search").form(JSON.stringify(post_body))).Results;
-                let total = results.reduce((sum, item)=>{
+                let total = results.reduce((sum, item) => {
                     if (item.EquipSlotCategory.OffHand != -1) {
                         return sum + item.LevelItem;
                     } else {
-                        return sum + item.LevelItem*2;                        
+                        return sum + item.LevelItem * 2;
                     }
-                },0)
-                desc_lines.push(`**Average Item Level**: ${Math.round(total/13*100)/100}`);
+                }, 0)
+                desc_lines.push(`**Average Item Level**: ${Math.round(total / 13 * 100) / 100}`);
             }
             if (response.FreeCompany) desc_lines.push(`**Free Company**: **[${response.FreeCompany.Name}](https://na.finalfantasyxiv.com/lodestone/freecompany/${response.FreeCompany.ID}/)**`)
             if (response.Achievements) desc_lines.push(`**Achievement Points**: ${response.Achievements.Points}`);
@@ -4076,8 +4085,8 @@ commands.push(new Command({
             return rich;
         }
 
-        let char_list = response.Results.map(char=>{
-            return [`${char.Name} - ${char.Server}`, async()=>{
+        let char_list = response.Results.map(char => {
+            return [`${char.Name} - ${char.Server}`, async () => {
                 let typing_prom = bot.api.channels[message.channel.id].typing.post();
                 let result_prom = charRich(char);
                 await typing_prom;
@@ -4085,14 +4094,14 @@ commands.push(new Command({
             }]
         })
 
-        if (char_list.length<1) {
+        if (char_list.length < 1) {
             return `\`No characters found\``
-        } else if (char_list.length==1) {
+        } else if (char_list.length == 1) {
             return await char_list[0][1]();
         } else {
             let rich = new Discord.RichEmbed({
                 title: "Multiple characters found",
-                description: createCustomNumCommand3(message,char_list)
+                description: createCustomNumCommand3(message, char_list)
             })
             return rich;
         }
@@ -4112,7 +4121,7 @@ lists recent changes`,
     log: true,
     points: 1,
     typing: false,
-    run: (message, args) =>{
+    run: (message, args) => {
         return `\`
 12-23
 • fixed youtube playback errors
@@ -4143,7 +4152,7 @@ commands.push(new Command({
     testString: "alexa play despacito",
     hidden: true,
     requirePrefix: false,
-    req: ()=>{return config.api.youtube;},
+    req: () => { return config.api.youtube; },
     log: true,
     points: 1,
     shortDesc: "",
@@ -4151,7 +4160,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let re = /^(?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
         let a = re.exec(args[1]);
         if (a) {
@@ -4162,14 +4171,14 @@ commands.push(new Command({
         let body = await urlpromise;
 
         let data = JSON.parse(body);
-        if (data.items.length<1) return `\`No videos found\``;
-        const voiceChannel = message.member&&message.member.voice?message.member.voice.channel:null;
+        if (data.items.length < 1) return `\`No videos found\``;
+        const voiceChannel = message.member && message.member.voice ? message.member.voice.channel : null;
         if (!voiceChannel) {
             return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];
         } else {
             let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {
                 filter: 'audioonly',
-                quality: 'highestaudio'                         
+                quality: 'highestaudio'
             });
             playSound(voiceChannel, stream);
             return null;
@@ -4190,21 +4199,21 @@ commands.push(new Command({
 returns the time converted to different time zones. can be anywhere in a message`,
     log: true,
     points: 1,
-    run: (message, args) =>{
+    run: (message, args) => {
         let fullZones2 = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         let fullName = convertTZ(args[4]);
         //msg += fullName;
         let inputTime = moment.tz(`${args[1]}${args[2]}${args[3]}`, ["h:mma", "hmma"], fullName).subtract(1, 'days');
         if (!inputTime.isValid()) return;
-        if (parseInt(args[1])<13 && args[3]===undefined) {
-            for (let i=0;i<4;i++) {
+        if (parseInt(args[1]) < 13 && args[3] === undefined) {
+            for (let i = 0; i < 4; i++) {
                 if (inputTime.diff(moment()) >= 0) {
                     break;
                 }
                 inputTime.add(12, 'hours');
             }
         } else {
-            for (let i=0;i<2;i++) {
+            for (let i = 0; i < 2; i++) {
                 if (inputTime.diff(moment()) >= 0) {
                     break;
                 }
@@ -4213,7 +4222,7 @@ returns the time converted to different time zones. can be anywhere in a message
         }
         let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow() + "\n";
 
-        msg = msg + fullZones2.map(zone=>{
+        msg = msg + fullZones2.map(zone => {
             return inputTime.tz(zone).format('ddd, MMM Do YYYY, h:mma z');
         }).join("\n")
 
@@ -4237,7 +4246,7 @@ commands.push(new Command({
     prerun: (message, args) => {
         return args[1].toLowerCase() !== "this" && args[1].toLowerCase() !== "that" && args[1].toLowerCase() !== "off";
     },
-    run: (message, args) =>{
+    run: (message, args) => {
         if (args[1].toLowerCase() === "you" || args[1].toLowerCase() === "u") {
             return "fuck you too";
         }
@@ -4257,8 +4266,8 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: (message, args) =>{
-        return "never";        
+    run: (message, args) => {
+        return "never";
     }
 }))
 
@@ -4274,7 +4283,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
+    run: async (message, args) => {
         let thismsgs = await message.channel.messages.fetch({
             limit: 1,
             before: message.id
@@ -4282,7 +4291,7 @@ commands.push(new Command({
         let thismsg = thismsgs.first();
         if (thismsg.content == "") return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
         else if (thismsg.author.id === message.author.id) return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
-        else return "**"+thismsg.content.toUpperCase().replace(/\*\*/g,"")+"**";
+        else return "**" + thismsg.content.toUpperCase().replace(/\*\*/g, "") + "**";
     }
 }))
 
@@ -4298,7 +4307,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: (message, args) =>{
+    run: (message, args) => {
         return "http://www.dhuang8.com/gg/";
     }
 }))
@@ -4315,9 +4324,9 @@ commands.push(new Command({
     shortDesc: "",
     longDesc: ``,
     typing: false,
-    req: ()=>{return config.adminID && config.botlink;},
-    prerun: (message)=>{return message.author.id === config.adminID},
-    run: (message, args) =>{
+    req: () => { return config.adminID && config.botlink; },
+    prerun: (message) => { return message.author.id === config.adminID },
+    run: (message, args) => {
         return `<${config.botlink}>`;
     }
 }))
@@ -4334,7 +4343,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: (message, args) =>{
+    run: (message, args) => {
         return "sorry";
     }
 }))
@@ -4353,7 +4362,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    func: (message, args) =>{
+    func: (message, args) => {
         let files = fs.readdirSync("animalgifs/");
         let file = files[Math.floor(Math.random() * files.length)]
         return new Discord.MessageAttachment("animalgifs/" + file);
@@ -4372,8 +4381,8 @@ commands.push(new Command({
     log: true,
     typing: false,
     points: 1,
-    run: (message, args) =>{
-        let greetings = ["Hello", "Hi", "Hey","Greetings"];
+    run: (message, args) => {
+        let greetings = ["Hello", "Hi", "Hey", "Greetings"];
         let responses = ["Nice to meet you.", ""];
         if (message.guild.me && message.guild.me.displayName) {
             responses.push(`I'm ${message.guild.me.displayName}.`)
@@ -4396,7 +4405,7 @@ commands.push(new Command({
     longDesc: "",
     log: true,
     points: 1,
-    run: (message, args) =>{
+    run: (message, args) => {
         return `It's Death Stranding. You don't "play" it and you don't "like" it. It transcends those social constructs you fuckin swine. That's how I know you're not ready for Kojimas Brilliance. Using words like "play" and "like" when talking about Death Stranding. \*SPITS\* FUCK YOU. You have no idea what this is really about. The metaphysical meaning, the deep and subtle vicissitudes that Kojima was able to expertly weave into this piece of art that transcends the basic human cognisense. He's a damn near omniscient being and to that its a standing ovation. To anyone with an IQ over 500.`;
     },
     typing: false,
@@ -4409,14 +4418,14 @@ commands.push(new Command({
     testString: "",
     hidden: true,
     requirePrefix: true,
-    req: ()=>{return config.adminID;},
+    req: () => { return config.adminID; },
     shortDesc: "",
     longDesc: ``,
     log: true,
     points: 0,
     typing: false,
-    prerun: (message) => {return message.author.id === config.adminID},
-    run: (message, args) =>{
+    prerun: (message) => { return message.author.id === config.adminID },
+    run: (message, args) => {
         process.exit();
         return null;
     }
@@ -4457,17 +4466,17 @@ returns a list of commands. respond with the number for details on a specific co
     log: true,
     points: 1,
     typing: false,
-    run: (message, args)=>{
+    run: (message, args) => {
         let results = [];
-        let mes = commands.filter((cur)=>{
+        let mes = commands.filter((cur) => {
             return cur.getVisibility();
-        }).map((cur, index)=>{
-            if (typeof cur.getLongDesc() == "string"){
+        }).map((cur, index) => {
+            if (typeof cur.getLongDesc() == "string") {
                 results.push(["```" + cur.getLongDesc() + "```"]);
             } else {
-                results.push(["",{embed: new Discord.RichEmbed(cur.getLongDesc())}]);
+                results.push(["", { embed: new Discord.RichEmbed(cur.getLongDesc()) }]);
             }
-            return `**${index+1}.** ${cur.getShortDesc()}`;
+            return `**${index + 1}.** ${cur.getShortDesc()}`;
         }).join("\n");
         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
             var num = parseInt(message.content) - 1;
@@ -4490,17 +4499,17 @@ commands.push(new Command({
     regex: /^update(?: (.+))?$/i,
     requirePrefix: true,
     hidden: true,
-    hardAsserts: ()=>{return config.adminID;},
+    hardAsserts: () => { return config.adminID; },
     shortDesc: "update script",
     longDesc: `.update
 updates script`,
     log: true,
     points: 0,
     typing: true,
-    prerun: (message) => {return message.author.id === config.adminID},
-    run: (message, args) =>{
+    prerun: (message) => { return message.author.id === config.adminID },
+    run: (message, args) => {
         if (args[1]) {
-            return (new Promise((res,rej) => {
+            return (new Promise((res, rej) => {
                 execFile('node', [`update_scripts/${args[1]}/update.js`], (e, stdout, stderr) => {
                     if (e) {
                         rej(e)
@@ -4510,7 +4519,7 @@ updates script`,
                 })
             }))
         } else {
-            return (new Promise((res,rej) => {
+            return (new Promise((res, rej) => {
                 execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v3"], (e, stdout, stderr) => {
                     if (e) {
                         rej(e)
@@ -4528,22 +4537,22 @@ commands.push(new Command({
     regex: /^test$/i,
     requirePrefix: true,
     hidden: true,
-    hardAsserts: ()=>{return config.adminID;},
+    hardAsserts: () => { return config.adminID; },
     shortDesc: "tests commands",
     longDesc: `.test
 returns a list of commands. respond with the number to test that command`,
     log: true,
     points: 0,
     typing: false,
-    func: (message, args)=>{
+    func: (message, args) => {
         if (message.author.id != config.adminID) return false;
         let results = [];
         let mes = "```";
-        mes += commands.filter((cur)=>{
+        mes += commands.filter((cur) => {
             return cur.testString !== "";
-        }).map((cur, index)=>{
+        }).map((cur, index) => {
             results.push(cur);
-            return `${index+1}. ${cur.name} - "${cur.testString}"`;
+            return `${index + 1}. ${cur.name} - "${cur.testString}"`;
         }).join("\n");
         mes += "```";
         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
@@ -4572,7 +4581,7 @@ stops the current song playing`,
     log: true,
     points: 0,
     typing: false,
-    prerun: (message, args) =>{
+    prerun: (message, args) => {
         let server = message.channel.guild;
         if (server.voice && server.voice.connection != null) {
             server.voice.connection.disconnect();
@@ -4600,9 +4609,9 @@ paste token into config.json
 
 \`node discord.js\` again
 `
-    readme += commands.filter(cmd=>{
+    readme += commands.filter(cmd => {
         return !cmd.hidden;
-    }).map(cmd=>{
+    }).map(cmd => {
         let desc = `## ${cmd.name}\n`;
         if (typeof cmd.longDesc === "string") {
             let com_desc = cmd.longDesc.split("\n");
@@ -4611,7 +4620,7 @@ paste token into config.json
         } else {
             desc += cmd.longDesc.description + "\n";
             desc += `### ${cmd.longDesc.title}\n`;
-            cmd.longDesc.fields.forEach(field=>{
+            cmd.longDesc.fields.forEach(field => {
                 desc += `#### ${field.name}\n${field.value.split("\n").join("\n\n")}\n`;
             })
         }

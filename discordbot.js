@@ -3967,7 +3967,7 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
         }
     }
 }))
-
+/*
 commands.push(new Command({
     name: "ff14",
     regex: /^ff(?:14|xiv) (.+)$/i,
@@ -4109,7 +4109,7 @@ commands.push(new Command({
         }
     }
 }))
-
+*/
 commands.push(new Command({
     name: "patchnotes",
     regex: /^patch(notes)?$/i,

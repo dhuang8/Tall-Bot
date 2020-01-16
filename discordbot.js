@@ -1881,7 +1881,7 @@ commands.push(new Command({
     testString: ".lor karma",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "",
+    shortDesc: "return legends of runeterra card info",
     req: () => { return runeterra; },
     longDesc: {
         title: `.runeterra __search_term or random__`,
@@ -3967,7 +3967,7 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
         }
     }
 }))
-/*
+
 commands.push(new Command({
     name: "ff14",
     regex: /^ff(?:14|xiv) (.+)$/i,
@@ -4020,6 +4020,7 @@ commands.push(new Command({
         async function charRich(char) {
             let response = await rp(`https://xivapi.com/character/${char.ID}?data=AC,FC`)
             response = JSON.parse(response);
+            /*
             if (response.Info.Character.State == 1) {
                 return "`The character will be added to the database. Try again in a few seconds.`";
             } else if (response.Info.Character.State == 3) {
@@ -4029,6 +4030,7 @@ commands.push(new Command({
             } else if (response.Info.Character.State == 5) {
                 return "`Character is private on lodestone`";
             }
+            */
             let char_data = response.Character;
             let rich = new Discord.RichEmbed()
                 .setTitle(`${char_data.Name} - ${char_data.Server}`)
@@ -4046,7 +4048,7 @@ commands.push(new Command({
                 //const job_data = JSON.parse(await rp(`https://xivapi.com/ClassJob/${char_data.ActiveClassJob.JobID}?columns=NameEnglish`));
                 //const job = job_data.NameEnglish;
                 desc_lines.push(`Level ${char_data.ActiveClassJob.Level} ${jobs[char_data.ActiveClassJob.JobID]}`);
-                console.log(char_data.ActiveClassJob.JobID)
+                //console.log(char_data.ActiveClassJob.JobID)
             }
 
             if (char_data.GearSet.Gear) {
@@ -4109,7 +4111,7 @@ commands.push(new Command({
         }
     }
 }))
-*/
+
 commands.push(new Command({
     name: "patchnotes",
     regex: /^patch(notes)?$/i,

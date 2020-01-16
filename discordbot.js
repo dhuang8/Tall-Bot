@@ -293,13 +293,13 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v12.23 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('v1.16 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v12.23 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('v1.16 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -4127,6 +4127,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-01-16
+• fixed ff14
+
 12-23
 • fixed youtube playback errors
 
@@ -4137,13 +4140,7 @@ lists recent changes`,
 • added .lor
 
 10-04
-• added .pokemon
-
-09-30
-• .reminder significantly improved
-
-09-18
-• .quote now works if the message is in a different channel. The message must still be in the same server.\``
+• added .pokemon\``
     }
 }))
 

@@ -30,7 +30,7 @@
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "utf-8-validate": "^5.0.2",
-    "ytdl-core": "^1.0.4",
+    "ytdl-core": "^2.0.1",
     "zlib-sync": "^0.1.6",
     "zucc": "^0.1.2"
   },

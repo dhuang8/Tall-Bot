@@ -17,6 +17,7 @@ const annotation = require('chartjs-plugin-annotation');
 const rp = require('request-promise');
 const unescape = require('unescape');
 const RSSManager = require('./utils/RSSManager');
+const EpicStore = require('./utils/EpicStore');
 const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
 
@@ -281,7 +282,6 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-let rss;
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
         fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
@@ -293,13 +293,13 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('v1.16 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('v1.16 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -307,17 +307,6 @@ fs.readFile("./config.json", "utf8", (e, data) => {
             let rows = sql.prepare("SELECT * FROM reminders WHERE triggered=false").all();
             rows.forEach(row => {
                 setReminder(row.id, row.user_id, row.channel_id, row.message_text, row.message_id, row.time, row.original_time, row.url);
-            })
-            fs.readFile("./data/RSS.json", "utf8", (err, data) => {
-                if (err && err.code === "ENOENT") {
-                    console.error("No RSS json file");
-                } else {
-                    try {
-                        rss = new RSSManager(bot, sql, config.errorChannelID);
-                    } catch (e) {
-                        console.error(e);
-                    };
-                }
             })
         })
         bot.login(config.token).catch(console.error);
@@ -383,7 +372,7 @@ commands.push(new Command({
                 msg += "\n" + attach.proxyURL;
             })
             if (message.mentions.users.get(bot.user.id)) {
-                msg += bot.users.get(config.adminID)
+                msg = bot.users.get(config.adminID).toString() + " " + msg;
             }
             if (msg.length > 2000) msg = msg.slice(0, 1997) + "...";
             guildchan.send(msg);
@@ -1876,7 +1865,7 @@ fs.readFile("./data/runeterra/data/set1-en_us.json", 'utf8', function (e, data) 
 
 commands.push(new Command({
     name: "lor",
-    regex: /^(?:runeterra|rune|lor)? (.+)$/i,
+    regex: /^(?:runeterra|rune|lor) (.+)$/i,
     prefix: ".",
     testString: ".lor karma",
     hidden: false,
@@ -2114,7 +2103,7 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
 function playSound(channel, URL, setvolume, setstart, setduration) {
     try {
         //todo serverVol
-        setvolume = setvolume || /*(serverVol ? serverVol[channel.guild] / 100:false) || */.5;
+        setvolume = setvolume || /*(serverVol ? serverVol[channel.guild] / 100:false) || */.3;
         setstart = setstart || 0;
 
         let stream_options = {
@@ -2136,12 +2125,12 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                 if (thisDispatch) {
                     thisDispatch.removeAllListeners('finish');
                     thisDispatch.on('finish', () => {
-                        const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('end', leave);
+                        const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('finish', leave);
                     });
                     thisDispatch.end();
                     //sitting in channel without playing sound
                 } else {
-                    channel.guild.voice.connection.play(URL, stream_options).on('end', leave);
+                    channel.guild.voice.connection.play(URL, stream_options).on('finish', leave);
                 }
                 //if in another voice channel
             } else {
@@ -2174,9 +2163,8 @@ commands.push(new Command({
     typing: false,
     points: 1,
     shortDesc: "plays audio from a YouTube link in a voice channel",
-    longDesc: `.yt (youtube_id)
-plays audio from a YouTube link in a voice channel
-youtube_id - can either be the full YouTube URL or the unique 11 characters at the end of the URL`,
+    longDesc: `.yt (youtube_link or search_term)
+plays audio from a YouTube link in a voice channel or returns a YouTube link if its a search term and not in a voice channel`,
     run: async (message, args) => {
         let voiceChannel = message.member.voice.channel;
         if (!voiceChannel) {
@@ -2323,7 +2311,7 @@ commands.push(new Command({
     points: 0,
     shortDesc: "",
     longDesc: ``,
-    typing: true,
+    typing: false,
     req: () => { return config.adminID },
     prerun: (message) => { return message.author.id === config.adminID },
     run: async (message, args) => {
@@ -3301,6 +3289,7 @@ commands.push(new Command({
     }
 }))
 
+let rss = new RSSManager(bot, sql, config.errorChannelID);
 //add typing when using .rss add/test/list
 commands.push(new Command({
     name: "rss",
@@ -3326,27 +3315,63 @@ __.rss add [http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top 
             name: `rss subs`,
             value: `Lists all subscriptions`
         }, {
-            name: `rss list`,
+            name: `rss news`,
             value: `Lists all recent news from subscriptions`
         }, {
             name: `rss remove (num)`,
             value: `Remove a subscription from this channel. Get the number from ".rss subs"`
-        }, {
-            name: `rss test`,
-            value: `Returns the latest feed`
         }]
     },
     func: async (message, args) => {
         if (args[1] === "add") {
             return await rss.add(message, args[2]);
-        } else if (args[1] === "subs" || args[1] === "sub") {
+        } else if (args[1] === "subs" || args[1] === "list") {
             return await rss.subs(message);
-        } else if (args[1] === "list") {
+        } else if (args[1] === "news") {
             return await rss.list(message);
         } else if (args[1] === "remove" || args[1] === "rem") {
             return await rss.remove(message, args[2]);
         } else if (args[1] === "test") {
             return await rss.test(message);
+        } else {
+            return ["`unknown action`"];
+        }
+    }
+}))
+
+let egs = new EpicStore(bot, sql, config.errorChannelID);
+commands.push(new Command({
+    name: "egs",
+    regex: /^egs (\w+)(?: (.+))?$/i,
+    prefix: ".",
+    testString: ".egs list",
+    hidden: true,
+    requirePrefix: true,
+    log: true,
+    typing: false,
+    points: 1,
+    shortDesc: "returns free epic game store games",
+    longDesc: {
+        title: `.egs (action) (args)`,
+        description: `returns free epic game store games list or alerts`,
+        fields: [{
+            name: `egs on`,
+            value: `turns on reminder of new egs games`
+        }, {
+            name: `egs off`,
+            value: `turns off reminder`
+        }, {
+            name: `rss list`,
+            value: `returns the current list of free games`
+        }]
+    },
+    func: async (message, args) => {
+        if (args[1] === "on") {
+            return await egs.on(message.channel.id);
+        } else if (args[1] === "off") {
+            return await egs.off(message.channel.id);
+        } else if (args[1] === "list") {
+            return await egs.list();
         } else {
             return ["`unknown action`"];
         }
@@ -3660,20 +3685,20 @@ commands.push(new Command({
     longDesc: `.rank
 have a trophy`,
     run: (message, args) => {
-        let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users) WHERE user_id = ?;")
-        let rank = stmt.get(message.author.id).rank
+        let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users WHERE user_id != ?) WHERE user_id = ?;")
+        let rank = stmt.get(config.adminID, message.author.id).rank
         let url = "";
-        if (rank < 4) {
+        if (rank < 2) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/a/a4/League_division_S.png";
         } else if (rank < 10) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/c/c3/League_division_A.png";
-        } else if (rank < 20) {
-            url = "https://vignette.wikia.nocookie.net/sonic/images/6/6b/League_division_B.png";
         } else if (rank < 30) {
+            url = "https://vignette.wikia.nocookie.net/sonic/images/6/6b/League_division_B.png";
+        } else if (rank < 50) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/4/43/League_division_C.png";
-        } else if (rank < 40) {
+        } else if (rank < 70) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/2/23/League_division_D.png";
-        } else if (rank < 60) {
+        } else if (rank < 100) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/9/9c/League_division_E.png";
         } else {
             url = "https://vignette.wikia.nocookie.net/sonic/images/c/cd/League_division_F.png";
@@ -3931,7 +3956,11 @@ Alternatively you can use the AND / OR / NOT keywords, and optionally group thes
     func: async (message, args) => {
         //https://newsapi.org/docs/endpoints/everything
         async function smmry(e) {
-            let summary = JSON.parse(await rp(`http://api.smmry.com/&SM_API_KEY=${config.api.smmry}&SM_WITH_BREAK=true&SM_URL=${e.url}`)).sm_api_content;
+            let response = JSON.parse(await rp(`http://api.smmry.com/&SM_API_KEY=${config.api.smmry}&SM_WITH_BREAK=true&SM_URL=${e.url}`));
+            if (response.sm_api_error) {
+                return `\`${response.sm_api_message}\``;
+            }
+            let summary = response.sm_api_content;
             summary = summary.replace(/\[BREAK\]/g, "\n\n");
             let rich = new Discord.RichEmbed()
                 .setTitle(e.title)
@@ -4127,20 +4156,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
-2020-01-16
-• fixed ff14
-
-12-23
-• fixed youtube playback errors
-
-10-22
-• added .curr
-
-10-17
-• added .lor
-
-10-04
-• added .pokemon\``
+2020-03-27
+• removed most meme messages
+\``
     }
 }))
 
@@ -4165,7 +4183,17 @@ commands.push(new Command({
         let re = /^(?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
         let a = re.exec(args[1]);
         if (a) {
-            return `\`Use .yt for youtube links\``;
+            let voiceChannel = message.member.voice.channel;
+            if (!voiceChannel) {
+                return [`get in a voice channel`, { reply: message.author }];
+            }
+
+            let stream = ytdl("https://www.youtube.com/watch?v=" + (a[1] || a[2]), {
+                filter: 'audioonly',
+                quality: 'highestaudio'
+            });
+            playSound(voiceChannel, stream);
+            return null;
         }
         let search = encodeURIComponent(args[1]);
         let urlpromise = rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
@@ -4232,6 +4260,7 @@ returns the time converted to different time zones. can be anywhere in a message
     }
 }))
 
+/*
 commands.push(new Command({
     name: "fuck (thing)",
     regex: /^fuck (?:you |u )?(\S+)$/i,
@@ -4254,6 +4283,7 @@ commands.push(new Command({
         return `I think its hilarious u kids talking shit about ${args[1]}. u wouldnt say this shit to ${args[1]} at lan. not only that but ${args[1]} wears the freshest clothes, eats at the chillest restaurants and hangs out with the hottest dudes. yall are pathetic lol`;
     }
 }))
+*/
 
 commands.push(new Command({
     name: "whens",
@@ -4271,7 +4301,7 @@ commands.push(new Command({
         return "never";
     }
 }))
-
+/*
 commands.push(new Command({
     name: "what",
     regex: /^(what|wat)\??$/i,
@@ -4292,10 +4322,12 @@ commands.push(new Command({
         let thismsg = thismsgs.first();
         if (thismsg.content == "") return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
         else if (thismsg.author.id === message.author.id) return new Discord.MessageAttachment("https://i.kym-cdn.com/photos/images/newsfeed/000/173/576/Wat8.jpg");
-        else return "**" + thismsg.content.toUpperCase().replace(/\*\*/g, "") + "**";
+        else return `**${thismsg.content.toUpperCase().replace(/\*\*
+            /g, "")}**`;
     }
 }))
-
+*/
+/*
 commands.push(new Command({
     name: "jonio",
     regex: /^jonio$/i,
@@ -4312,7 +4344,7 @@ commands.push(new Command({
         return "http://www.dhuang8.com/gg/";
     }
 }))
-
+*/
 //todo volume
 
 commands.push(new Command({
@@ -4334,9 +4366,9 @@ commands.push(new Command({
 
 commands.push(new Command({
     name: "bad bot",
-    regex: /(^| )(bad|dumb|stupid|shit) bot($| |\.)/i,
+    regex: /^bad bot$/i,
     prefix: "",
-    testString: "this dumb bot",
+    testString: "bad bot",
     hidden: true,
     requirePrefix: false,
     shortDesc: "",
@@ -4345,11 +4377,28 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: (message, args) => {
-        return "sorry";
+        return "fuck off";
     }
 }))
 
-//rip dat boi
+commands.push(new Command({
+    name: "good bot",
+    regex: /^good bot$/i,
+    prefix: "",
+    testString: "good bot",
+    hidden: true,
+    requirePrefix: false,
+    shortDesc: "",
+    longDesc: ``,
+    log: true,
+    points: 1,
+    typing: false,
+    run: (message, args) => {
+        return "`Thank you. Your vote has been recorded.`";
+    }
+}))
+
+/*
 commands.push(new Command({
     name: "animal",
     regex: /animal/i,
@@ -4369,7 +4418,8 @@ commands.push(new Command({
         return new Discord.MessageAttachment("animalgifs/" + file);
     }
 }))
-
+*/
+/*
 commands.push(new Command({
     name: "im blah",
     regex: /^(?:im|i'm)( \w+)$/i,
@@ -4394,7 +4444,7 @@ commands.push(new Command({
         return msg;
     }
 }))
-
+*/
 commands.push(new Command({
     name: "play death stranding",
     regex: /(?:play|like) death stranding/i,
@@ -4407,7 +4457,7 @@ commands.push(new Command({
     log: true,
     points: 1,
     run: (message, args) => {
-        return `It's Death Stranding. You don't "play" it and you don't "like" it. It transcends those social constructs you fuckin swine. That's how I know you're not ready for Kojimas Brilliance. Using words like "play" and "like" when talking about Death Stranding. \*SPITS\* FUCK YOU. You have no idea what this is really about. The metaphysical meaning, the deep and subtle vicissitudes that Kojima was able to expertly weave into this piece of art that transcends the basic human cognisense. He's a damn near omniscient being and to that its a standing ovation. To anyone with an IQ over 500.`;
+        return `It's Death Stranding. You don't "play" it and you don't "like" it. It transcends those social constructs you fuckin swine. That's how I know you're not ready for Kojimas Brilliance. Using words like "play" and "like" when talking about Death Stranding. \\*SPITS\\* FUCK YOU. You have no idea what this is really about. The metaphysical meaning, the deep and subtle vicissitudes that Kojima was able to expertly weave into this piece of art that transcends the basic human cognisense. He's a damn near omniscient being and to that its a standing ovation. To anyone with an IQ over 500.`;
     },
     typing: false,
 }))
@@ -4571,7 +4621,7 @@ returns a list of commands. respond with the number to test that command`,
 
 commands.push(new Command({
     name: "stop",
-    regex: /^stop/i,
+    regex: /^stop$/i,
     prefix: ".",
     testString: "",
     hidden: true,

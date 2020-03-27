@@ -2,8 +2,6 @@
 const Discord = require('discord.js');
 const CronJob = require('cron').CronJob;
 const Parser = require('rss-parser');
-const fs = require('fs');
-const rp = require('request-promise');
 
 class RSSManager {
     constructor(bot, sql, error_channel) {
@@ -65,6 +63,16 @@ class RSSManager {
 
     async add(message, rss_url) {
         try {
+            //check if already on list
+            let stmt1 = this.sql.prepare("SELECT id, title FROM feeds WHERE title = ? COLLATE NOCASE").get(rss_url);
+            if (stmt1) {
+                let info = this.sql.prepare("INSERT OR IGNORE INTO subscriptions(feed_id, channel_id) VALUES (?, ?)").run(stmt1.id, message.channel.id)
+                if (info.changes<1) {
+                    return [`\`${stmt1.title} already on list\``]
+                }
+                return [`\`added ${stmt1.title} to list\``, this.subs(message)]
+            };
+            
             let a = /^.*steam(?:powered|community)\.com\/(?:app|news|games)\/?(?:\?appids=)?(\d+).*$/.exec(rss_url)
             if (a) {
                 let valve = {
@@ -94,7 +102,7 @@ class RSSManager {
             if (info.changes<1) {
                 return [`\`${title} already on list\``]
             }
-            return [`\`added ${title} to list\``]
+            return [`\`added ${stmt1.title} to list\``, this.subs(message)]
         } catch(e) {
             console.log(e)
             return ["`failed to add`"]
@@ -111,7 +119,7 @@ class RSSManager {
             .setTitle("Subscriptions")
             .setDescription(desc_lines.join("\n"))
             .setFooter("Remove a subscription by using \".rss remove (number)\"")
-        return [rich]
+        return rich
     }
 
     async list(message){
@@ -172,9 +180,22 @@ class RSSManager {
         return [`\`No feeds\``]
     }
 
-    remove(message, num){
+    remove(message, arg){
         try {
-            num = parseInt(num)-1;
+            let isnum = /^\d+$/.test(arg)
+            let num;
+            if (!isnum) {
+                //check if already on list
+                let stmt1 = this.sql.prepare("SELECT id, title FROM feeds WHERE title = ? COLLATE NOCASE").get(arg);
+                if (stmt1) {
+                    num = stmt1.id
+                } else {
+                    return "`Subscription not found`"
+                };
+            } else {
+                num = parseInt(arg)-1;
+            }
+            if (num<1) return "`Error`";
             let row = this.sql.prepare("SELECT feed_id, feeds.title FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ? LIMIT ?, 1").get(message.channel.id, num);
             if (row === undefined) return ["`Subscription not found`"]
             let info = this.sql.prepare("DELETE FROM subscriptions WHERE channel_id = ? AND feed_id = ?").run(message.channel.id, row.feed_id);

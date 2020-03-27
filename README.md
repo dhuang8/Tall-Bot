@@ -163,11 +163,9 @@ from_symbol - the currency symbol you are exchanging from. ex: CAD
 
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.
 ## yt
-.yt (youtube_id)
+.yt (youtube_link or search_term)
 
-plays audio from a YouTube link in a voice channel
-
-youtube_id - can either be the full YouTube URL or the unique 11 characters at the end of the URL
+plays audio from a YouTube link in a voice channel or returns a YouTube link if its a search term and not in a voice channel
 ## yts
 .yts (search_turn) \[number_of_results]
 
@@ -192,6 +190,8 @@ location - can be several things like the name of a city or a zip code
 .pt (item)
 
 returns poe.trade based on item name or stats
+
+can paste item text after copying it from poe. add x at the end of the item text to ignore stats. add f at the end of the item text to search by formose score
 ## setpoeleague
 .setpoeleague
 
@@ -235,12 +235,10 @@ __.rss add \[https]()://steamcommunity.com/games/389730/__ - subscribes to Tekke
 __.rss add \[http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top stories (enjoy the spam)
 #### rss subs
 Lists all subscriptions
-#### rss list
+#### rss news
 Lists all recent news from subscriptions
 #### rss remove (num)
 Remove a subscription from this channel. Get the number from ".rss subs"
-#### rss test
-Returns the latest feed
 
 ## cog
 .cog (imageurl) or .cog (emoji) or .cog while attaching an image

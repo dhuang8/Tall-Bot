@@ -2134,8 +2134,10 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                 }
                 //if in another voice channel
             } else {
-                channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
-                channel.guild.voice.connection.dispatcher.end();
+                if (channel.guild.voice.connection.dispatcher) {
+                    channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
+                    channel.guild.voice.connection.dispatcher.end();
+                }
                 channel.join().then(connnection => {
                     const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
                 }).catch(err);

@@ -9,7 +9,7 @@ function err(error, message) {
         if (message) {
             messageString = message.author.tag + ": " + message.cleanContent;
         }
-        discordbot.bot.channels.get(discordbot.config.errorChannelID).send(`${messageString}\n${error.stack}`, {
+        discordbot.bot.channels.resolve(discordbot.config.errorChannelID).send(`${messageString}\n${error.stack}`, {
             code: true,
             split: true,
             reply: discordbot.config.adminID || null
@@ -119,7 +119,7 @@ class Command {
                 else if ((this.regex == null || (args = this.regex.exec(messageString))) && this._testSoftRequirements(message, args)) {
                     if (this.log && discordbot.config && discordbot.config.botChannelID) {
                         let msg = "`" + message.author.tag + ":` " + message.cleanContent
-                        discordbot.bot.channels.get(discordbot.config.botChannelID).send(msg);
+                        discordbot.bot.channels.resolve(discordbot.config.botChannelID).send(msg);
                     }
                     let thiscom = this;
                     //let start = new Date();

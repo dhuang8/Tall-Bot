@@ -73,7 +73,7 @@ class EpicStore {
             let rich = this.createRich(gamelist);
             let sub = this;
             channels.forEach(channel=>{
-                sub.bot.channels.get(channel.channel_id).send(rich).catch(console.log);
+                sub.bot.channels.resolve(channel.channel_id).send(rich).catch(console.log);
             })
         }
         let waittime = 0;
@@ -124,13 +124,13 @@ class EpicStore {
     async on(channel_id) {
         let stmt = this.sql.prepare("INSERT INTO channels(channel_id,egs) VALUES (?,?) ON CONFLICT(channel_id) DO UPDATE SET egs=excluded.egs;")
         stmt.run(channel_id, 1);
-        return `\`This channel will now post EGS updates\``
+        return `\`EGS updates will now be posted to this channel.\``
     }
 
     async off(channel_id) {
         let stmt = this.sql.prepare("INSERT INTO channels(channel_id,egs) VALUES (?,?) ON CONFLICT(channel_id) DO UPDATE SET egs=excluded.egs;")
         stmt.run(channel_id, 0);
-        return `\`This channel will no longer post EGS updates\``
+        return `\`EGS updates will no longer be posted to this channel.\``
     }
 
     async __getList() {
@@ -183,7 +183,7 @@ class EpicStore {
             }
         })
         curlist.sort((a,b)=>{
-            return a.start.isSameOrAfter(b.start);
+            return a.end.isSameOrAfter(b.end);
         })
         upcominglist.sort((a,b)=>{
             return a.start.isSameOrAfter(b.start);

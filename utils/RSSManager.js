@@ -46,14 +46,14 @@ class RSSManager {
                                 .setTitle(feed.title)
                                 .setDescription(desc);
                             channels.forEach(channel=>{
-                                sub.bot.channels.get(channel.channel_id).send(rich).catch(console.log);
+                                sub.bot.channels.resolve(channel.channel_id).send(rich).catch(console.log);
                             })
                         }
                     }
                     sub.time = new Date();
                 })().catch(e=>{
                     console.error(e);
-                    sub.bot.channels.get("").send("`Error`").catch(console.log);
+                    sub.bot.channels.resolve(error_channel).send("`Error`").catch(console.log);
                 })
             }, null, true, 'America/New_York');
         } catch(e) {

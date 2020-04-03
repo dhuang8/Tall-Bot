@@ -54,7 +54,7 @@ const Command = require('./utils/Command');
 bot.on('guildCreate', (guild) => {
     try {
         let msg = `${moment().format('h:mma')} ${guild.name} (${guild.id}) guild joined.`;
-        bot.channels.get(config.botChannelID).send(`\`${msg}\``).catch(err);
+        bot.channels.resolve(config.botChannelID).send(`\`${msg}\``).catch(err);
     } catch (e) {
         err(e)
     }
@@ -63,7 +63,7 @@ bot.on('guildCreate', (guild) => {
 bot.on('guildDelete', (guild) => {
     try {
         let msg = `${moment().format('h:mma')} ${guild.name} (${guild.id}) guild left.`;
-        bot.channels.get(config.botChannelID).send(`\`${msg}\``).catch(err);
+        bot.channels.resolve(config.botChannelID).send(`\`${msg}\``).catch(err);
     } catch (e) {
         err(e)
     }
@@ -93,7 +93,7 @@ function richQuote(message) {
 
 function err(error, loadingMessage, content) {
     if (config.errorChannelID) {
-        bot.channels.get(config.errorChannelID).send(`${error.stack}`, {
+        bot.channels.resolve(config.errorChannelID).send(`${error.stack}`, {
             code: true,
             split: true,
             reply: config.adminID || null
@@ -294,16 +294,16 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
             bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
-            bot.channels.get(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
+            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
-            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
+            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
             bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
-            bot.channels.get(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
             let rows = sql.prepare("SELECT * FROM reminders WHERE triggered=false").all();
             rows.forEach(row => {
                 setReminder(row.id, row.user_id, row.channel_id, row.message_text, row.message_id, row.time, row.original_time, row.url);
@@ -318,7 +318,7 @@ fs.readFile("./config.json", "utf8", (e, data) => {
                 (async () => {
                     return await weather("nyc");
                 })().then(params => {
-                    bot.channels.get(config.weatherChannelID).send(params).catch(err);
+                    bot.channels.resolve(config.weatherChannelID).send(params).catch(err);
                 }).catch(e => {
                     err(e);
                 })
@@ -358,13 +358,13 @@ commands.push(new Command({
         (async () => {
             let msgguild = message.guild ? message.guild.id : "whispers";
             let msgchannel = message.channel.id;
-            let guildcat = bot.guilds.get(config.guildID).channels.find(chan => chan.name == msgguild && chan.type == "category");
+            let guildcat = bot.guilds.resolve(config.guildID).channels.cache.find(chan => chan.name == msgguild && chan.type == "category");
             if (!guildcat) {
-                guildcat = await bot.guilds.get(config.guildID).channels.create(msgguild, { type: "category" });
+                guildcat = await bot.guilds.resolve(config.guildID).create(msgguild, { type: "category" });
             }
-            let guildchan = bot.guilds.get(config.guildID).channels.find(chan => chan.name == msgchannel && chan.type == "text");
+            let guildchan = bot.guilds.resolve(config.guildID).channels.cache.find(chan => chan.name == msgchannel && chan.type == "text");
             if (!guildchan) {
-                guildchan = await bot.guilds.get(config.guildID).channels.create(msgchannel, { type: "text" });
+                guildchan = await bot.guilds.resolve(config.guildID).create(msgchannel, { type: "text" });
                 guildchan.setParent(guildcat);
             }
             let msg = "`" + message.author.tag + ":` " + message.cleanContent
@@ -372,7 +372,7 @@ commands.push(new Command({
                 msg += "\n" + attach.proxyURL;
             })
             if (message.mentions.users.get(bot.user.id)) {
-                msg = bot.users.get(config.adminID).toString() + " " + msg;
+                msg = bot.users.resolve(config.adminID).toString() + " " + msg;
             }
             if (msg.length > 2000) msg = msg.slice(0, 1997) + "...";
             guildchan.send(msg);
@@ -398,7 +398,7 @@ commands.push(new Command({
         return message.channel.guild && message.channel.guild.id == config.guildID && message.author.id == config.adminID
     },
     run: async (message, args) => {
-        bot.channels.get(message.channel.name).send(message.content);
+        bot.channels.resolve(message.channel.name).send(message.content);
     }
 }))
 commands.push(new Command({
@@ -593,16 +593,16 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
         let wait = (time - now.valueOf());
         //handle long timeouts;
         if (wait > 2147483647) return;
-        let user = bot.users.get(user_id)
+        let user = bot.users.resolve(user_id)
         if (!user) throw new Error("Could find user");
-        let channel = bot.channels.get(channel_id)
+        let channel = bot.channels.resolve(channel_id)
         if (!channel) throw new Error("Could find channel");
 
         timeouts[id] = bot.setTimeout(function () {
             let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
             if (info.changes < 1) throw new Error("Could not modify reminder");
             let rich = new Discord.RichEmbed();
-            let member = channel.members ? channel.members.get(user) : null
+            let member = channel.members ? channel.members.resolve(user) : null
             let username;
             if (member && member.nickname) {
                 username = member.nickname;
@@ -612,7 +612,7 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
             rich.setAuthor(username, user.displayAvatarURL());
             rich.setDescription(message_text);
             rich.setTimestamp(original_time);
-            bot.channels.get(channel_id).send(`reminder: ${message_text}\n${url}`, {
+            bot.channels.resolve(channel_id).send(`reminder: ${message_text}\n${url}`, {
                 reply: user,
                 embed: rich
             });

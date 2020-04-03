@@ -360,11 +360,11 @@ commands.push(new Command({
             let msgchannel = message.channel.id;
             let guildcat = bot.guilds.resolve(config.guildID).channels.cache.find(chan => chan.name == msgguild && chan.type == "category");
             if (!guildcat) {
-                guildcat = await bot.guilds.resolve(config.guildID).create(msgguild, { type: "category" });
+                guildcat = await bot.guilds.resolve(config.guildID).channels.create(msgguild, { type: "category" });
             }
             let guildchan = bot.guilds.resolve(config.guildID).channels.cache.find(chan => chan.name == msgchannel && chan.type == "text");
             if (!guildchan) {
-                guildchan = await bot.guilds.resolve(config.guildID).create(msgchannel, { type: "text" });
+                guildchan = await bot.guilds.resolve(config.guildID).channels.create(msgchannel, { type: "text" });
                 guildchan.setParent(guildcat);
             }
             let msg = "`" + message.author.tag + ":` " + message.cleanContent

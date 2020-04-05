@@ -293,8 +293,8 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardReconnecting', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
-            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
+            //bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            //bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")

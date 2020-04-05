@@ -11,6 +11,7 @@
     "@vitalets/google-translate-api": "^2.9.0",
     "better-sqlite3": "^5.4.3",
     "bufferutil": "^4.0.1",
+    "canvas": "^2.6.1",
     "chartjs-node-canvas": "^2.4.2",
     "chartjs-plugin-annotation": "^0.5.7",
     "cheerio": "^1.0.0-rc.3",

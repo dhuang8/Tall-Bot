@@ -112,12 +112,13 @@ class EpicStore {
             }).join("\n");
             rich.addField("Upcoming free games", desc)
         }
+        /*
         if (gamelist.unknownlist.length > 0) {
             let desc = gamelist.unknownlist.map(cur=>{
                 return `[${cur.title}](${cur.url})`
             }).join("\n");
             rich.addField("Unknown", desc)
-        }
+        }*/
         return rich;
     }
 

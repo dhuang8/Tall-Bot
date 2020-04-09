@@ -299,7 +299,7 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-04-09 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -725,7 +725,7 @@ returns yu-gi-oh card data`,
     points: 1,
     run: async (message, args) => {
         let response;
-        if (args[1] === "random") {
+        if (args[1].toLowerCase() === "random") {
             response = await rp(`https://db.ygoprodeck.com/api/v4/randomcard.php`).catch(e => { return { error: "`No cards found`" } })
         } else {
             response = await rp(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`).catch(e => { return { error: "`No cards found`" } })
@@ -1821,35 +1821,85 @@ returns information on a Slay the Spire card or relic. Matches by substring`,
         let results = [];
         sts.forEach((element) => {
             if (element.title.toLowerCase().indexOf(args[1].toLowerCase()) > -1) {
-                results.push(element);
+                results.push([element.title,()=>{
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(element.title);
+                    rich.setImage(element.image)
+                    rich.setDescription(element.description);
+                    return rich;
+                }]);
             }
         })
         if (results.length < 1) {
             return ["`No results`"];
         } else if (results.length == 1) {
-            let rich = new Discord.RichEmbed();
-            rich.setTitle(results[0].title);
-            rich.setImage(results[0].image)
-            rich.setDescription(results[0].description);
-            return ["", { embed: rich }];
+            return results[0][1]();
         } else {
-            let msg = "```" + results.map((v, i) => {
-                return `${i + 1}. ${v.title}`
-            }).join("\n") + "```";
-
-            extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
-                var num = parseInt(message.content) - 1;
-                if (num < results.length && num > -1) {
-                    let rich = new Discord.RichEmbed();
-                    rich.setTitle(results[num].title);
-                    rich.setImage(results[num].image)
-                    rich.setDescription(results[num].description);
-                    message.channel.send("", { embed: rich });
-                    return true;
-                }
-                return false;
+            let rich = new Discord.RichEmbed({
+                title: "Multiple results found",
+                description: createCustomNumCommand3(message, results)
             })
-            return msg;
+            return rich;
+        }
+    }
+}))
+
+let osfe = null;
+fs.readFile("./data/osfe.json", 'utf8', function (e, data) {
+    if (e) {
+        return console.error("OSFE data not found");
+    } else {
+        osfe = JSON.parse(data);
+    }
+})
+
+commands.push(new Command({
+    name: "osfe",
+    regex: /^(?:osfe|eden) (.+)$/i,
+    prefix: ".",
+    testString: ".osfe coldstone",
+    req: () => { return osfe; },
+    hidden: false,
+    requirePrefix: true,
+    log: true,
+    points: 1,
+    typing: false,
+    shortDesc: "returns info on One Step From Eden spells and artifacts",
+    longDesc: `.osfe (spell, artifact, or keyword)
+returns information on a One Step From Eden spell, artifact, or keyword. Matches by substring`,
+    run: (message, args) => {
+        if (args[1].toLowerCase() === "random" || args[1].toLowerCase() === "rand") {
+            let rand = Math.floor(osfe.length * Math.random())
+            let card = osfe[rand]
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(card.title);
+            rich.setImage(card.image)
+            rich.setDescription(card.description);
+            return rich;
+        }
+        let results = [];
+        osfe.forEach((element) => {
+            if (element.title.toLowerCase().indexOf(args[1].toLowerCase()) > -1) {
+                results.push([element.title,()=>{
+                    let rich = new Discord.RichEmbed();
+                    rich.setTitle(element.title);
+                    rich.setImage(element.image)
+                    rich.setDescription(element.description);
+                    return rich;
+                }]);
+            }
+        })
+        
+        if (results.length < 1) {
+            return ["`No results`"];
+        } else if (results.length == 1) {
+            return results[0][1]();
+        } else {
+            let rich = new Discord.RichEmbed({
+                title: "Multiple results found",
+                description: createCustomNumCommand3(message, results)
+            })
+            return rich;
         }
     }
 }))
@@ -2027,8 +2077,27 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
                     borderWidth: 1,
                     pointRadius: 0
                 }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            callback: (value) => {
+                                if (value % 1 == 0) {
+                                    return '$' + value
+                                } else if (value < .01) {
+                                    return '$' + value;
+                                }
+                                return '$' + value.toFixed(2);
+                            },
+                            fontStyle: "bold",
+                            fontSize: 10
+                        }
+                    }]
+                }
             }
         };
+
         let stream = createChartStream(configuration);
         let rich = new Discord.RichEmbed();
         rich.attachFiles([{ attachment: stream, name: `chart.png` }])
@@ -2184,7 +2253,7 @@ plays audio from a YouTube link in a voice channel or returns a YouTube link if 
 
 commands.push(new Command({
     name: "yts",
-    regex: /^yts ([^\n\r]+?)(?: ([\d]{1,2}))?$/i,
+    regex: /^yts ([^\n\r]+?)$/i,
     prefix: ".",
     testString: ".yts blood drain again",
     hidden: false,
@@ -2194,13 +2263,11 @@ commands.push(new Command({
     points: 1,
     typing: true,
     shortDesc: "searches YouTube videos",
-    longDesc: `.yts (search_turn) [number_of_results]
-returns list of YouTube videos based on the search term
-number_of_results - the number of results to return. Default is 6.`,
+    longDesc: `.yts (search_turn)
+returns list of YouTube videos based on the search term`,
     run: async (message, args) => {
         args[1] = encodeURIComponent(args[1]);
         var max = 6;
-        if (args[2] && parseInt(args[2]) > 0 && parseInt(args[2]) < 51) max = parseInt(args[2]);
         let body = await rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=' + max + '&q=' + args[1])
         let data = JSON.parse(body);
         let rich = new Discord.RichEmbed();
@@ -2446,6 +2513,221 @@ location - can be several things like the name of a city or a zip code`,
     run: async (message, args) => {
         return await weather(args[1]);
     }
+}))
+
+let covid_countries = [];
+let covid_states = [];
+rp({
+    url: "https://covidtracking.com/api/v1/states/info.json",
+    json: true
+}).then(json => {
+    covid_states = json.map(state=>{
+        return {
+            initial: state.state,
+            name: state.name
+        }
+    })
+})
+
+rp({
+    url: "https://corona.lmao.ninja/countries",
+    json: true
+}).then(json => {
+    covid_countries = json.map(country=>{
+        return {
+            initial: [country.countryInfo.iso2,country.countryInfo.iso3],
+            name: country.country
+        }
+    })
+})
+
+commands.push(new Command({
+    name: "covid",
+    regex: /^(?:corona|covid|corona) (.+)$/i,
+    prefix: ".",
+    testString: "",
+    hidden: false,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: {title:`.covid __place__`,
+        description: `returns covid-19 counts for area`,
+        fields: [{
+            name: `place`,
+            value: `"all" or country name or state initial/name`
+        }]
+    },
+    log: true,
+    points: 1,
+    run: async (message, args) =>{
+        function parseNovelCOVID(current, history) {
+            let active_cases = [];
+            let dates = Object.keys(history.cases)
+            for (let i=1;i<dates.length;i++) {
+                active_cases.push(history.cases[dates[i]]-history.cases[dates[i-1]])
+            }
+            /*
+            dates.forEach(date=>{
+                active_cases.push(history.cases[date]-history.deaths[date]-history.recovered[date])
+            })*/
+
+            let step = parseInt(dates.length / 5);
+        
+            let labels = dates.slice(1).map((date,index) => {
+                if (index == dates.length-2) return date;
+                if (index > dates.length-step) return "";
+                if (index % step == 0) return date;
+                return "";
+            })
+        
+            const configuration = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "New cases",
+                        data: active_cases,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    legend: {
+                        display: true
+                    }
+                }
+            };
+        
+            let stream = createChartStream(configuration);
+            let desc_lines = []
+            desc_lines.push(`Total cases: ${current.cases}`)
+            desc_lines.push(`Total active: ${current.active}`)
+            desc_lines.push(`Total recovered: ${current.recovered}`)
+            desc_lines.push(`Total deaths: ${current.deaths}`)
+            desc_lines.push(`New cases: ${current.todayCases}`)
+            desc_lines.push(`New deaths: ${current.todayDeaths}`)
+            let rich = new Discord.RichEmbed()
+            rich.setDescription(desc_lines.join("\n"));
+            rich.setTitle("World")
+            rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+            rich.setImage(`attachment://chart.png`)
+            return rich;
+        }
+        if (args[1].toLowerCase() === "all" || args[1].toLowerCase() === "world") {
+            let current_prom = rp({
+                url: "https://corona.lmao.ninja/all",
+                json: true
+            })
+            let history = await rp({
+                url: "https://corona.lmao.ninja/v2/historical/all?lastdays=all",
+                json: true
+            })
+            let current = await current_prom;
+            let rich = parseNovelCOVID(current,history);
+            rich.setTitle("World");
+            return rich;
+        }
+        let country = covid_countries.find(country=>{
+            if (country.name.toLowerCase() === args[1].toLowerCase()) return true;
+            if (country.initial[0] && country.initial[0].toLowerCase() === args[1].toLowerCase()) return true;
+            if (country.initial[1] && country.initial[1].toLowerCase() === args[1].toLowerCase()) return true;
+            return false;
+        })
+        if (country !== undefined) {
+            let current_prom = rp({
+                url: `https://corona.lmao.ninja/countries/${country.initial[0]}`,
+                json:true
+            })
+            let history = await rp({
+                url: `https://corona.lmao.ninja/v2/historical/${country.initial[0]}?lastdays=all`,
+                json:true
+            })
+            let current = await current_prom;
+            let rich = parseNovelCOVID(current,history.timeline);
+            rich.setTitle(country.name);
+            return rich;
+        }
+        let state = covid_states.find(state=>{
+            if (state.name.toLowerCase() === args[1].toLowerCase()) return true;
+            if (state.initial.toLowerCase() === args[1].toLowerCase()) return true;
+            return false;
+        })
+        if (state !== undefined) {
+            let current_prom = rp({
+                url: `https://covidtracking.com/api/v1/states/current.json`,
+                json:true
+            })
+            let history = await rp({
+                url: `https://covidtracking.com/api/states/daily?state=${state.initial}`,
+                json:true
+            })
+            console.log(history)
+            let current = await current_prom;
+            current = current.find(this_state => {
+                return this_state.state === state.initial;
+            })
+            let active_cases = [];
+            history.sort((a,b)=>{
+                return a.date - b.date;
+            })
+            for (let i=1;i<history.length;i++) {
+                active_cases.push(history[i].positive-history[i-1].positive)
+            }
+            /*
+            active_cases = history.map(date=>{
+                let death = date.death || 0;
+                let recovered = date.recovered || 0;
+                return date.positive-death-recovered;
+            })*/
+            let dates = history.map(date=>{
+                return date.date;
+            })
+
+            let step = parseInt((dates.length-1) / 5);
+        
+            let labels = dates.slice(1).map((date,index) => {
+                if (index == dates.length-2) return date;
+                if (index > dates.length-step) return "";
+                if (index % step == 0) return date;
+                return "";
+            })
+        
+            const configuration = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "New cases",
+                        data: active_cases,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    legend: {
+                        display: true
+                    }
+                }
+            };
+        
+            let stream = createChartStream(configuration);
+            let desc_lines = []
+            desc_lines.push(`Total cases: ${current.positive}`)
+            desc_lines.push(`Total active: ${current.positive-current.recovered-current.death}`)
+            if (current.recovered !=null) desc_lines.push(`Total recovered: ${current.recovered}`)
+            if (current.death !=null) desc_lines.push(`Total deaths: ${current.death}`)
+            let rich = new Discord.RichEmbed()
+            rich.setDescription(desc_lines.join("\n"));
+            rich.setTitle(state.name)
+            rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+            rich.setImage(`attachment://chart.png`)
+            rich.setTitle(state.name);
+            return rich;
+        }
+        return `\`Place not found\``;
+    },
+    typing: true,
 }))
 
 let poe_stats = {};
@@ -3325,15 +3607,15 @@ __.rss add [http]()://rss.cnn.com/rss/cnn_topstories.rss__ - subscribes CNN top 
         }]
     },
     func: async (message, args) => {
-        if (args[1] === "add") {
+        if (args[1].toLowerCase() === "add") {
             return await rss.add(message, args[2]);
-        } else if (args[1] === "subs" || args[1] === "list") {
+        } else if (args[1].toLowerCase() === "subs" || args[1].toLowerCase() === "list") {
             return await rss.subs(message);
-        } else if (args[1] === "news") {
+        } else if (args[1].toLowerCase() === "news") {
             return await rss.list(message);
-        } else if (args[1] === "remove" || args[1] === "rem") {
+        } else if (args[1].toLowerCase() === "remove" || args[1].toLowerCase() === "rem") {
             return await rss.remove(message, args[2]);
-        } else if (args[1] === "test") {
+        } else if (args[1].toLowerCase() === "test") {
             return await rss.test(message);
         } else {
             return ["`unknown action`"];
@@ -3368,11 +3650,11 @@ commands.push(new Command({
         }]
     },
     func: async (message, args) => {
-        if (args[1] === "on") {
+        if (args[1].toLowerCase() === "on") {
             return await egs.on(message.channel.id);
-        } else if (args[1] === "off") {
+        } else if (args[1].toLowerCase() === "off") {
             return await egs.off(message.channel.id);
-        } else if (args[1] === "list") {
+        } else if (args[1].toLowerCase() === "list") {
             return await egs.list();
         } else {
             return ["`unknown action`"];
@@ -3787,14 +4069,6 @@ function createChartStream(configuration) {
             maxRotation: 0
         }
         ChartJS.defaults.line.scales.yAxes[0].ticks = {
-            callback: (value) => {
-                if (value % 1 == 0) {
-                    return '$' + value
-                } else if (value < .01) {
-                    return '$' + value;
-                }
-                return '$' + value.toFixed(2);
-            },
             fontStyle: "bold",
             fontSize: 10
         }
@@ -3912,6 +4186,22 @@ returns price and chart of stock symbol`,
             options: {
                 annotation: {
                     annotations: annotations
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            callback: (value) => {
+                                if (value % 1 == 0) {
+                                    return '$' + value
+                                } else if (value < .01) {
+                                    return '$' + value;
+                                }
+                                return '$' + value.toFixed(2);
+                            },
+                            fontStyle: "bold",
+                            fontSize: 10
+                        }
+                    }]
                 }
             }
         };
@@ -4158,6 +4448,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-04-09
+• added .osfe/eden and .covid commands
+
 2020-03-27
 • removed most meme messages
 \``
@@ -4379,7 +4672,8 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: (message, args) => {
-        return "fuck off";
+        let responses = ["fuck off", "sorry"];
+        return responses[parseInt(Math.random() * responses.length)];
     }
 }))
 

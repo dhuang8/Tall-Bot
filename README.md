@@ -130,6 +130,10 @@ multiple conditions can be linked together using condition1&condition2&condition
 .sts (card_name or relic_name)
 
 returns information on a Slay the Spire card or relic. Matches by substring
+## osfe
+.osfe (spell, artifact, or keyword)
+
+returns information on a One Step From Eden spell, artifact, or keyword. Matches by substring
 ## lor
 returns Legends of Runeterra card
 ### .runeterra __search_term or random__
@@ -167,11 +171,9 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
 
 plays audio from a YouTube link in a voice channel or returns a YouTube link if its a search term and not in a voice channel
 ## yts
-.yts (search_turn) \[number_of_results]
+.yts (search_turn)
 
 returns list of YouTube videos based on the search term
-
-number_of_results - the number of results to return. Default is 6.
 ## quote
 .quote (message_id or previous_nth_message)
 
@@ -186,6 +188,12 @@ previous_nth_message - the number of messages to go back to reach the message yo
 returns the 8 day forecast and a chart of the temperature for the next 2 days
 
 location - can be several things like the name of a city or a zip code
+## covid
+returns covid-19 counts for area
+### .covid __place__
+#### place
+"all" or country name or state initial/name
+
 ## pt
 .pt (item)
 

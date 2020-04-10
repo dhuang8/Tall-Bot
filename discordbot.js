@@ -2211,7 +2211,7 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                     const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
                 }).catch(err);
             }
-            //not in a voice channel
+        //not in a voice channel
         } else {
             channel.join().then(connnection => {
                 const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
@@ -2627,26 +2627,7 @@ commands.push(new Command({
             rich.setTitle("World");
             return rich;
         }
-        let country = covid_countries.find(country=>{
-            if (country.name.toLowerCase() === args[1].toLowerCase()) return true;
-            if (country.initial[0] && country.initial[0].toLowerCase() === args[1].toLowerCase()) return true;
-            if (country.initial[1] && country.initial[1].toLowerCase() === args[1].toLowerCase()) return true;
-            return false;
-        })
-        if (country !== undefined) {
-            let current_prom = rp({
-                url: `https://corona.lmao.ninja/countries/${country.initial[0]}`,
-                json:true
-            })
-            let history = await rp({
-                url: `https://corona.lmao.ninja/v2/historical/${country.initial[0]}?lastdays=all`,
-                json:true
-            })
-            let current = await current_prom;
-            let rich = parseNovelCOVID(current,history.timeline);
-            rich.setTitle(country.name);
-            return rich;
-        }
+        //prioritize state over country
         let state = covid_states.find(state=>{
             if (state.name.toLowerCase() === args[1].toLowerCase()) return true;
             if (state.initial.toLowerCase() === args[1].toLowerCase()) return true;
@@ -2723,6 +2704,26 @@ commands.push(new Command({
             rich.attachFiles([{ attachment: stream, name: `chart.png` }])
             rich.setImage(`attachment://chart.png`)
             rich.setTitle(state.name);
+            return rich;
+        }
+        let country = covid_countries.find(country=>{
+            if (country.name.toLowerCase() === args[1].toLowerCase()) return true;
+            if (country.initial[0] && country.initial[0].toLowerCase() === args[1].toLowerCase()) return true;
+            if (country.initial[1] && country.initial[1].toLowerCase() === args[1].toLowerCase()) return true;
+            return false;
+        })
+        if (country !== undefined) {
+            let current_prom = rp({
+                url: `https://corona.lmao.ninja/countries/${country.initial[0]}`,
+                json:true
+            })
+            let history = await rp({
+                url: `https://corona.lmao.ninja/v2/historical/${country.initial[0]}?lastdays=all`,
+                json:true
+            })
+            let current = await current_prom;
+            let rich = parseNovelCOVID(current,history.timeline);
+            rich.setTitle(country.name);
             return rich;
         }
         return `\`Place not found\``;

@@ -4,7 +4,7 @@ const request = require('request');
 const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
-const ytdl = require('ytdl-core');
+const ytdl = require('ytdl-core-discord');
 const execFile = require('child_process').execFile;
 const execFileSync = require('child_process').execFileSync;
 const CronJob = require('cron').CronJob;
@@ -2182,7 +2182,7 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
             //highWaterMark: 1
         }
 
-        function leave() {
+        function leave(reason) {
             channel.leave();
         }
         //if in voice channel and playing
@@ -2194,12 +2194,12 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                 if (thisDispatch) {
                     thisDispatch.removeAllListeners('finish');
                     thisDispatch.on('finish', () => {
-                        const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('finish', leave);
+                        const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
                     });
                     thisDispatch.end();
                     //sitting in channel without playing sound
                 } else {
-                    channel.guild.voice.connection.play(URL, stream_options).on('finish', leave);
+                    channel.guild.voice.connection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
                 }
                 //if in another voice channel
             } else {
@@ -2208,13 +2208,13 @@ function playSound(channel, URL, setvolume, setstart, setduration) {
                     channel.guild.voice.connection.dispatcher.end();
                 }
                 channel.join().then(connnection => {
-                    const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
+                    const dispatcher = connnection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
                 }).catch(err);
             }
         //not in a voice channel
         } else {
             channel.join().then(connnection => {
-                const dispatcher = connnection.play(URL, stream_options).on('finish', leave);
+                const dispatcher = connnection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
             }).catch(err)
         }
     } catch (e) {
@@ -2242,9 +2242,10 @@ plays audio from a YouTube link in a voice channel or returns a YouTube link if 
             return [`get in a voice channel`, { reply: message.author }];
         }
 
-        let stream = ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
+        let stream = await ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
             filter: 'audioonly',
-            quality: 'highestaudio'
+            quality: 'highestaudio',
+            highWaterMark: 1<<25
         });
         playSound(voiceChannel, stream);
         return null;
@@ -2288,9 +2289,10 @@ returns list of YouTube videos based on the search term`,
                         message.channel.send(`https://youtu.be/${data.items[num - 1].id.videoId}`).catch(err);
                         return false;
                     }
-                    let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
+                    let stream = await ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
                         filter: 'audioonly',
-                        quality: 'highestaudio'
+                        quality: 'highestaudio',
+                        highWaterMark: 1<<25
                     });
                     playSound(voiceChannel, stream);
                     return true;
@@ -2548,7 +2550,7 @@ commands.push(new Command({
     testString: "",
     hidden: false,
     requirePrefix: true,
-    shortDesc: "",
+    shortDesc: "returns covid stats for country or state",
     longDesc: {title:`.covid __place__`,
         description: `returns covid-19 counts for area`,
         fields: [{
@@ -4483,9 +4485,10 @@ commands.push(new Command({
                 return [`get in a voice channel`, { reply: message.author }];
             }
 
-            let stream = ytdl("https://www.youtube.com/watch?v=" + (a[1] || a[2]), {
+            let stream = await ytdl("https://www.youtube.com/watch?v=" + (a[1] || a[2]), {
                 filter: 'audioonly',
-                quality: 'highestaudio'
+                quality: 'highestaudio',
+                highWaterMark: 1<<25
             });
             playSound(voiceChannel, stream);
             return null;
@@ -4500,9 +4503,10 @@ commands.push(new Command({
         if (!voiceChannel) {
             return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];
         } else {
-            let stream = ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {
+            let stream = await ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {
                 filter: 'audioonly',
-                quality: 'highestaudio'
+                quality: 'highestaudio',
+                highWaterMark: 1<<25
             });
             playSound(voiceChannel, stream);
             return null;

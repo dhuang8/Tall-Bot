@@ -2661,7 +2661,6 @@ commands.push(new Command({
                 url: `https://covidtracking.com/api/states/daily?state=${state.initial}`,
                 json:true
             })
-            console.log(history)
             let current = await current_prom;
             current = current.find(this_state => {
                 return this_state.state === state.initial;
@@ -4823,7 +4822,7 @@ returns a list of commands. respond with the number for details on a specific co
             } else {
                 results.push(["", { embed: new Discord.RichEmbed(cur.getLongDesc()) }]);
             }
-            return `**${index + 1}.** ${cur.getShortDesc()}`;
+            return `${index + 1}. ${cur.getShortDesc()}`;
         }).join("\n");
         extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
             var num = parseInt(message.content) - 1;

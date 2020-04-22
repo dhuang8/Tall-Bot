@@ -4,7 +4,7 @@ const request = require('request');
 const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
-const ytdl = require('ytdl-core-discord');
+const ytdl = require('ytdl-core');
 const execFile = require('child_process').execFile;
 const execFileSync = require('child_process').execFileSync;
 const CronJob = require('cron').CronJob;
@@ -20,6 +20,8 @@ const RSSManager = require('./utils/RSSManager');
 const EpicStore = require('./utils/EpicStore');
 const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
+//const heapdump = require('heapdump');
+
 
 moment.tz.setDefault("America/New_York");
 
@@ -214,7 +216,9 @@ function createCustomNumCommand3(message, data_array) {
                 (async () => {
                     return await data_array[num][1](message);
                 })().then(params => {
-                    if (Array.isArray(params)) {
+                    if (params == null) {
+                        return;
+                    } else if (Array.isArray(params)) {
                         message.channel.send.apply(message.channel, params).catch(e => {
                             if (e.code == 50035) {
                                 message.channel.send("`Message too large`").catch(err);
@@ -291,7 +295,7 @@ fs.readFile("./config.json", "utf8", (e, data) => {
     } else {
         config = JSON.parse(data);
         globalvars.config = config;
-        bot.on('shardReconnecting', () => {
+        bot.on('shardResume', () => {
             console.log(`reconnected`)
             //bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             //bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
@@ -299,7 +303,7 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('2020-04-09 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-04-22 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -2169,63 +2173,115 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
     }
 }))
 
-function playSound(channel, URL, setvolume, setstart, setduration) {
-    try {
-        //todo serverVol
-        setvolume = setvolume || /*(serverVol ? serverVol[channel.guild] / 100:false) || */.3;
-        setstart = setstart || 0;
-
-        let stream_options = {
-            //seek: setstart,
-            volume: setvolume,
-            //bitrate: "auto",
-            //highWaterMark: 1
+function playSound(channel, URL, options = {}) {
+    return new Promise((resolve)=>{
+        //stop the music
+        if (channel.guild.voice != null && channel.guild.voice.connection !=null && channel.guild.voice.connection.dispatcher != null) {
+            channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
+            channel.guild.voice.connection.dispatcher.end();
         }
-
-        function leave(reason) {
-            channel.leave();
-        }
-        //if in voice channel and playing
-        if (channel.guild.voice != null && channel.guild.voice.connection && channel.guild.voice.connection.player != null) {
-            //if in the same voice channel
-            if (channel.guild.voice.connection.channel.equals(channel)) {
-                let thisDispatch = channel.guild.voice.connection.dispatcher;
-                //if playing sound
-                if (thisDispatch) {
-                    thisDispatch.removeAllListeners('finish');
-                    thisDispatch.on('finish', () => {
-                        const dispatcher = channel.guild.voice.connection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
-                    });
-                    thisDispatch.end();
-                    //sitting in channel without playing sound
-                } else {
-                    channel.guild.voice.connection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
-                }
-                //if in another voice channel
-            } else {
-                if (channel.guild.voice.connection.dispatcher) {
-                    channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
-                    channel.guild.voice.connection.dispatcher.end();
-                }
-                channel.join().then(connnection => {
-                    const dispatcher = connnection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
-                }).catch(err);
-            }
-        //not in a voice channel
+        resolve();
+    }).then(()=>{
+        //join channel
+        if (channel.guild.voice != null && channel.guild.voice.connection !=null && channel.guild.voice.connection.channel.equals(channel)) {
+            return channel.guild.voice.connection;
         } else {
-            channel.join().then(connnection => {
-                const dispatcher = connnection.play(URL, stream_options).on('finish', leave).on('end', (reason) => console.log(reason));
-            }).catch(err)
+            return channel.join();    
         }
-    } catch (e) {
-        console.error(e);
+    }).then((connection)=>{
+        //play music
+        let setvolume = .3;
+        let stream_options = {
+            volume: setvolume,
+            highWaterMark: 1
+        }
+        stream_options = {...stream_options, ...options}
+        const dispatcher = connection.play(URL, stream_options)
+        dispatcher.on('finish', ()=>{
+            channel.leave()
+        });
+        return null;
+        //dispatcher.on('end', (reason) => console.log(reason)).on('finish', channel.leave());
+    }).catch((e)=>{
         throw e;
+    })
+}
+
+async function playYoutube(url, channel) {
+    //source from ytdl-core-discord
+    try {
+        let info = await ytdl.getInfo(url);
+        let options = {
+            highWaterMark: 1<<25
+        }
+        function filter(format) {
+            return format.codecs === 'opus' &&
+                format.container === 'webm' &&
+                format.audioSampleRate == 48000;
+        }
+        let format_list = info.formats.filter(f=>{
+            return f.audioBitrate;
+        }).sort((a,b)=>{
+            function score(f) {
+                let score = 0;
+                if (f.codecs === "opus" && f.container === "webm") score +=1
+                return score;
+            }
+            let score_a = score(a);
+            let score_b = score(b);
+            if (score_a != score_b) return score_b-score_a;
+            else return b.audioBitrate - a.audioBitrate;
+        })
+        if (format_list.length > 0) {
+            const itag = format_list[0].itag;
+            options = {...options, filter: (f)=>{
+                return f.itag == itag;
+            }}
+            let type;
+            if (format_list[0].codecs === "opus" && format_list[0].container === "webm") type = "webm/opus"
+            else type = "unknown";
+            let stream = ytdl.downloadFromInfo(info, options);
+            return [stream,{type}];
+        }
+        return null;
+    } catch (e) {
+        console.log(e)
+        return null;
     }
+}
+
+async function ytFunc(message,args){
+    let id;
+    let searched = false;
+    let data;
+    try {
+        id = ytdl.getVideoID(args[1])
+    } catch (e) {
+        if (!config.api.youtube) return `\`No videos found\``;
+        data = await rp({
+            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=1&q=${args[1]}`,
+            json: true
+        })
+        id = data.items[0].id.videoId;
+        searched = true;
+    }
+    const ytstream = await playYoutube(id);
+    if (ytstream !== null) {
+        if (message.member.voice.channel) {
+            return await playSound(message.member.voice.channel, ytstream[0], ytstream[1]);
+        } else {
+            if (searched) {
+                return `**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`;
+            }
+            return `\`Not in a voice channel\``;
+        }
+    }
+    return `\`No videos found\``;
 }
 
 commands.push(new Command({
     name: "yt",
-    regex: /^yt (?:([a-zA-Z0-9_-]{11})|(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i,
+    regex: /^yt (.+)$/i,
     prefix: ".",
     testString: ".yt DN9YncMIr60",
     hidden: false,
@@ -2234,27 +2290,27 @@ commands.push(new Command({
     typing: false,
     points: 1,
     shortDesc: "plays audio from a YouTube link in a voice channel",
-    longDesc: `.yt (youtube_link or search_term)
-plays audio from a YouTube link in a voice channel or returns a YouTube link if its a search term and not in a voice channel`,
+    longDesc: {
+        title: `.yt __youtube link, id, or search term__`,
+        description: `returns or plays audio from YouTube video to a voice channel`,
+        fields: [{
+            name: `__youtube link, id, or search term__`,
+            value: `can be an entire YouTube URL, just the ID, or a string to search`
+        },{
+            name: `Examples`,
+            value: `**.yt DN9YncMIr60** - plays <https://youtu.be/DN9YncMIr60> in a voice channel
+**.yt <https://www.youtube.com/watch?v=DN9YncMIr60>** - same as above
+**.yt Tokyo Daylight (Atlus Kozuka Remix)** - same as above or returns the video if not in a voice channel`
+        }]
+    },
     run: async (message, args) => {
-        let voiceChannel = message.member.voice.channel;
-        if (!voiceChannel) {
-            return [`get in a voice channel`, { reply: message.author }];
-        }
-
-        let stream = await ytdl("https://www.youtube.com/watch?v=" + (args[1] || args[2]), {
-            filter: 'audioonly',
-            quality: 'highestaudio',
-            highWaterMark: 1<<25
-        });
-        playSound(voiceChannel, stream);
-        return null;
+        return ytFunc(message, args)
     }
 }))
 
 commands.push(new Command({
     name: "yts",
-    regex: /^yts ([^\n\r]+?)$/i,
+    regex: /^yts (.+)$/i,
     prefix: ".",
     testString: ".yts blood drain again",
     hidden: false,
@@ -2264,45 +2320,33 @@ commands.push(new Command({
     points: 1,
     typing: true,
     shortDesc: "searches YouTube videos",
-    longDesc: `.yts (search_turn)
+    longDesc: `.yts (search_term)
 returns list of YouTube videos based on the search term`,
     run: async (message, args) => {
         args[1] = encodeURIComponent(args[1]);
         var max = 6;
-        let body = await rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=' + max + '&q=' + args[1])
-        let data = JSON.parse(body);
+        let data = await rp({
+            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=${max}&q=${args[1]}`,
+            json: true
+        })
         let rich = new Discord.RichEmbed();
         rich.setTitle("YouTube results");
         rich.setURL("https://www.youtube.com/results?search_query=" + args[1])
-        let msg = "";
-        for (var i = 0; i < data.items.length; i++) {
-            //rich.addField(i + 1, `[${data.items[i].snippet.title}](https://youtu.be/${data.items[i].id.videoId})`, false);
-            msg += `**${i + 1}**. **[${escapeMarkdownText(unescape(data.items[i].snippet.title))}](https://youtu.be/${data.items[i].id.videoId})**\n`;
-        }
-        rich.setDescription(msg);
-        extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, function (message) {
-            var num = parseInt(message.content);
-            if (num < data.items.length + 1 && num > 0) {
-                try {
-                    const voiceChannel = message.member.voice.channel;
-                    if (!voiceChannel) {
-                        message.channel.send(`https://youtu.be/${data.items[num - 1].id.videoId}`).catch(err);
-                        return false;
+        let yt_list = data.items.map(item=>{
+            return [`[${escapeMarkdownText(unescape(item.snippet.title))}](https://youtu.be/${item.id.videoId})`,async ()=>{
+                const ytstream = await playYoutube(item.id.videoId);
+                if (ytstream !== null) {
+                    if (message.member.voice.channel) {
+                        return await playSound(message.member.voice.channel, ytstream[0], ytstream[1]);
                     }
-                    let stream = await ytdl("https://www.youtube.com/watch?v=" + data.items[num - 1].id.videoId, {
-                        filter: 'audioonly',
-                        quality: 'highestaudio',
-                        highWaterMark: 1<<25
-                    });
-                    playSound(voiceChannel, stream);
-                    return true;
-                } catch (e) {
-                    err(e);
-                    message.channel.send("`Error`").catch(err);
+                    if (searched) {
+                        return `**${escapeMarkdownText(unescape(item.snippet.title))}**\nhttps://youtu.be/${item.id.videoId}`;
+                    }
+                    return `\`Not in a voice channel\``;
                 }
-            }
-            return false;
+            }]
         })
+        rich.setDescription(createCustomNumCommand3(message, yt_list));
         return rich;
     }
 }))
@@ -2532,7 +2576,7 @@ rp({
 })
 
 rp({
-    url: "https://corona.lmao.ninja/countries",
+    url: "https://corona.lmao.ninja/v2/countries",
     json: true
 }).then(json => {
     covid_countries = json.map(country=>{
@@ -2617,7 +2661,7 @@ commands.push(new Command({
         }
         if (args[1].toLowerCase() === "all" || args[1].toLowerCase() === "world") {
             let current_prom = rp({
-                url: "https://corona.lmao.ninja/all",
+                url: "https://corona.lmao.ninja/v2/all",
                 json: true
             })
             let history = await rp({
@@ -2715,7 +2759,7 @@ commands.push(new Command({
         })
         if (country !== undefined) {
             let current_prom = rp({
-                url: `https://corona.lmao.ninja/countries/${country.initial[0]}`,
+                url: `https://corona.lmao.ninja/v2/countries/${country.initial[0]}`,
                 json:true
             })
             let history = await rp({
@@ -4450,11 +4494,15 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-04-22
+• improved YouTube audio playback
+• alexa play and .yt both work with search terms and YouTube URLs. They also do the same thing. 
+
 2020-04-09
 • added .osfe/eden and .covid commands
 
 2020-03-27
-• removed most meme messages
+• removed most meme commands
 \``
     }
 }))
@@ -4477,40 +4525,7 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: async (message, args) => {
-        let re = /^(?:(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:[^\/\s]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))\S*(?: (\d{1,6}))?(?: (\d{1,6}))?(?: (\d{1,3}))?$/i;
-        let a = re.exec(args[1]);
-        if (a) {
-            let voiceChannel = message.member.voice.channel;
-            if (!voiceChannel) {
-                return [`get in a voice channel`, { reply: message.author }];
-            }
-
-            let stream = await ytdl("https://www.youtube.com/watch?v=" + (a[1] || a[2]), {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-                highWaterMark: 1<<25
-            });
-            playSound(voiceChannel, stream);
-            return null;
-        }
-        let search = encodeURIComponent(args[1]);
-        let urlpromise = rp('https://www.googleapis.com/youtube/v3/search?part=snippet&key=' + config.api.youtube + '&type=video&maxResults=1' + '&q=' + search)
-        let body = await urlpromise;
-
-        let data = JSON.parse(body);
-        if (data.items.length < 1) return `\`No videos found\``;
-        const voiceChannel = message.member && message.member.voice ? message.member.voice.channel : null;
-        if (!voiceChannel) {
-            return [`**${escapeMarkdownText(unescape(data.items[0].snippet.title))}**\nhttps://youtu.be/${data.items[0].id.videoId}`];
-        } else {
-            let stream = await ytdl("https://www.youtube.com/watch?v=" + data.items[0].id.videoId, {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-                highWaterMark: 1<<25
-            });
-            playSound(voiceChannel, stream);
-            return null;
-        }
+        return ytFunc(message, args)
     }
 }))
 

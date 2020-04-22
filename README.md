@@ -167,11 +167,19 @@ from_symbol - the currency symbol you are exchanging from. ex: CAD
 
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.
 ## yt
-.yt (youtube_link or search_term)
+returns or plays audio from YouTube video to a voice channel
+### .yt __youtube link, id, or search term__
+#### __youtube link, id, or search term__
+can be an entire YouTube URL, just the ID, or a string to search
+#### Examples
+**.yt DN9YncMIr60** - plays <https://youtu.be/DN9YncMIr60> in a voice channel
 
-plays audio from a YouTube link in a voice channel or returns a YouTube link if its a search term and not in a voice channel
+**.yt <https://www.youtube.com/watch?v=DN9YncMIr60>** - same as above
+
+**.yt Tokyo Daylight (Atlus Kozuka Remix)** - same as above or returns the video if not in a voice channel
+
 ## yts
-.yts (search_turn)
+.yts (search_term)
 
 returns list of YouTube videos based on the search term
 ## quote

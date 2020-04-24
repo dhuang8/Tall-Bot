@@ -1875,21 +1875,13 @@ returns information on a One Step From Eden spell, artifact, or keyword. Matches
         if (args[1].toLowerCase() === "random" || args[1].toLowerCase() === "rand") {
             let rand = Math.floor(osfe.length * Math.random())
             let card = osfe[rand]
-            let rich = new Discord.RichEmbed();
-            rich.setTitle(card.title);
-            rich.setImage(card.image)
-            rich.setDescription(card.description);
-            return rich;
+            return new Discord.RichEmbed(card);
         }
         let results = [];
         osfe.forEach((element) => {
             if (element.title.toLowerCase().indexOf(args[1].toLowerCase()) > -1) {
                 results.push([element.title,()=>{
-                    let rich = new Discord.RichEmbed();
-                    rich.setTitle(element.title);
-                    rich.setImage(element.image)
-                    rich.setDescription(element.description);
-                    return rich;
+                    return new Discord.RichEmbed(element);
                 }]);
             }
         })

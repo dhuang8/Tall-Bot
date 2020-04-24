@@ -75,10 +75,13 @@ class RSSManager {
             
             let a = /^.*steam(?:powered|community)\.com\/(?:app|news|games)\/?(?:\?appids=)?(\d+).*$/.exec(rss_url)
             if (a) {
+                //https://steamcommunity.com/games/mysummercar/announcements/
                 let valve = {
                     "504": "Dota2",
                     "730": "CSGO",
-                    "440": "TF2"
+                    "440": "TF2",
+                    "286160": "TabletopSimulator",
+                    "516750": "mysummercar"
                 };
                 if (valve[a[1]]) a[1] = valve[a[1]]
                 rss_url = `https://steamcommunity.com/games/${a[1]}/rss`
@@ -102,7 +105,7 @@ class RSSManager {
             if (info.changes<1) {
                 return [`\`${title} already on list\``]
             }
-            return [`\`added ${stmt1.title} to list\``, this.subs(message)]
+            return [`\`added ${title} to list\``, this.subs(message)]
         } catch(e) {
             console.log(e)
             return ["`failed to add`"]

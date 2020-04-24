@@ -46,6 +46,22 @@ const moment = require('moment-timezone');
 	}
   }
 */
+function err(error, loadingMessage, content) {
+    if (config.errorChannelID) {
+        bot.channels.resolve(config.errorChannelID).send(`${error.stack}`, {
+            code: true,
+            split: true,
+            reply: config.adminID || null
+        }).catch(function (e) {
+            console.error(error.stack);
+            console.error(e.stack);
+            console.error("maybe missing bot channel");
+        })
+        if (loadingMessage != null) loadingMessage.edit(content).catch(err)
+    } else {
+        console.error(error);
+    }
+}
 
 class EpicStore {
     constructor(bot, sql, error_channel) {
@@ -68,12 +84,11 @@ class EpicStore {
             return this.lastlist.indexOf(game.title) < 0;
         })
         if (isnew && !firsttime) {
-            let channels = this.sql.prepare("SELECT channel_id FROM channels WHERE egs=1").all()
-            let gamelist = await this.__getList();
+            let channels = this.sql.prepare("SELECT channel_id FROM channels WHERE egs=1").all();
             let rich = this.createRich(gamelist);
             let sub = this;
             channels.forEach(channel=>{
-                sub.bot.channels.resolve(channel.channel_id).send(rich).catch(console.log);
+                sub.bot.channels.resolve(channel.channel_id).send(rich).catch(err);
             })
         }
         let waittime = 0;
@@ -135,9 +150,54 @@ class EpicStore {
     }
 
     async __getList() {
-        let body = {"query":"query {Catalog {catalogOffers(namespace: \"epic\", locale: \"en-US\", params: {category: \"freegames\", country: \"US\", sortBy: \"effectiveDate\", sortDir: \"asc\"}) {elements {title description id namespace categories {path}linkedOfferNs linkedOfferId keyImages {type url} productSlug promotions {promotionalOffers { promotionalOffers {startDate endDate discountSetting {discountType discountPercentage}}}upcomingPromotionalOffers {promotionalOffers {startDate endDate discountSetting {discountType discountPercentage}}}}}}}}"}
+        let qr=`
+        query searchStoreQuery($allowCountries: String, $category: String, $count: Int, $country: String!, $keywords: String, $locale: String, $namespace: String, $sortBy: String, $sortDir: String, $start: Int, $tag: String, $withPrice: Boolean = false, $withPromotions: Boolean = false) {
+            Catalog {
+              searchStore(allowCountries: $allowCountries, category: $category, count: $count, country: $country, keywords: $keywords, locale: $locale, namespace: $namespace, sortBy: $sortBy, sortDir: $sortDir, start: $start, tag: $tag) {
+                elements {
+                  title
+                  keyImages {
+                    type
+                    url
+                  }
+                  productSlug
+                  price(country: $country) @include(if: $withPrice) {
+                    lineOffers {
+                      appliedRules {
+                        id
+                      }
+                    }
+                  }
+                  promotions(category: $category) @include(if: $withPromotions) {
+                    promotionalOffers {
+                      promotionalOffers {
+                        startDate
+                        endDate
+                        discountSetting {
+                          discountType
+                          discountPercentage
+                        }
+                      }
+                    }
+                    upcomingPromotionalOffers {
+                      promotionalOffers {
+                        startDate
+                        endDate
+                        discountSetting {
+                          discountType
+                          discountPercentage
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }`;
+        let vr = {"category":"freegames","sortBy":"effectiveDate","sortDir":"asc","count":1000,"country":"US","allowCountries":"US","locale":"en-US","withPrice":true,"withPromotions":true};
+        let body = {"query":qr, "variables":vr}
         let response = await rp({
-            url: "https://graphql.epicgames.com/graphql",
+            url: "https://www.epicgames.com/store/backend/graphql-proxy",
             method: "post",
             body: body,
             json: true
@@ -145,7 +205,7 @@ class EpicStore {
         let curlist = [];
         let upcominglist = [];
         let unknownlist = [];
-        response.data.Catalog.catalogOffers.elements.forEach(ele=>{
+        response.data.Catalog.searchStore.elements.forEach(ele=>{
             let image = ele.keyImages.find(keyImages=>{
                 return keyImages.type == "DieselStoreFrontTall"
             })

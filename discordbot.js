@@ -2339,10 +2339,7 @@ returns list of YouTube videos based on the search term`,
                     if (message.member.voice.channel) {
                         return await playSound(message.member.voice.channel, ytstream[0], ytstream[1]);
                     }
-                    if (searched) {
-                        return `**${escapeMarkdownText(unescape(item.snippet.title))}**\nhttps://youtu.be/${item.id.videoId}`;
-                    }
-                    return `\`Not in a voice channel\``;
+                    return `**${escapeMarkdownText(unescape(item.snippet.title))}**\nhttps://youtu.be/${item.id.videoId}`;
                 }
             }]
         })
@@ -2608,8 +2605,14 @@ commands.push(new Command({
         function parseNovelCOVID(current, history) {
             let active_cases = [];
             let dates = Object.keys(history.cases)
+            let date_text = [];
+            let infected = false;
             for (let i=1;i<dates.length;i++) {
-                active_cases.push(history.cases[dates[i]]-history.cases[dates[i-1]])
+                if (!infected && history.cases[dates[i+1]] > 0) infected = true;
+                if (infected) {
+                    active_cases.push(history.cases[dates[i]]-history.cases[dates[i-1]])
+                    date_text.push(dates[i])
+                }
             }
             /*
             dates.forEach(date=>{
@@ -2618,9 +2621,9 @@ commands.push(new Command({
 
             let step = parseInt(dates.length / 5);
         
-            let labels = dates.slice(1).map((date,index) => {
-                if (index == dates.length-2) return date;
-                if (index > dates.length-step) return "";
+            let labels = date_text.slice(1).map((date,index) => {
+                if (index == date_text.length-2) return date;
+                if (index > date_text.length-step) return "";
                 if (index % step == 0) return date;
                 return "";
             })
@@ -4837,24 +4840,17 @@ returns a list of commands. respond with the number for details on a specific co
         let mes = commands.filter((cur) => {
             return cur.getVisibility();
         }).map((cur, index) => {
-            if (typeof cur.getLongDesc() == "string") {
-                results.push(["```" + cur.getLongDesc() + "```"]);
-            } else {
-                results.push(["", { embed: new Discord.RichEmbed(cur.getLongDesc()) }]);
-            }
-            return `${index + 1}. ${cur.getShortDesc()}`;
-        }).join("\n");
-        extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
-            var num = parseInt(message.content) - 1;
-            if (num < results.length && num > -1) {
-                message.channel.send.apply(message.channel, results[num]).catch(err);
-                return true;
-            }
-            return false;
-        })
+            return [cur.getShortDesc(), ()=>{
+                if (typeof cur.getLongDesc() == "string") {
+                    return "```" + cur.getLongDesc() + "```" ;
+                } else {
+                    return new Discord.RichEmbed(cur.getLongDesc());
+                }
+            }];
+        });
         let rich = new Discord.RichEmbed({
             title: "List of commands",
-            description: mes
+            description: createCustomNumCommand3(message, mes)
         })
         rich.setFooter(`Respond with number or ".(commandname) help" for more info`)
         return rich;

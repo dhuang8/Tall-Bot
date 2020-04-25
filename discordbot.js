@@ -2206,11 +2206,6 @@ async function playYoutube(url, channel) {
         let options = {
             highWaterMark: 1<<25
         }
-        function filter(format) {
-            return format.codecs === 'opus' &&
-                format.container === 'webm' &&
-                format.audioSampleRate == 48000;
-        }
         let format_list = info.formats.filter(f=>{
             return f.audioBitrate;
         }).sort((a,b)=>{
@@ -2251,7 +2246,7 @@ async function ytFunc(message,args){
     } catch (e) {
         if (!config.api.youtube) return `\`No videos found\``;
         data = await rp({
-            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=1&q=${args[1]}`,
+            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=1&q=${encodeURIComponent(args[1])}`,
             json: true
         })
         id = data.items[0].id.videoId;

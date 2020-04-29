@@ -2376,7 +2376,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
             if (!quote) {
                 if (message.guild && message.guild.available) {
                     return await Promise.all(
-                        message.guild.channels.filter(channel => {
+                        message.guild.channels.cache.filter(channel => {
                             return channel.id !== message.channel.id && channel.type == "text"
                         }).map(channel => {
                             return findQuote(channel, args[1]).then(quotefound => {
@@ -2686,18 +2686,24 @@ commands.push(new Command({
             history.sort((a,b)=>{
                 return a.date - b.date;
             })
+            let infected = false;
+            let dates = [];
             for (let i=1;i<history.length;i++) {
-                active_cases.push(history[i].positive-history[i-1].positive)
+                if (!infected && history[i+1].positive > 0) infected = true;
+                if (infected) {
+                    active_cases.push(history[i].positive-history[i-1].positive)
+                    dates.push(history[i].date)
+                }
             }
             /*
             active_cases = history.map(date=>{
                 let death = date.death || 0;
                 let recovered = date.recovered || 0;
                 return date.positive-death-recovered;
-            })*/
+            })
             let dates = history.map(date=>{
                 return date.date;
-            })
+            })*/
 
             let step = parseInt((dates.length-1) / 5);
         

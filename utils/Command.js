@@ -208,7 +208,7 @@ class Command {
     }
 
     getShortDesc() {
-        return `__**${this.prefix}${this.name}**__ - ${this.shortDesc}`;
+        return `${this.prefix}${this.name} — ${this.shortDesc}`;
     }
 
     getLongDesc() {

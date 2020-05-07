@@ -1963,12 +1963,19 @@ returns information on a One Step From Eden spell, artifact, or keyword. Matches
     }
 }))
 
-let runeterra = null;
+let runeterra = [];
 fs.readFile("./data/runeterra/data/set1-en_us.json", 'utf8', function (e, data) {
     if (e) {
         return console.error("Legends of Runeterra data not found");
     } else {
-        runeterra = JSON.parse(data);
+        runeterra = runeterra.concat(JSON.parse(data));
+    }
+})
+fs.readFile("./data/runeterra/data/set2-en_us.json", 'utf8', function (e, data) {
+    if (e) {
+        return console.error("Legends of Runeterra data not found");
+    } else {
+        runeterra = runeterra.concat(JSON.parse(data));
     }
 })
 
@@ -2007,7 +2014,7 @@ commands.push(new Command({
             if (card.attack && card.health) desclines.push(`${card.attack} | ${card.health}`);
             desclines.push("");
             if (card.description) {
-                desclines.push(card.description.replace(/<.+?>/g, "**").replace(/\*{3,}/g, "**"));
+                desclines.push(card.description.replace(/<\/.+?>/g, "\u200b**").replace(/(\u200b\*\*){2,}/g, "\u200b**").replace(/<[^\/].*?>/g, "**\u200b").replace(/(\*\*\u200b){2,}/g, "**\u200b"));
             }
             //if (card.descriptionRaw) desclines.push(card.descriptionRaw);
             embed.addField(card.type, desclines.join("\n"));
@@ -2015,7 +2022,7 @@ commands.push(new Command({
             let attach = new Discord.MessageAttachment(`./data/runeterra/${card.assets[0].gameAbsolutePath.replace("http://dd.b.pvp.net/Set1/en_us/","")}`,`${card.cardCode}.png`);
             embed.attachFiles([attach]).setImage(`attachment://${card.cardCode}.png`);
             */
-            embed.setImage(`https://cdn-lor.mobalytics.gg/latest/images/set1/en_us/img/card/game/${card.cardCode}.png`);
+            embed.setImage(card.assets[0].gameAbsolutePath);
             embed.setFooter(card.flavorText);
             return embed;
         }
@@ -4557,6 +4564,7 @@ lists recent changes`,
 2020-05-07
 • switched .t7 to gifs. They look worse but it keeps the messages cleaner.
 • added battleground cards to .hs
+• added newest set to .lor
 
 2020-04-22
 • improved YouTube audio playback

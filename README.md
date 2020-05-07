@@ -172,9 +172,9 @@ returns or plays audio from YouTube video to a voice channel
 #### __youtube link, id, or search term__
 can be an entire YouTube URL, just the ID, or a string to search
 #### Examples
-**.yt DN9YncMIr60** - plays <https://youtu.be/DN9YncMIr60> in a voice channel
+**.yt DN9YncMIr60** - plays <https:/​/youtu.be/DN9YncMIr60> in a voice channel
 
-**.yt <https://www.youtube.com/watch?v=DN9YncMIr60>** - same as above
+**.yt <https:/​/www.youtube.com/watch?v=DN9YncMIr60>** - same as above
 
 **.yt Tokyo Daylight (Atlus Kozuka Remix)** - same as above or returns the video if not in a voice channel
 

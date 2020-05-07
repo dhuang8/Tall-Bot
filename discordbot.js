@@ -730,24 +730,31 @@ returns yu-gi-oh card data`,
     run: async (message, args) => {
         let response;
         if (args[1].toLowerCase() === "random") {
-            response = await rp(`https://db.ygoprodeck.com/api/v4/randomcard.php`).catch(e => { return { error: "`No cards found`" } })
+            response = await rp({
+                url: `https://db.ygoprodeck.com/api/v7/randomcard.php`,
+                json: true
+            }).catch(e => { return { error: "`No cards found`" } })
         } else {
-            response = await rp(`https://db.ygoprodeck.com/api/v4/cardinfo.php?fname=${encodeURIComponent(args[1])}`).catch(e => { return { error: "`No cards found`" } })
+            response = await rp({
+                url: `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(args[1])}`,
+                json: true
+            }).catch(e => { return { error: "`No cards found`" } })
         }
         if (response.error) return response.error;
-        response = JSON.parse(response);
 
         function cardRich(card) {
             let rich = new Discord.RichEmbed()
                 .setTitle(escapeMarkdownText(card.name))
-                .setImage(card.image_url)
-                .setURL(`http://yugioh.wikia.com/wiki/${encodeURIComponent(card.name)}`)
+                .setURL(`http://yugioh.wikia.com/wiki/${encodeURIComponent(card.name)}`);
+            if (card.card_images.length > 0) {
+                rich.setImage(card.card_images[0].image_url)
+            }
             let desc_lines = []
             if (card.attribute) desc_lines.push(`${card.attribute}`);
             if (card.level) desc_lines.push(`Level: ${card.level}:star:`);
             if (card.scale) desc_lines.push(`Scale: ${card.scale}`);
             if (card.linkmarkers) {
-                let ascii_arrows = {
+                const ascii_arrows = {
                     "Top": ":arrow_up:",
                     "Bottom": ":arrow_down:",
                     "Left": ":arrow_left:",
@@ -757,7 +764,7 @@ returns yu-gi-oh card data`,
                     "Bottom-Left": ":arrow_lower_left:",
                     "Bottom-Right": ":arrow_lower_right:"
                 };
-                let links = card.linkmarkers.split(",").map(dir => {
+                let links = card.linkmarkers.map(dir => {
                     return ascii_arrows[dir];
                 }).join(" ")
 
@@ -767,18 +774,38 @@ returns yu-gi-oh card data`,
             if (card.race) race_type.push(card.race)
             if (card.type) race_type.push(card.type)
             if (race_type.length > 0) desc_lines.push(`**[${escapeMarkdownText(race_type.join(" / "))}]**`)
-            if (card.desc) desc_lines.push(escapeMarkdownText(card.desc));
+            if (card.desc) desc_lines.push(escapeMarkdownText(card.desc).replace("----------------------------------------\r\n",""));
             let atk_def = []
-            if (card.atk) atk_def.push(`ATK/ ${card.atk}`);
-            if (card.def) atk_def.push(`DEF/ ${card.def}`);
-            if (card.linkval && card.linkval > 0) atk_def.push(`LINK-${card.linkval}`);
+            if (card.atk) atk_def.push(`ATK/${card.atk}`);
+            if (card.def) atk_def.push(`DEF/${card.def}`);
+            if (card.linkval && card.linkval > 0) atk_def.push(`LINK–${card.linkval}`);
             if (atk_def.length > 0) desc_lines.push(`**${atk_def.join("  ")}**`)
-            if (card.tcgplayer_price) desc_lines.push(`Price: $${parseFloat(card.tcgplayer_price).toFixed(2)}`);
+            desc_lines.push(``);
+            if (card.banlist_info) {
+                const format = {
+                    "ban_tcg": "TCG",
+                    "ban_ocg": "OCG",
+                    "ban_goat": "GOAT"
+                };
+                Object.keys(card.banlist_info).forEach(key=>{
+                    desc_lines.push(`**${format[key]}**: ${card.banlist_info[key]}`);                    
+                })
+            }
+            if (card.card_prices) {
+                const shops = Object.keys(card.card_prices[0])
+                let sum = shops.map(shop=>{
+                    return parseFloat(card.card_prices[0][shop])
+                }).reduce((a,b)=>{
+                    return a+b;
+                },0)
+                let avg = sum/shops.length
+                desc_lines.push(`Price: $${avg.toFixed(2)}`);
+            }
             rich.setDescription(desc_lines.join("\n"));
             return rich;
         }
 
-        let card_list = response[0].map(card => {
+        let card_list = response.data.map(card => {
             return [card.name, () => { return cardRich(card) }]
         })
 
@@ -824,8 +851,14 @@ returns hearthstone card data`,
             const result = await thisoauth.clientCredentials.getToken();
             token = thisoauth.accessToken.create(result);
         }
-        let cardsprom = rp({
-            url: `https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&access_token=${token.token.access_token}`,
+        //gameMode=battlegrounds
+        let cardsprom1 = rp({
+            url: `https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&gameMode=constructed&access_token=${token.token.access_token}`,
+            //url: `https://us.api.blizzard.com/hearthstone/cards?locale=en_US&id=59891&access_token=${token.token.access_token}`,
+            json: true
+        });
+        let cardsprom2 = rp({
+            url: `https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${args[1]}&gameMode=battlegrounds&access_token=${token.token.access_token}`,
             json: true
         });
         if (!meta) {
@@ -834,29 +867,38 @@ returns hearthstone card data`,
                 json: true
             });
         }
-        let cards = await cardsprom;
-        function cardRich(card) {
+        let cards = (await cardsprom1).cards
+        let cards2 = (await cardsprom2).cards
+        cards = cards.concat(cards2)
+        function cardRich(card, mode) {
             let rich = new Discord.RichEmbed();
             rich.setTitle(card.name);
-            rich.setImage(card.image);
             let desc_lines = [];
-            if (card.classId) {
-                let class2 = meta.classes.find(class3 => {
-                    return class3.id == card.classId;
-                });
-                desc_lines.push(`**Class:** ${class2.name}`);
-            }
-            if (card.cardSetId) {
-                let set = meta.sets.find(set => {
-                    return set.name.id == set.classId;
-                });
-                desc_lines.push(`**Set:** ${set.name}`);
+            if (!card.battlegrounds) {
+                rich.setImage(card.image);
+                if (card.classId) {
+                    let class2 = meta.classes.find(class3 => {
+                        return class3.id == card.classId;
+                    });
+                    desc_lines.push(`**Class:** ${class2.name}`);
+                }
+                if (card.cardSetId) {
+                    let set = meta.sets.find(set => {
+                        return set.name.id == set.classId;
+                    });
+                    desc_lines.push(`**Set:** ${set.name}`);
+                }
+                if (card.manaCost) desc_lines.push(`**Cost**: ${card.manaCost}`);
+            } else {
+                if (card.battlegrounds.hero) desc_lines.push(`**Hero**`);
+                if (card.battlegrounds.tier) desc_lines.push(`**Tier**: ${card.battlegrounds.tier}`);
+                rich.setImage(card.battlegrounds.image);
             }
             if (card.collectible != 1) desc_lines.push("**Uncollectible**");
-            if (card.manaCost) desc_lines.push(`**Cost:** ${card.manaCost}`);
             if (card.attack && card.health) desc_lines.push(`${card.attack}/${card.health}`);
             desc_lines.push("");
             if (card.text) {
+                card.text = card.text.replace(/&nbsp;/g, " ");
                 card.text = card.text.replace(/\*/g, "\\*");
                 card.text = card.text.replace(/<i>/g, "*");
                 card.text = card.text.replace(/<\/i>/g, "*");
@@ -874,8 +916,10 @@ returns hearthstone card data`,
             rich.setFooter(card.flavorText);
             return rich;
         }
-        cards = cards.cards.map(card => {
-            return [card.name, () => { return cardRich(card) }]
+        cards = cards.map(card => {
+            let title = card.name
+            if (card.battlegrounds) title += " (BG)";
+            return [title, () => { return cardRich(card) }];
         })
         if (cards.length < 1) {
             return "`No results`";
@@ -1543,6 +1587,23 @@ multiple conditions can be linked together using condition1&condition2&condition
         }
 
         function createMoveMessage(char, move) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(char.name)
+            let mes = Object.keys(move).filter((v) => {
+                return v != "gfycat" && v != "regexp" && v != "cell";
+            }).map((key) => {
+                return `**${key}**: ${move[key]}`
+            }).join("\n");
+            if (move.cell) {
+                mes += `\n**[Edit frame data](https://docs.google.com/spreadsheets/d/${config.t7sheetid}#gid=${char.sheet_id}&range=${move.cell})**`
+            }
+            rich.setDescription(mes);
+            if (move.gfycat) {
+                let gfycatid = /.+\/(.+?)$/.exec(move.gfycat);
+                rich.setImage(`https://thumbs.gfycat.com/${gfycatid[1]}-size_restricted.gif`);
+            }
+            return rich;
+            /*
             let gfycatlink = move.gfycat || "";
             let mes = `>>> __**${char.name}**__\n`
             mes += Object.keys(move).filter((v) => {
@@ -1555,6 +1616,7 @@ multiple conditions can be linked together using condition1&condition2&condition
             }
             mes += "\n" + gfycatlink;
             return mes;
+            */
         }
 
         let msg = parseCharList(charfound) || parseCharList(charfoundmid) || "`Character not found`";
@@ -2249,6 +2311,7 @@ async function ytFunc(message,args){
             url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=1&q=${encodeURIComponent(args[1])}`,
             json: true
         })
+        if (data.items.length < 1) return `\`No videos found\``;
         id = data.items[0].id.videoId;
         searched = true;
     }
@@ -2285,8 +2348,8 @@ commands.push(new Command({
             value: `can be an entire YouTube URL, just the ID, or a string to search`
         },{
             name: `Examples`,
-            value: `**.yt DN9YncMIr60** - plays <https://youtu.be/DN9YncMIr60> in a voice channel
-**.yt <https://www.youtube.com/watch?v=DN9YncMIr60>** - same as above
+            value: `**.yt DN9YncMIr60** - plays <https:/\u200b/youtu.be/DN9YncMIr60> in a voice channel
+**.yt <https:/\u200b/www.youtube.com/watch?v=DN9YncMIr60>** - same as above
 **.yt Tokyo Daylight (Atlus Kozuka Remix)** - same as above or returns the video if not in a voice channel`
         }]
     },
@@ -2597,7 +2660,7 @@ commands.push(new Command({
             for (let i=1;i<dates.length;i++) {
                 if (!infected && history.cases[dates[i+1]] > 0) infected = true;
                 if (infected) {
-                    active_cases.push(history.cases[dates[i]]-history.cases[dates[i-1]])
+                    active_cases.push(Math.max(history.cases[dates[i]]-history.cases[dates[i-1]]),0)
                     date_text.push(dates[i])
                 }
             }
@@ -2691,7 +2754,7 @@ commands.push(new Command({
             for (let i=1;i<history.length;i++) {
                 if (!infected && history[i+1].positive > 0) infected = true;
                 if (infected) {
-                    active_cases.push(history[i].positive-history[i-1].positive)
+                    active_cases.push(Math.max(history[i].positive-history[i-1].positive),0)
                     dates.push(history[i].date)
                 }
             }
@@ -4501,6 +4564,68 @@ lists recent changes`,
 • removed most meme commands
 \``
     }
+}))
+
+//modified from Discord.Util
+function cleanContentWithoutAt(str, message){
+    str = str.replace(/<@!?[0-9]+>/g, input => {
+        const id = input.replace(/<|!|>|@/g, '');
+        if (message.channel.type === 'dm') {
+            const user = message.client.users.cache.get(id);
+            return user ? `${user.username}` : input;
+        }
+
+        const member = message.channel.guild.members.cache.get(id);
+        if (member) {
+            return `${member.displayName}`;
+        } else {
+            const user = message.client.users.cache.get(id);
+            return user ? `${user.username}` : input;
+        }
+    })
+    .replace(/<#[0-9]+>/g, input => {
+        const channel = message.client.channels.cache.get(input.replace(/<|#|>/g, ''));
+        return channel ? `${channel.name}` : input;
+    })
+    .replace(/<@&[0-9]+>/g, input => {
+        if (message.channel.type === 'dm') return input;
+        const role = message.guild.roles.cache.get(input.replace(/<|@|>|&/g, ''));
+        return role ? `${role.name}` : input;
+    });
+    str = str.replace(/@([^<>@ ]*)/gmsu, (match, target) => {
+        if (target.match(/^[&!]?\d+$/)) {
+            return `${target}`;
+        } else {
+            return `\u200b${target}`;
+        }
+    });
+    return str.replace(/@/g, '@\u200b');
+}
+
+commands.push(new Command({
+    name: "birthday",
+    regex: /^birthday( .+)?/i,
+    prefix: ".",
+    testString: ".birthday",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: {title:`.birthday`,
+        description: `happy birthday!`
+    },
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) =>{
+        let names = "";
+        if (args[1] != undefined) {
+            names = args[1];
+        }
+        let rich = new Discord.RichEmbed();
+        rich.setTitle(`Happy Birthday${cleanContentWithoutAt(names,message)}!`)
+        rich.setImage("https://cdn.betterttv.net/emote/55b6524154eefd53777b2580/3x")
+        return rich;
+    },
 }))
 
 //messages without prefixes

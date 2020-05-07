@@ -297,13 +297,14 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardResume', () => {
             console.log(`reconnected`)
+            bot.user.setActivity('2020-05-07 .help for list of commands', { type: "PLAYING" }).catch(console.log)
             //bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             //bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('2020-04-22 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-05-07 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -4553,6 +4554,10 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-05-07
+• switched .t7 to gifs. They look worse but it keeps the messages cleaner.
+• added battleground cards to .hs
+
 2020-04-22
 • improved YouTube audio playback
 • alexa play and .yt both work with search terms and YouTube URLs. They also do the same thing. 

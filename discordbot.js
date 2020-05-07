@@ -2664,24 +2664,26 @@ commands.push(new Command({
             let active_cases = [];
             let dates = Object.keys(history.cases)
             let date_text = [];
+            
             let infected = false;
             for (let i=1;i<dates.length;i++) {
                 if (!infected && history.cases[dates[i+1]] > 0) infected = true;
                 if (infected) {
-                    active_cases.push(Math.max(history.cases[dates[i]]-history.cases[dates[i-1]]),0)
+                    active_cases.push(Math.max(history.cases[dates[i]]-history.cases[dates[i-1]],0))
                     date_text.push(dates[i])
                 }
             }
             /*
             dates.forEach(date=>{
                 active_cases.push(history.cases[date]-history.deaths[date]-history.recovered[date])
+                date_text.push(date)
             })*/
 
             let step = parseInt(dates.length / 5);
         
-            let labels = date_text.slice(1).map((date,index) => {
-                if (index == date_text.length-2) return date;
-                if (index > date_text.length-step) return "";
+            let labels = date_text.map((date,index) => {
+                if (index == date_text.length-1) return date;
+                if (index > date_text.length-step/2) return "";
                 if (index % step == 0) return date;
                 return "";
             })
@@ -2742,27 +2744,25 @@ commands.push(new Command({
         })
         if (state !== undefined) {
             let current_prom = rp({
-                url: `https://covidtracking.com/api/v1/states/current.json`,
+                url: `https://covidtracking.com/api/v1/states/${state.initial}/current.json`,
                 json:true
             })
             let history = await rp({
-                url: `https://covidtracking.com/api/states/daily?state=${state.initial}`,
+                url: `https://covidtracking.com/api/v1/states/${state.initial}/daily.json`,
                 json:true
             })
             let current = await current_prom;
-            current = current.find(this_state => {
-                return this_state.state === state.initial;
-            })
             let active_cases = [];
             history.sort((a,b)=>{
                 return a.date - b.date;
             })
+            
             let infected = false;
             let dates = [];
             for (let i=1;i<history.length;i++) {
-                if (!infected && history[i+1].positive > 0) infected = true;
+                if (!infected && history[i+1].positiveIncrease > 0) infected = true;
                 if (infected) {
-                    active_cases.push(Math.max(history[i].positive-history[i-1].positive),0)
+                    active_cases.push(history[i].positiveIncrease)
                     dates.push(history[i].date)
                 }
             }
@@ -2777,10 +2777,10 @@ commands.push(new Command({
             })*/
 
             let step = parseInt((dates.length-1) / 5);
-        
-            let labels = dates.slice(1).map((date,index) => {
-                if (index == dates.length-2) return date;
-                if (index > dates.length-step) return "";
+
+            let labels = dates.map((date,index) => {
+                if (index == dates.length-1) return date;
+                if (index > dates.length-step/2) return "";
                 if (index % step == 0) return date;
                 return "";
             })
@@ -2810,6 +2810,8 @@ commands.push(new Command({
             desc_lines.push(`Total active: ${current.positive-current.recovered-current.death}`)
             if (current.recovered !=null) desc_lines.push(`Total recovered: ${current.recovered}`)
             if (current.death !=null) desc_lines.push(`Total deaths: ${current.death}`)
+            desc_lines.push(`Yesterday new cases: ${history[history.length-1].positiveIncrease}`)
+            desc_lines.push(`Yesterday deaths: ${history[history.length-1].deathIncrease}`)
             let rich = new Discord.RichEmbed()
             rich.setDescription(desc_lines.join("\n"));
             rich.setTitle(state.name)

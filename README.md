@@ -46,8 +46,6 @@ returns a random card
 
 ## teppen
 .teppen (search)
-## gundam
-.gundam (search)
 ## t7
 returns information on a Tekken 7 character's move string
 ### .t7 __character_name__ __condition__
@@ -93,38 +91,6 @@ multiple conditions can be linked together using condition1&condition2&condition
 **.t7 aku notes:special cancel** - returns moves that say special cancel in the notes
 
 **.t7 aku block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid
-
-## sc6
-returns information about a Soulcalibur 6 character's attack string
-### .sc6 __character_name__ __condition__
-#### character_name
-full or part of a character's name
-#### **condition**
-**__commandstring__ or __movename__** - returns moves which contain the commandstring or movename. same as command:commandstring or attack:movename
-
-**__fieldname__>__searchstring__** - the field begins with searchstring
-
-**__fieldname__<__searchstring__** - the field ends with fieldvalue
-
-**__fieldname__=__searchstring__** - the field contains searchstring
-
-**__fieldname__>__num__** - the value of fieldname is greater than num
-
-**__fieldname__<__num__** - the value of fieldname is less than num
-
-**__fieldname__=__num__** - the value of fieldname is equal to num
-
-**i__num__** - same as imp=__num__
-
-multiple conditions can be linked together using condition1&condition2&condition3...
-#### Examples
-**.sc6 tal aaba** - returns information on Talim's AABA
-
-**.sc6 ivy ivy** - returns Ivy moves where the name contains "ivy"
-
-**.sc6 nigh imp<15** - returns Nightmare moves that are faster than 15 frames
-
-**.sc6 nigh hit level<m&hit level>h** - returns Nightmare moves that begin with a mid and end with a low
 
 ## sts
 .sts (card_name or relic_name)
@@ -255,6 +221,16 @@ Lists all subscriptions
 Lists all recent news from subscriptions
 #### rss remove (num)
 Remove a subscription from this channel. Get the number from ".rss subs"
+
+## egs
+returns free epic game store games list or alerts
+### .egs (action) (args)
+#### .egs on
+turns on reminder of new egs games
+#### .egs off
+turns off reminder
+#### .egs list
+returns the current list of free games
 
 ## cog
 .cog (imageurl) or .cog (emoji) or .cog while attaching an image

@@ -20,6 +20,7 @@ const RSSManager = require('./utils/RSSManager');
 const EpicStore = require('./utils/EpicStore');
 const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
+const { Readable } = require('stream')
 //const heapdump = require('heapdump');
 
 
@@ -297,14 +298,14 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardResume', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('2020-05-07 .help for list of commands', { type: "PLAYING" }).catch(console.log)
+            bot.user.setActivity('2020-05-25 .help for list of commands', { type: "PLAYING" }).catch(console.log)
             //bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             //bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('2020-05-07 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity('2020-05-25 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -1231,6 +1232,7 @@ commands.push(new Command({
     }
 }))
 
+/*
 let gundam = null;
 fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
     if (e) {
@@ -1239,7 +1241,6 @@ fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
         gundam = JSON.parse(data);
     }
 })
-
 commands.push(new Command({
     name: "gundam",
     regex: /^gundam (.+)$/i,
@@ -1299,7 +1300,7 @@ commands.push(new Command({
         return parselist(perfectmatch) || parselist(goodmatch) || "`Gundam not found`";
     }
 }))
-
+*/
 let t7 = null;
 fs.readFile("./data/t7.json", 'utf8', function (e, data) {
     if (e) {
@@ -1624,7 +1625,7 @@ multiple conditions can be linked together using condition1&condition2&condition
         return msg;
     }
 }))
-
+/*
 let sc6 = null;
 fs.readFile("./data/sc6.json", 'utf8', function (e, data) {
     if (e) {
@@ -1860,7 +1861,7 @@ multiple conditions can be linked together using condition1&condition2&condition
         return msg;
     }
 }))
-
+*/
 let sts = null;
 fs.readFile("./data/sts.json", 'utf8', function (e, data) {
     if (e) {
@@ -1963,6 +1964,7 @@ returns information on a One Step From Eden spell, artifact, or keyword. Matches
     }
 }))
 
+//https://developer.riotgames.com/docs/lor#data-dragon_set-bundles
 let runeterra = [];
 fs.readFile("./data/runeterra/data/set1-en_us.json", 'utf8', function (e, data) {
     if (e) {
@@ -2252,7 +2254,7 @@ function playSound(channel, URL, options = {}) {
         }
     }).then((connection)=>{
         //play music
-        let setvolume = .3;
+        let setvolume = .25;
         let stream_options = {
             volume: setvolume,
             highWaterMark: 1
@@ -2291,6 +2293,9 @@ async function playYoutube(url, channel) {
         })
         if (format_list.length > 0) {
             const itag = format_list[0].itag;
+            if (!format_list[0].url) {
+                throw new Error("Missing URL field");
+            }
             options = {...options, filter: (f)=>{
                 return f.itag == itag;
             }}
@@ -2316,9 +2321,12 @@ async function ytFunc(message,args){
     } catch (e) {
         if (!config.api.youtube) return `\`No videos found\``;
         data = await rp({
-            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&type=video&maxResults=1&q=${encodeURIComponent(args[1])}`,
+            url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&fields=items(id/videoId,snippet/title)&type=video&maxResults=1&q=${encodeURIComponent(args[1])}`,
             json: true
         })
+        if (e.response && e.response.body && e.response.body.error && e.response.body.error.errors[0] && e.response.body.error.errors[0].reason && e.response.body.error.errors[0].reason === "quotaExceeded") {
+            return "`Search quota exceeded. Use a full YouTube URL or try searching again tomorrow.`";
+        }
         if (data.items.length < 1) return `\`No videos found\``;
         id = data.items[0].id.videoId;
         searched = true;
@@ -2381,6 +2389,11 @@ commands.push(new Command({
     longDesc: `.yts (search_term)
 returns list of YouTube videos based on the search term`,
     run: async (message, args) => {
+        try {
+            ytdl.getVideoID(args[1])
+        } catch (e) {
+            return `\`.yts is for text search only. Use .yt for YouTube URLs\``
+        }
         args[1] = encodeURIComponent(args[1]);
         var max = 6;
         let data = await rp({
@@ -2713,8 +2726,8 @@ commands.push(new Command({
             desc_lines.push(`Total active: ${current.active}`)
             desc_lines.push(`Total recovered: ${current.recovered}`)
             desc_lines.push(`Total deaths: ${current.deaths}`)
-            desc_lines.push(`New cases: ${current.todayCases}`)
-            desc_lines.push(`New deaths: ${current.todayDeaths}`)
+            desc_lines.push(`Yesterday new cases: ${active_cases[active_cases.length-1]}`)
+            desc_lines.push(`Yesterday deaths: ${history.deaths[dates[dates.length-1]]-history.deaths[dates[dates.length-2]]}`)
             let rich = new Discord.RichEmbed()
             rich.setDescription(desc_lines.join("\n"));
             rich.setTitle("World")
@@ -3744,23 +3757,23 @@ commands.push(new Command({
     regex: /^egs (\w+)(?: (.+))?$/i,
     prefix: ".",
     testString: ".egs list",
-    hidden: true,
+    hidden: false,
     requirePrefix: true,
     log: true,
     typing: false,
     points: 1,
-    shortDesc: "returns free epic game store games",
+    shortDesc: "returns list of current free epic game store games",
     longDesc: {
         title: `.egs (action) (args)`,
         description: `returns free epic game store games list or alerts`,
         fields: [{
-            name: `egs on`,
+            name: `.egs on`,
             value: `turns on reminder of new egs games`
         }, {
-            name: `egs off`,
+            name: `.egs off`,
             value: `turns off reminder`
         }, {
-            name: `rss list`,
+            name: `.egs list`,
             value: `returns the current list of free games`
         }]
     },
@@ -4563,6 +4576,12 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-05-25
+• .yts will refer to .yt if a YouTube URL is detected
+• Fixed YouTube playback issues
+• Removed .gundam, .sc6, and soon alexa play
+• Added .egs
+
 2020-05-07
 • switched .t7 to gifs. They look worse but it keeps the messages cleaner.
 • added battleground cards to .hs
@@ -4643,6 +4662,117 @@ commands.push(new Command({
     },
 }))
 
+commands.push(new Command({
+    name: "record",
+    regex: /^record$/i,
+    prefix: ".",
+    testString: ".record",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "records the next time you speak and uploads the audio file to the channel",
+    longDesc: {title:`.record`,
+        description: `records the next time you speak and uploads the audio file to the channel`
+    },
+    log: true,
+    req: () => { return config.adminID },
+    prerun: (message) => { return message.author.id === config.adminID },
+    points: 1,
+    typing: false,
+    run: async (message, args) =>{
+        let channel = message.member.voice.channel;
+        return new Promise((resolve)=>{
+            //stop the music
+            if (channel.guild.voice != null && channel.guild.voice.connection !=null && channel.guild.voice.connection.dispatcher != null) {
+                channel.guild.voice.connection.dispatcher.removeAllListeners('finish');
+                channel.guild.voice.connection.dispatcher.end();
+            }
+            resolve();
+        }).then(()=>{
+            //join channel
+            if (channel.guild.voice != null && channel.guild.voice.connection !=null && channel.guild.voice.connection.channel.equals(channel)) {
+                return channel.guild.voice.connection;
+            } else {
+                return channel.join();    
+            }
+        }).then((connection)=>{
+            //record
+            
+            class Silence extends Readable {
+                _read() {
+                  this.push(Buffer.from([0xf8, 0xff, 0xfe]));
+                }
+            }
+            connection.play(new Silence(), { type: "opus" })
+            return sleep(1000).then(()=>{
+                return connection
+            }) 
+            /*
+            return new Promise(res => connection.play(new Silence(), { type: "opus" }).on('finish', ()=>{
+                res(connection)
+            }));*/
+
+            return new Promise(res => connection.play("https://github.com/Clemens-E/better-airhorn/raw/master/music/ding.wav").on('finish', ()=>{
+                res(connection)
+            }));
+
+            let stream = connection.receiver.createStream(message.member.id, { mode: 'pcm' });
+            stream.on("resume", ()=>{console.log("resume")})
+            stream.on("end", ()=>{console.log("end")})
+            stream.on("pause", ()=>{console.log("pause")})
+            stream.on("readable", ()=>{console.log("readable")})
+            stream.on("data", ()=>{console.log("data")})
+            setTimeout(() => {
+                console.log('starting to play the stream now');
+                connection.play(stream, {type: 'opus'});
+            }, 600);
+            //connection.play(stream, {type: "opus"})
+            /*
+            var writestream = fs.createWriteStream("audio.pcm");
+            stream.pipe(writestream)*/
+            //let attach = new Discord.MessageAttachment(stream, message.author)
+            //return attach;
+        }).then((connection)=>{
+            let stream = connection.receiver.createStream(message.author, {mode: 'opus'});
+            var writestream = fs.createWriteStream("audio.ogg");
+            stream.pipe(writestream);
+            //stream.on("resume", ()=>{console.log("resume")})
+            //stream.on("end", ()=>{console.log("end")})
+            //stream.on("pause", ()=>{console.log("pause")})
+            //stream.on("readable", ()=>{console.log("readable")})
+            //stream.on("data", ()=>{console.log("data")})
+            //let attach = new Discord.MessageAttachment(stream, message.author);
+            //return attach;
+            //connection.play(stream, {type: 'opus'});
+        }).catch((e)=>{
+            throw e;
+        })
+    },
+}))
+
+commands.push(new Command({
+    name: "test",
+    regex: /^test$/i,
+    prefix: ".",
+    testString: ".test",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: {title:`.test`,
+        description: ``
+    },
+    req: () => { return config.adminID },
+    prerun: (message) => { return message.author.id === config.adminID },
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) =>{
+        const prism = require('prism-media');
+        fs.createReadStream('speech_orig.ogg')
+        .pipe(new prism.opus.OggDemuxer())
+        .pipe(fs.createWriteStream('./audio.pcm'));
+    },
+}))
+
 //messages without prefixes
 
 commands.push(new Command({
@@ -4661,7 +4791,7 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: async (message, args) => {
-        return ytFunc(message, args)
+        return `my name is not alexa https://pastebin.com/raw/Nv2UMbt2`;
     }
 }))
 

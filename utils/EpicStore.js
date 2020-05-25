@@ -217,13 +217,13 @@ class EpicStore {
             function check(off, thislist) {
                 off.promotionalOffers.forEach(promo=>{
                     if (promo.discountSetting.discountType === 'PERCENTAGE' && promo.discountSetting.discountPercentage === 0) {
-                        thislist.push({
-                            title: ele.title,
-                            image: image,
-                            url: `https://www.epicgames.com/store/en-US/product/${ele.productSlug}`,
-                            start: moment(promo.startDate),
-                            end: moment(promo.endDate)
-                        })
+                      thislist.push({
+                          title: ele.title,
+                          image: image,
+                          url: `https://www.epicgames.com/store/en-US/product/${ele.productSlug}`,
+                          start: moment(promo.startDate),
+                          end: moment(promo.endDate)
+                      })
                     }
                 })
                 return thislist;

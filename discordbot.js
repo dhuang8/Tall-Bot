@@ -2391,8 +2391,9 @@ returns list of YouTube videos based on the search term`,
     run: async (message, args) => {
         try {
             ytdl.getVideoID(args[1])
+            return `\`.yts is for text search only. Use .yt for YouTube URLs.\``
         } catch (e) {
-            return `\`.yts is for text search only. Use .yt for YouTube URLs\``
+            
         }
         args[1] = encodeURIComponent(args[1]);
         var max = 6;

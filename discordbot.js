@@ -1,6 +1,5 @@
 "use strict";
 const Discord = require('discord.js');
-const request = require('request');
 const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
@@ -20,7 +19,8 @@ const RSSManager = require('./utils/RSSManager');
 const EpicStore = require('./utils/EpicStore');
 const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
-const { Readable } = require('stream')
+const { Readable, PassThrough } = require('stream')
+const prism = require('prism-media');
 //const heapdump = require('heapdump');
 
 
@@ -4704,46 +4704,41 @@ commands.push(new Command({
                 }
             }
             connection.play(new Silence(), { type: "opus" })
-            return sleep(1000).then(()=>{
+            
+            return sleep(500).then(()=>{
                 return connection
-            }) 
-            /*
-            return new Promise(res => connection.play(new Silence(), { type: "opus" }).on('finish', ()=>{
-                res(connection)
-            }));*/
-
-            return new Promise(res => connection.play("https://github.com/Clemens-E/better-airhorn/raw/master/music/ding.wav").on('finish', ()=>{
-                res(connection)
-            }));
-
-            let stream = connection.receiver.createStream(message.member.id, { mode: 'pcm' });
-            stream.on("resume", ()=>{console.log("resume")})
-            stream.on("end", ()=>{console.log("end")})
-            stream.on("pause", ()=>{console.log("pause")})
-            stream.on("readable", ()=>{console.log("readable")})
-            stream.on("data", ()=>{console.log("data")})
-            setTimeout(() => {
-                console.log('starting to play the stream now');
-                connection.play(stream, {type: 'opus'});
-            }, 600);
-            //connection.play(stream, {type: "opus"})
-            /*
-            var writestream = fs.createWriteStream("audio.pcm");
-            stream.pipe(writestream)*/
-            //let attach = new Discord.MessageAttachment(stream, message.author)
-            //return attach;
+            })
         }).then((connection)=>{
-            let stream = connection.receiver.createStream(message.author, {mode: 'opus'});
-            var writestream = fs.createWriteStream("audio.ogg");
-            stream.pipe(writestream);
-            //stream.on("resume", ()=>{console.log("resume")})
-            //stream.on("end", ()=>{console.log("end")})
+            let stream = connection.receiver.createStream(message.author, {end: 'silence', mode: 'pcm'});
+            const transcoder = new prism.FFmpeg({
+                args: [
+                    '-f', 's16le',
+                    '-analyzeduration', '0',
+                    '-loglevel', '0',
+                    '-ar', '48000',
+                    '-ac', '2',
+                    '-i', '-',
+                    '-f', 'mp3'
+                ],
+            });
+            let mp3out = stream.pipe(transcoder).pipe(new PassThrough());
+            return new Promise(res=>{
+                stream.on("end", ()=>{
+                    channel.leave();
+                    let attach = new Discord.MessageAttachment(mp3out, `${message.author.id}.mp3`);
+                    res(attach);
+                })
+            })
+            //let stream2 = fs.createReadStream('audio.pcm').pipe(transcoder);
+            //let stream2 = fs.createReadStream("test2")
+            //stream2.on("end", ()=>{console.log("end")})
+            //stream2.pipe(fs.createWriteStream('test2.mp3'));
             //stream.on("pause", ()=>{console.log("pause")})
             //stream.on("readable", ()=>{console.log("readable")})
             //stream.on("data", ()=>{console.log("data")})
-            //let attach = new Discord.MessageAttachment(stream, message.author);
-            //return attach;
             //connection.play(stream, {type: 'opus'});
+            //let attach = new Discord.MessageAttachment(fs.createReadStream("test2.mp3"), `${message.author}.mp3`);
+            //return attach;
         }).catch((e)=>{
             throw e;
         })
@@ -4766,11 +4761,24 @@ commands.push(new Command({
     log: true,
     points: 1,
     typing: false,
-    run: async (message, args) =>{
-        const prism = require('prism-media');
+    run: async (message, args) =>{/*
         fs.createReadStream('speech_orig.ogg')
         .pipe(new prism.opus.OggDemuxer())
-        .pipe(fs.createWriteStream('./audio.pcm'));
+        .pipe(fs.createWriteStream('./audio.pcm'));*/
+        const transcoder = new prism.FFmpeg({
+            args: [
+                '-f', 's16le',
+                '-analyzeduration', '0',
+                '-loglevel', '0',
+                '-ar', '48000',
+                '-ac', '2',
+                '-i', '-',
+                '-f', 'mp3'
+            ],
+          });
+        fs.createReadStream('audio.pcm')
+        .pipe(transcoder)
+        .pipe(fs.createWriteStream('test.mp3'));
     },
 }))
 

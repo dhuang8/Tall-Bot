@@ -198,7 +198,7 @@ class RSSManager {
             } else {
                 num = parseInt(arg)-1;
             }
-            if (num<1) return "`Error`";
+            if (num<0) return "`Error`";
             let row = this.sql.prepare("SELECT feed_id, feeds.title FROM subscriptions LEFT JOIN feeds ON feed_id=feeds.id WHERE channel_id = ? LIMIT ?, 1").get(message.channel.id, num);
             if (row === undefined) return ["`Subscription not found`"]
             let info = this.sql.prepare("DELETE FROM subscriptions WHERE channel_id = ? AND feed_id = ?").run(message.channel.id, row.feed_id);

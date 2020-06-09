@@ -2506,16 +2506,14 @@ commands.push(new Command({
 }))
 
 async function weather(location_name) {
-    let body = await rp(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
+    let body = await rp(`https://api.weather.com/v3/location/search?apiKey=6532d6454b8aa370768e63d6ba5a832e&language=en-US&query=${encodeURIComponent(location_name)}&format=json`)
+    //let body = await rp(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
     let data = JSON.parse(body);
-    for (var i = 0; i < data.RESULTS.length; i++) {
-        if (data.RESULTS[i].lat != "-9999.000000") break;
-    }
-    if (i == data.RESULTS.length) return "`Location not found`";
-    let locName = data.RESULTS[i].name;
-    let lat = data.RESULTS[i].lat;
-    let lon = data.RESULTS[i].lon;
-    body = await rp(`https://api.darksky.net/forecast/${config.api.darksky}/${data.RESULTS[i].lat},${data.RESULTS[i].lon}?units=auto&exclude=minutely`)
+    if (data.location.address.length < 1) return "`Location not found`";
+    let locName = data.location.address[0];
+    let lat = data.location.latitude[0];
+    let lon = data.location.longitude[0];
+    body = await rp(`https://api.darksky.net/forecast/${config.api.darksky}/${lat},${lon}?units=auto&exclude=minutely`)
     data = JSON.parse(body);
     let tM;
     (data.flags.units == "us") ? tM = "°F" : tM = "°C";
@@ -2758,11 +2756,11 @@ commands.push(new Command({
         })
         if (state !== undefined) {
             let current_prom = rp({
-                url: `https://covidtracking.com/api/v1/states/${state.initial}/current.json`,
+                url: `https://covidtracking.com/api/v1/states/${state.initial.toLowerCase()}/current.json`,
                 json:true
             })
             let history = await rp({
-                url: `https://covidtracking.com/api/v1/states/${state.initial}/daily.json`,
+                url: `https://covidtracking.com/api/v1/states/${state.initial.toLowerCase()}/daily.json`,
                 json:true
             })
             let current = await current_prom;

@@ -3141,6 +3141,7 @@ async function poesearch(message, args) {
     rich.setDescription(desc_list.join("\n"));
 
     let data = await rp({
+        method: "POST",
         url: `https://www.pathofexile.com/api/trade/search/${encodeURIComponent(poeleague)}`,
         body: body,
         json: true

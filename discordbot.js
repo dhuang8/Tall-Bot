@@ -85,10 +85,20 @@ function richQuote(message) {
     try {
         let rich = new Discord.RichEmbed();
         let username = (message.member && message.member.nickname) ? message.member.nickname : message.author.username;
-        rich.setAuthor(username, message.author.displayAvatarURL(), message.url);
-        rich.setDescription(message.content);
+        rich.setAuthor(username, message.author.displayAvatarURL());
+        let empty = true;
+        if (message.content !== "") {
+            rich.setDescription(message.content);
+            empty = false;
+        }
         rich.setTimestamp(message.createdAt);
-        return rich;
+        if (message.attachments.first() && message.attachments.first().height && message.attachments.first().url.slice(-4) == ".png") {
+            rich.setImage(message.attachments.first().url);
+            empty = false;
+        }
+        console.log(message.embeds)
+        if (!empty) return rich;
+        if (message.embeds.length > 0) return message.embeds[0];
     } catch (e) {
         throw e;
     }
@@ -287,6 +297,8 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
+const last_update = "2020-07-05";
+
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
         fs.writeFile("./config.json", JSON.stringify(config, null, 4), (e) => {
@@ -298,14 +310,14 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         globalvars.config = config;
         bot.on('shardResume', () => {
             console.log(`reconnected`)
-            bot.user.setActivity('2020-05-25 .help for list of commands', { type: "PLAYING" }).catch(console.log)
+            bot.user.setActivity(`${last_update} .help for list of commands`, { type: "PLAYING" }).catch(console.log)
             //bot.user.setActivity('2020-03-27 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
             //bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} reconnected\``).catch(bot.err)
         });
         bot.on('ready', () => {
             console.log("ready2")
             bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
-            bot.user.setActivity('2020-05-25 .help for list of commands', { type: "PLAYING" }).catch(bot.err)
+            bot.user.setActivity(`${last_update} .help for list of commands`, { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
@@ -2485,6 +2497,36 @@ previous_nth_message - the number of messages to go back to reach the message yo
 }))
 
 commands.push(new Command({
+    name: "quotelink",
+    regex: /^https:\/\/discordapp.com\/channels\/(\d{10,})\/(\d{10,})\/(\d{10,})$/,
+    prefix: "",
+    testString: "https://discordapp.com/channels/155411137339326464/532227798375333909/712016665222709259",
+    hidden: true,
+    requirePrefix: false,
+    log: true,
+    points: 1,
+    typing: false,
+    shortDesc: "returns a quote of a past message from a link",
+    longDesc: `returns a quote of a past message from a link`,
+    run: async (message, args) => {
+        let serverid = args[1];
+        let channelid = args[2];
+        let msgid = args[3];
+        if (message.channel.guild.available && message.channel.guild.id === serverid) {
+            let channel = message.channel.guild.channels.resolve(channelid);
+            if (channel) {
+                try {
+                    let thismsg = await channel.messages.fetch(msgid);
+                    return richQuote(thismsg)
+                } catch (e) {
+
+                }
+            }
+        }
+    }
+}))
+
+commands.push(new Command({
     name: "eval",
     regex: /^eval ([\s\S]+)$/i,
     prefix: ".",
@@ -2694,9 +2736,9 @@ commands.push(new Command({
             let step = parseInt(dates.length / 5);
         
             let labels = date_text.map((date,index) => {
-                if (index == date_text.length-1) return date;
+                if (index == date_text.length-1) return moment(date, "M/D/YYYY").format("MMM D");
                 if (index > date_text.length-step/2) return "";
-                if (index % step == 0) return date;
+                if (index % step == 0) return moment(date, "M/D/YYYY").format("MMM D");
                 return "";
             })
         
@@ -2791,9 +2833,9 @@ commands.push(new Command({
             let step = parseInt((dates.length-1) / 5);
 
             let labels = dates.map((date,index) => {
-                if (index == dates.length-1) return date;
+                if (index == dates.length-1) return moment(date, "YYYYMMDD").format("MMM D");
                 if (index > dates.length-step/2) return "";
-                if (index % step == 0) return date;
+                if (index % step == 0) return moment(date, "YYYYMMDD").format("MMM D");
                 return "";
             })
         
@@ -4576,6 +4618,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-07-05
+• auto quote messages that contain a message link
+
 2020-05-25
 • .yts will refer to .yt if a YouTube URL is detected
 • Fixed YouTube playback issues
@@ -4799,7 +4844,7 @@ commands.push(new Command({
     points: 1,
     typing: false,
     run: async (message, args) => {
-        return `my name is not alexa https://pastebin.com/raw/Nv2UMbt2`;
+        return `use .yt`;
     }
 }))
 

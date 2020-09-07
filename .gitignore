@@ -1,4 +1,7 @@
 node_modules/
 animalgifs/
+external_scripts/
 data/
 /config.json
+sqlitedb/discord.sqlite
+update_scripts/

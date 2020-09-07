@@ -10,10 +10,10 @@
   "dependencies": {
     "@discordjs/opus": "^0.1.0",
     "@vitalets/google-translate-api": "^2.9.0",
-    "better-sqlite3": "^5.4.3",
+    "better-sqlite3": "^7.1.0",
     "bufferutil": "^4.0.1",
     "canvas": "^2.6.1",
-    "chartjs-node-canvas": "^2.4.2",
+    "chartjs-node-canvas": "^3.0.6",
     "chartjs-plugin-annotation": "^0.5.7",
     "cheerio": "^1.0.0-rc.3",
     "cron": "^1.8.2",
@@ -29,7 +29,7 @@
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "utf-8-validate": "^5.0.2",
-    "ytdl-core": "^2.1.7",
+    "ytdl-core": "^3.2.2",
     "zlib-sync": "^0.1.6"
   },
   "devDependencies": {},

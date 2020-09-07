@@ -103,8 +103,10 @@ class Command {
         let messageString = message.content;
         let curlybracket;
         function parseMess(messageString){
-            if (this.requirePrefix && messageString[0] !== this.prefix) return false;
+            //
+            if (this.requirePrefix && messageString.slice(0,this.prefix.length) !== this.prefix) return false;
             else if (messageString.indexOf(this.prefix) == 0) messageString = messageString.slice(this.prefix.length);
+            if (messageString[0] == " ") messageString = messageString.slice(1);
             if (this.regex) args = this.regex.exec(messageString)
             if (this._testHardRequirements()) {
                 //tests for ".command help"

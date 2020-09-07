@@ -96,7 +96,6 @@ function richQuote(message) {
             rich.setImage(message.attachments.first().url);
             empty = false;
         }
-        console.log(message.embeds)
         if (!empty) return rich;
         if (message.embeds.length > 0) return message.embeds[0];
     } catch (e) {
@@ -297,7 +296,7 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-const last_update = "2020-07-05";
+const last_update = "2020-09-07";
 
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
@@ -316,12 +315,12 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         });
         bot.on('ready', () => {
             console.log("ready2")
-            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
+            if (config.errorChannelID) bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready2\``).catch(bot.err)
             bot.user.setActivity(`${last_update} .help for list of commands`, { type: "PLAYING" }).catch(bot.err)
         });
         bot.once("ready", () => {
             console.log("ready")
-            bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
+            if (config.errorChannelID) bot.channels.resolve(config.errorChannelID).send(`\`${process.platform} ready\``).catch(bot.err)
             let rows = sql.prepare("SELECT * FROM reminders WHERE triggered=false").all();
             rows.forEach(row => {
                 setReminder(row.id, row.user_id, row.channel_id, row.message_text, row.message_id, row.time, row.original_time, row.url);
@@ -764,10 +763,10 @@ returns yu-gi-oh card data`,
                 rich.setImage(card.card_images[0].image_url)
             }
             let desc_lines = []
-            if (card.attribute) desc_lines.push(`${card.attribute}`);
-            if (card.level) desc_lines.push(`Level: ${card.level}:star:`);
-            if (card.scale) desc_lines.push(`Scale: ${card.scale}`);
-            if (card.linkmarkers) {
+            if (card.attribute != null) desc_lines.push(`${card.attribute}`);
+            if (card.level != null) desc_lines.push(`Level: ${card.level}:star:`);
+            if (card.scale != null) desc_lines.push(`Scale: ${card.scale}`);
+            if (card.linkmarkers != null) {
                 const ascii_arrows = {
                     "Top": ":arrow_up:",
                     "Bottom": ":arrow_down:",
@@ -785,13 +784,13 @@ returns yu-gi-oh card data`,
                 desc_lines.push(`LINK: ${links}`);
             }
             let race_type = []
-            if (card.race) race_type.push(card.race)
-            if (card.type) race_type.push(card.type)
+            if (card.race != null) race_type.push(card.race)
+            if (card.type != null) race_type.push(card.type)
             if (race_type.length > 0) desc_lines.push(`**[${escapeMarkdownText(race_type.join(" / "))}]**`)
-            if (card.desc) desc_lines.push(escapeMarkdownText(card.desc).replace("----------------------------------------\r\n",""));
+            if (card.desc != null) desc_lines.push(escapeMarkdownText(card.desc).replace("----------------------------------------\r\n",""));
             let atk_def = []
-            if (card.atk) atk_def.push(`ATK/${card.atk}`);
-            if (card.def) atk_def.push(`DEF/${card.def}`);
+            if (card.atk != null) atk_def.push(`ATK/${card.atk}`);
+            if (card.def != null) atk_def.push(`DEF/${card.def}`);
             if (card.linkval && card.linkval > 0) atk_def.push(`LINK–${card.linkval}`);
             if (atk_def.length > 0) desc_lines.push(`**${atk_def.join("  ")}**`)
             desc_lines.push(``);
@@ -805,7 +804,7 @@ returns yu-gi-oh card data`,
                     desc_lines.push(`**${format[key]}**: ${card.banlist_info[key]}`);                    
                 })
             }
-            if (card.card_prices) {
+            if (card.card_prices != null) {
                 const shops = Object.keys(card.card_prices[0])
                 let sum = shops.map(shop=>{
                     return parseFloat(card.card_prices[0][shop])
@@ -1244,6 +1243,84 @@ commands.push(new Command({
     }
 }))
 
+let ahdb = null;
+rp({
+    url: `https://arkhamdb.com/api/public/cards/`,
+    json: true
+}).then((json)=>{
+    ahdb = json;
+})
+
+
+commands.push(new Command({
+    name: "ahdb",
+    regex: /^ahdb (.+)$/i,
+    prefix: ".",
+    testString: ".ahdb emergency cache",
+    hidden: false,
+    requirePrefix: true,
+    req: () => { return ahdb; },
+    shortDesc: "search for Arkham Horror LCG cards",
+    longDesc: `.ahdb (search)`,
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) => {
+        function simplifyname(s) {
+            s = s.replace(/ /g, "");
+            s = s.replace(/-/g, "");
+            s = s.replace(/\./g, "");
+            s = s.toLowerCase();
+            return s;
+        }
+        function parseCardText(s) {
+            s = s.replace(/\[(.+?)\]/g, "**$1**");
+            s = s.replace(/<b>(.+?)<\/b>/g, "**$1**");
+            return s;
+        }
+        function createRich(card) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(card.name);
+            if (card.url != null) rich.setURL(card.url)
+            let desclines = [];
+            if (card.traits != null) desclines.push(card.traits);
+            if (card.xp != null) desclines.push(`XP: ${card.xp}`);
+            if (card.cost != null) desclines.push(`Cost: ${card.cost}`);
+            if (card.text != null) desclines.push(parseCardText(card.text));
+            rich.setDescription(desclines.join("\n"));
+            if (card.imagesrc != null) rich.setImage(`https://arkhamdb.com${card.imagesrc}`)
+            if (card.flavor != null) rich.setFooter(card.flavor)
+            return ["", { embed: rich }]
+        }
+        let cardlist = [];
+        ahdb.forEach(card=>{
+            if (simplifyname(card.name).indexOf(simplifyname(args[1]))>-1) {
+                let title = card.name;
+                if (card.xp != null) title = `${card.name} (${card.xp})`
+                cardlist.push([title, ()=>{
+                    return createRich(card)
+                }]);
+            }
+        })
+
+        function parselist(list) {
+            if (list.length == 1) {
+                return list[0][1]();
+            } else if (list.length > 1) {
+                let rich = new Discord.RichEmbed({
+                    title: "Multiple cards found",
+                    description: createCustomNumCommand3(message, list)
+                })
+                return ["", { embed: rich }]
+            } else {
+                return false;
+            }
+        }
+
+        return parselist(cardlist) || "`Card not found`";
+    }
+}))
+
 /*
 let gundam = null;
 fs.readFile("./data/gundam.json", 'utf8', function (e, data) {
@@ -1327,7 +1404,7 @@ commands.push(new Command({
     regex: /^(?:t7|tek) (\S+)(?: ([^\n\r]+?))?$/i,
     prefix: ".",
     requirePrefix: true,
-    req: () => { return t7 && config.t7sheetid; },
+    req: () => { return t7},
     testString: ".t7 ak block=1",
     log: true,
     points: 1,
@@ -2319,7 +2396,6 @@ async function playYoutube(url, channel) {
         }
         return null;
     } catch (e) {
-        console.log(e)
         return null;
     }
 }
@@ -2328,10 +2404,12 @@ async function ytFunc(message,args){
     let id;
     let searched = false;
     let data;
+    let ytstream;
     try {
         id = ytdl.getVideoID(args[1])
+        ytstream = await playYoutube(id);
+        if (ytstream == null) throw e;
     } catch (e) {
-        if (!config.api.youtube) return `\`No videos found\``;
         data = await rp({
             url: `https://www.googleapis.com/youtube/v3/search?part=snippet&key=${config.api.youtube}&fields=items(id/videoId,snippet/title)&type=video&maxResults=1&q=${encodeURIComponent(args[1])}`,
             json: true
@@ -2342,8 +2420,8 @@ async function ytFunc(message,args){
         if (data.items.length < 1) return `\`No videos found\``;
         id = data.items[0].id.videoId;
         searched = true;
+        ytstream = await playYoutube(id);
     }
-    const ytstream = await playYoutube(id);
     if (ytstream !== null) {
         if (message.member.voice.channel) {
             return await playSound(message.member.voice.channel, ytstream[0], ytstream[1]);
@@ -2366,6 +2444,7 @@ commands.push(new Command({
     requirePrefix: true,
     log: true,
     typing: false,
+    req: () => { return config.api.youtube; },
     points: 1,
     shortDesc: "plays audio from a YouTube link in a voice channel",
     longDesc: {
@@ -2402,7 +2481,7 @@ commands.push(new Command({
 returns list of YouTube videos based on the search term`,
     run: async (message, args) => {
         try {
-            ytdl.getVideoID(args[1])
+            ytdl.getURLVideoID(args[1])
             return `\`.yts is for text search only. Use .yt for YouTube URLs.\``
         } catch (e) {
             
@@ -2498,7 +2577,7 @@ previous_nth_message - the number of messages to go back to reach the message yo
 
 commands.push(new Command({
     name: "quotelink",
-    regex: /^https:\/\/discordapp.com\/channels\/(\d{10,})\/(\d{10,})\/(\d{10,})$/,
+    regex: /^https:\/\/discord(?:app)?.com\/channels\/(\d{10,})\/(\d{10,})\/(\d{10,})$/,
     prefix: "",
     testString: "https://discordapp.com/channels/155411137339326464/532227798375333909/712016665222709259",
     hidden: true,
@@ -4162,6 +4241,49 @@ have a trophy`,
     }
 }))
 
+async function getImage(message, args){
+    let safe = message.channel.nsfw ? "" : "&safe=active"
+    //https://developers.google.com/custom-search/v1/cse/list
+    let urlpromise;
+    try {
+        urlpromise = await rp({
+            url: `https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args)}&searchType=image&num=10${safe}`,
+            json: true
+        })
+    } catch (e) {
+        if (e.response && e.response.body && e.response.body.error && e.response.body.error.errors[0] && e.response.body.error.errors[0].reason && e.response.body.error.errors[0].reason === "dailyLimitExceeded") {
+            return "`Try again tomorrow`";
+        }
+        throw e;
+    }
+
+    let data = urlpromise;
+    let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
+    let extension = [".png", ".jpg", ".bmp", ".gif"]
+    if (data.items && data.items.length > 0) {
+        let imageitems = data.items.filter(element => {
+            return validmime.indexOf(element.mime) > -1;
+        })
+        for (let i = 0; i < imageitems.length; i++) {
+            let imagedata = imageitems[i];
+            if (imagedata.image.byteSize < 8388608) {
+                try {
+                    let head = await rp.head(imagedata.link, { timeout: 1000 })
+                    let attach = new Discord.MessageAttachment(imagedata.link, `${encodeURIComponent(args)}${extension[validmime.indexOf(imagedata.mime)]}`);
+                    return attach;
+                } catch (e) {
+                    //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
+                    //return attach;
+                }
+            } else {
+                //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
+                //return attach;
+            }
+        }
+    }
+    return "`No results found`"
+}
+
 commands.push(new Command({
     name: "image",
     regex: /^im(?:age|g) ([^\n\r]+?)$/i,
@@ -4176,47 +4298,25 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
     log: true,
     points: 1,
     run: async (message, args) => {
-        //args[1] = encodeURIComponent(args[1]);
-        let safe = message.channel.nsfw ? "" : "&safe=active"
-        //https://developers.google.com/custom-search/v1/cse/list
-        let urlpromise;
-        try {
-            urlpromise = await rp({
-                url: `https://www.googleapis.com/customsearch/v1?key=${config.api.image}&q=${encodeURIComponent(args[1])}&searchType=image&num=10${safe}`,
-                json: true
-            })
-        } catch (e) {
-            if (e.response && e.response.body && e.response.body.error && e.response.body.error.errors[0] && e.response.body.error.errors[0].reason && e.response.body.error.errors[0].reason === "dailyLimitExceeded") {
-                return "`Try again tomorrow`";
-            }
-            throw e;
-        }
+        return getImage(message, args[1])
+    }
+}))
 
-        let data = urlpromise;
-        let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
-        let extension = [".png", ".jpg", ".bmp", ".gif"]
-        if (data.items && data.items.length > 0) {
-            let imageitems = data.items.filter(element => {
-                return validmime.indexOf(element.mime) > -1;
-            })
-            for (let i = 0; i < imageitems.length; i++) {
-                let imagedata = imageitems[i];
-                if (imagedata.image.byteSize < 8388608) {
-                    try {
-                        let head = await rp.head(imagedata.link, { timeout: 1000 })
-                        let attach = new Discord.MessageAttachment(imagedata.link, `${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
-                        return attach;
-                    } catch (e) {
-                        //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
-                        //return attach;
-                    }
-                } else {
-                    //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
-                    //return attach;
-                }
-            }
-        }
-        return "`No results found`"
+commands.push(new Command({
+    name: "gif",
+    regex: /^gif ([^\n\r]+?)$/i,
+    prefix: ".",
+    testString: ".gif cat",
+    hidden: false,
+    requirePrefix: true,
+    hardAsserts: () => { return config.api.image; },
+    shortDesc: "returns the first gif search result",
+    longDesc: `.gif (term)
+returns the first gif search result. safesearch is off if the channel is nsfw.`,
+    log: true,
+    points: 1,
+    run: async (message, args) => {
+        return getImage(message, `${args[1]} gif`)
     }
 }))
 
@@ -4618,6 +4718,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-09-07
+• fixed .yt error with certain searh strings. added .gif and .ahdb
+
 2020-07-05
 • auto quote messages that contain a message link
 
@@ -4638,9 +4741,6 @@ lists recent changes`,
 
 2020-04-09
 • added .osfe/eden and .covid commands
-
-2020-03-27
-• removed most meme commands
 \``
     }
 }))
@@ -4787,6 +4887,25 @@ commands.push(new Command({
             throw e;
         })
     },
+}))
+
+commands.push(new Command({
+    name: "emotes",
+    regex: /^emotes$/i,
+    prefix: ".",
+    testString: "",
+    hidden: true,
+    requirePrefix: true,
+    req: () => { return config.adminID },
+    shortDesc: "",
+    log: true,
+    points: 1,
+    run: async (message, args) =>{
+        return bot.emojis.cache.map(emoji=>{
+            return emoji
+        }).join(" ");
+    },
+    typing: false,
 }))
 
 commands.push(new Command({
@@ -5029,6 +5148,23 @@ commands.push(new Command({
     typing: false,
     run: (message, args) => {
         return "`Thank you. Your vote has been recorded.`";
+    }
+}))
+
+commands.push(new Command({
+    name: "hi",
+    regex: /^hi$/i,
+    prefix: "",
+    testString: "hi",
+    hidden: true,
+    requirePrefix: false,
+    shortDesc: "",
+    longDesc: ``,
+    log: true,
+    points: 1,
+    typing: false,
+    run: (message, args) => {
+        return "hi";
     }
 }))
 

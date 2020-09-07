@@ -46,6 +46,8 @@ returns a random card
 
 ## teppen
 .teppen (search)
+## ahdb
+.ahdb (search)
 ## t7
 returns information on a Tekken 7 character's move string
 ### .t7 __character_name__ __condition__
@@ -248,6 +250,10 @@ have a trophy
 .image (term)
 
 returns the first image result. safesearch is off if the channel is nsfw. add gif to the search if you want gifs
+## gif
+.gif (term)
+
+returns the first gif search result. safesearch is off if the channel is nsfw.
 ## stock
 .stock (symbol)
 

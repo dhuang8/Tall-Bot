@@ -95,6 +95,8 @@ class EpicStore {
         if (gamelist.upcominglist.length > 0){
             waittime = gamelist.upcominglist[0].start.valueOf()-this.time.valueOf()
         }
+        //add an extra 10 minutes just in case
+        waittime = waittime + 60*1000*10
         //minimum 10 minutes, maximum 1 week
         waittime = Math.max(600000,waittime)
         waittime = Math.min(60000*60*24*7,waittime)
@@ -127,6 +129,7 @@ class EpicStore {
             }).join("\n");
             rich.addField("Upcoming free games", desc)
         }
+        rich.setFooter("Direct links to games may not work")
         /*
         if (gamelist.unknownlist.length > 0) {
             let desc = gamelist.unknownlist.map(cur=>{

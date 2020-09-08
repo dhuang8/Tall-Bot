@@ -4893,7 +4893,7 @@ commands.push(new Command({
     name: "emotes",
     regex: /^emotes$/i,
     prefix: ".",
-    testString: "",
+    testString: ".emotes",
     hidden: true,
     requirePrefix: true,
     req: () => { return config.adminID },
@@ -4901,9 +4901,15 @@ commands.push(new Command({
     log: true,
     points: 1,
     run: async (message, args) =>{
-        return bot.emojis.cache.map(emoji=>{
-            return emoji
-        }).join(" ").slice(0,2000);
+        let curr_mes = ""
+        bot.emojis.cache.each(emoji=>{
+            if (curr_mes.length + emoji.toString().length > 2000) {
+                message.channel.send(curr_mes);
+                curr_mes = "";
+            }
+            curr_mes += emoji
+        });
+        return curr_mes;
     },
     typing: false,
 }))

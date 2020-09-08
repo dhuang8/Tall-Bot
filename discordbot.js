@@ -4907,7 +4907,7 @@ commands.push(new Command({
                 message.channel.send(curr_mes);
                 curr_mes = "";
             }
-            curr_mes += " " + emoji.toString();
+            curr_mes += emoji.toString();
         });
         return curr_mes;
     },

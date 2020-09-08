@@ -4903,11 +4903,11 @@ commands.push(new Command({
     run: async (message, args) =>{
         let curr_mes = ""
         bot.emojis.cache.each(emoji=>{
-            if (curr_mes.length + emoji.toString().length > 2000) {
+            if (curr_mes.length + emoji.toString().length > 1999) {
                 message.channel.send(curr_mes);
                 curr_mes = "";
             }
-            curr_mes += emoji.toString();
+            curr_mes += " " + emoji.toString();
         });
         return curr_mes;
     },

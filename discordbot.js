@@ -4903,7 +4903,7 @@ commands.push(new Command({
     run: async (message, args) =>{
         return bot.emojis.cache.map(emoji=>{
             return emoji
-        }).join(" ");
+        }).join(" ").slice(0,2000);
     },
     typing: false,
 }))

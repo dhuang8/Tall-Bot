@@ -1253,15 +1253,15 @@ rp({
 
 
 commands.push(new Command({
-    name: "ahdb",
-    regex: /^ahdb (.+)$/i,
+    name: "adb",
+    regex: /^adb (.+)$/i,
     prefix: ".",
-    testString: ".ahdb emergency cache",
+    testString: ".adb emergency cache",
     hidden: false,
     requirePrefix: true,
     req: () => { return ahdb; },
     shortDesc: "search for Arkham Horror LCG cards",
-    longDesc: `.ahdb (search)`,
+    longDesc: `.adb (search)`,
     log: true,
     points: 1,
     typing: false,
@@ -1274,6 +1274,7 @@ commands.push(new Command({
             return s;
         }
         function parseCardText(s) {
+            s = s.replace(/\[\[(.+?)\]\]/g, "***$1***");
             s = s.replace(/\[(.+?)\]/g, "**$1**");
             s = s.replace(/<b>(.+?)<\/b>/g, "**$1**");
             return s;
@@ -1283,7 +1284,7 @@ commands.push(new Command({
             rich.setTitle(card.name);
             if (card.url != null) rich.setURL(card.url)
             let desclines = [];
-            if (card.traits != null) desclines.push(card.traits);
+            if (card.traits != null) desclines.push(`*${card.traits}*`);
             if (card.xp != null) desclines.push(`XP: ${card.xp}`);
             if (card.cost != null) desclines.push(`Cost: ${card.cost}`);
             if (card.text != null) desclines.push(parseCardText(card.text));
@@ -1295,6 +1296,12 @@ commands.push(new Command({
         let cardlist = [];
         ahdb.forEach(card=>{
             if (simplifyname(card.name).indexOf(simplifyname(args[1]))>-1) {
+                let title = card.name;
+                if (card.xp != null) title = `${card.name} (${card.xp})`
+                cardlist.push([title, ()=>{
+                    return createRich(card)
+                }]);
+            } else if (card.code == args[1]) {
                 let title = card.name;
                 if (card.xp != null) title = `${card.name} (${card.xp})`
                 cardlist.push([title, ()=>{

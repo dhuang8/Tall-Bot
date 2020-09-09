@@ -1250,7 +1250,8 @@ rp({
 }).then((json)=>{
     ahdb = json;
 })
-const adbsql = new Database('sqlitedb/ahlcg.sqlite'/*, { verbose: console.log }*/);
+let adbsql;
+if (fs.existsSync('sqlitedb/ah2lcg.sqlite')) { adbsql = new Database('sqlitedb/ah2lcg.sqlite');}
 
 commands.push(new Command({
     name: "adb",
@@ -1280,12 +1281,13 @@ commands.push(new Command({
             return s;
         }
         function createRich(card) {
-            let cardanalytics = adbsql.prepare("select * from card where id=?").get(card.code);
+            let cardanalytics;
+            if (adbsql) cardanalytics = adbsql.prepare("select * from card where id=?").get(card.code);
             let rich = new Discord.RichEmbed();
             rich.setTitle(card.name);
             if (card.url != null) rich.setURL(card.url)
             let desclines = [];
-            if (cardanalytics != null) desclines.push(`Pick Rate: ${parseInt(cardanalytics.count*100/cardanalytics.possible)}%`);
+            if (cardanalytics != null) desclines.push(`Pick Rate: ${Math.round(cardanalytics.count*100/cardanalytics.possible)}%`);
             if (card.traits != null) desclines.push(`*${card.traits}*`);
             if (card.xp != null) desclines.push(`XP: ${card.xp}`);
             if (card.cost != null) desclines.push(`Cost: ${card.cost}`);

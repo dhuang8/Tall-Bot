@@ -3,5 +3,6 @@ animalgifs/
 external_scripts/
 data/
 /config.json
-sqlitedb/discord.sqlite
+sqlitedb/
+!sqlitedb/discord_sample.sqlite
 update_scripts/

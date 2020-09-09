@@ -1250,7 +1250,7 @@ rp({
 }).then((json)=>{
     ahdb = json;
 })
-
+const adbsql = new Database('sqlitedb/ahlcg.sqlite'/*, { verbose: console.log }*/);
 
 commands.push(new Command({
     name: "adb",
@@ -1280,10 +1280,12 @@ commands.push(new Command({
             return s;
         }
         function createRich(card) {
+            let cardanalytics = adbsql.prepare("select * from card where id=?").get(card.code);
             let rich = new Discord.RichEmbed();
             rich.setTitle(card.name);
             if (card.url != null) rich.setURL(card.url)
             let desclines = [];
+            if (cardanalytics != null) desclines.push(`Pick Rate: ${parseInt(cardanalytics.count*100/cardanalytics.possible)}%`);
             if (card.traits != null) desclines.push(`*${card.traits}*`);
             if (card.xp != null) desclines.push(`XP: ${card.xp}`);
             if (card.cost != null) desclines.push(`Cost: ${card.cost}`);
@@ -1297,13 +1299,14 @@ commands.push(new Command({
         ahdb.forEach(card=>{
             if (simplifyname(card.name).indexOf(simplifyname(args[1]))>-1) {
                 let title = card.name;
-                if (card.xp != null) title = `${card.name} (${card.xp})`
+                let xptext = ""
+                if (card.xp != null && card.xp>0) title = `${card.name} (${card.xp})`
                 cardlist.push([title, ()=>{
                     return createRich(card)
                 }]);
             } else if (card.code == args[1]) {
                 let title = card.name;
-                if (card.xp != null) title = `${card.name} (${card.xp})`
+                if (card.xp != null && card.xp>0) title = `${card.name} (${card.xp})`
                 cardlist.push([title, ()=>{
                     return createRich(card)
                 }]);

@@ -496,7 +496,7 @@ commands.push(new Command({
     regex: /^time$/i,
     testString: "time",
     prefix: ".",
-    requirePrefix: false,
+    requirePrefix: true,
     shortDesc: "responds with the time at several time zones",
     longDesc: "responds with the time in UTC, CST, EST, PST, NZST, and JST",
     log: true,
@@ -1251,7 +1251,7 @@ rp({
     ahdb = json;
 })
 let adbsql;
-if (fs.existsSync('sqlitedb/ah2lcg.sqlite')) { adbsql = new Database('sqlitedb/ah2lcg.sqlite');}
+if (fs.existsSync('sqlitedb/ahlcg.sqlite')) { adbsql = new Database('sqlitedb/ahlcg.sqlite');}
 
 commands.push(new Command({
     name: "adb",
@@ -1278,6 +1278,8 @@ commands.push(new Command({
             s = s.replace(/\[\[(.+?)\]\]/g, "***$1***");
             s = s.replace(/\[(.+?)\]/g, "**$1**");
             s = s.replace(/<b>(.+?)<\/b>/g, "**$1**");
+            s = s.replace(/<i>(.+?)<\/i>/g, "*$1*");
+            s = s.replace(/<br\/>/g, "\n");
             return s;
         }
         function createRich(card) {
@@ -1288,9 +1290,11 @@ commands.push(new Command({
             if (card.url != null) rich.setURL(card.url)
             let desclines = [];
             if (cardanalytics != null) desclines.push(`Pick Rate: ${Math.round(cardanalytics.count*100/cardanalytics.possible)}%`);
+            if (card.faction_name != null) desclines.push(`${card.faction_name}`);
+            if (card.type_name != null) desclines.push(`**${card.type_name}**`);
             if (card.traits != null) desclines.push(`*${card.traits}*`);
-            if (card.xp != null) desclines.push(`XP: ${card.xp}`);
             if (card.cost != null) desclines.push(`Cost: ${card.cost}`);
+            if (card.xp != null) desclines.push(`XP: ${card.xp}`);
             if (card.text != null) desclines.push(parseCardText(card.text));
             rich.setDescription(desclines.join("\n"));
             if (card.imagesrc != null) rich.setImage(`https://arkhamdb.com${card.imagesrc}`)
@@ -3273,12 +3277,30 @@ async function poesearch(message, args) {
     }
     rich.setDescription(desc_list.join("\n"));
 
-    let data = await rp({
-        method: "POST",
-        url: `https://www.pathofexile.com/api/trade/search/${encodeURIComponent(poeleague)}`,
-        body: body,
-        json: true
-    })
+    let data;
+    try {
+        data = await rp({
+            method: "POST",
+            url: `https://www.pathofexile.com/api/trade/search/${encodeURIComponent(poeleague)}`,
+            body: body,
+            json: true
+        })
+    } catch(e){
+        try {
+            if (e.error.error.code == 2) {
+                if (!(await checkLeague(poeleague))) {
+                    return setLeague("Update your league", message, async () => {
+                        let itemsearch = await poesearch(message, args);
+                        return itemsearch;
+                    });
+                } else {
+                    return "`No results`"
+                }
+            }
+        } catch (e2) {
+            throw e;
+        }
+    }
 
     rich.setURL(`https://www.pathofexile.com/trade/search/${encodeURIComponent(poeleague)}/${data.id}`);
     rich.setTitle("Results - " + poeleague);
@@ -3564,7 +3586,27 @@ async function poesearch2(message, args) {
     }];
 }
 
+async function checkLeague(leagueid){
+    let data;
+    try {
+        data = await rp({
+            url: "https://www.pathofexile.com/api/trade/data/leagues",
+            json: true
+        });
+    } catch (e) {
+        throw e;
+    }
+    poe_leagues = data.result.map(leag => {
+        return leag.id;
+    });
+    if (poe_leagues.indexOf(leagueid) < 0) {
+        return false;
+    }
+    return true;
+}
+
 async function setLeague(top, message, callback) {
+    /*
     let data;
     try {
         data = await rp({
@@ -3576,12 +3618,12 @@ async function setLeague(top, message, callback) {
     }
     poe_leagues = data.result.map(leag => {
         return leag.id
-    });
-    let leaguelist = data.result.map(leag => {
-        return [leag.id, async (thismess) => {
+    });*/
+    let leaguelist = poe_leagues.map(leagueid => {
+        return [leagueid, async (thismess) => {
             if (thismess.author.id !== message.author.id) return "";
             let stmt = sql.prepare("INSERT INTO users(user_id,poeleague) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET poeleague=excluded.poeleague;")
-            stmt.run(message.author.id, leag.id)
+            stmt.run(message.author.id, leagueid)
             return await callback();
         }]
     })
@@ -3772,7 +3814,7 @@ returns urban dictionary definition`,
             if (data.list[num].example) {
                 desc += "\n\n*" + escapeMarkdownText(data.list[num].example.replace(/[\[\]]/g, "")) + "*";
             }
-            rich.setDescription(desc);
+            rich.setDescription(desc.slice(0,2048));
             return rich;
         }
         return "`No results found`";

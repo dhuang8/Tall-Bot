@@ -8,7 +8,7 @@ const execFile = require('child_process').execFile;
 const execFileSync = require('child_process').execFileSync;
 const CronJob = require('cron').CronJob;
 const GIFEncoder = require('gifencoder');
-const { createCanvas, loadImage } = require('canvas');
+//const { createCanvas, loadImage } = require('canvas');
 const translate = require('@vitalets/google-translate-api');
 const Database = require("better-sqlite3");
 const { CanvasRenderService } = require('chartjs-node-canvas');
@@ -2751,6 +2751,21 @@ location - can be several things like the name of a city or a zip code`,
 
 let covid_countries = [];
 let covid_states = [];
+let covid_provinces = {"Alberta":"AB",
+    "British Columbia":"BC",
+    "Manitoba":"MB",
+    "New Brunswick":"NB",
+    "Newfoundland and Labrador":"NL",
+    "Northwest Territories":"NT",
+    "Nova Scotia":"NS",
+    "Nunavut":"NU",
+    "Ontario":"ON",
+    "Prince Edward Island":"PE",
+    "Quebec":"QC",
+    "Saskatchewan":"SK",
+    "Yukon":"YT",
+    "Repatriated Travellers":"RT"};
+
 rp({
     url: "https://covidtracking.com/api/v1/states/info.json",
     json: true
@@ -2899,15 +2914,6 @@ commands.push(new Command({
                     dates.push(history[i].date)
                 }
             }
-            /*
-            active_cases = history.map(date=>{
-                let death = date.death || 0;
-                let recovered = date.recovered || 0;
-                return date.positive-death-recovered;
-            })
-            let dates = history.map(date=>{
-                return date.date;
-            })*/
 
             let step = parseInt((dates.length-1) / 5);
 
@@ -2971,6 +2977,71 @@ commands.push(new Command({
             let current = await current_prom;
             let rich = parseNovelCOVID(current,history.timeline);
             rich.setTitle(country.name);
+            return rich;
+        }
+        let province = Object.keys(covid_provinces).find(country=>{
+            if (country.toLowerCase() === args[1].toLowerCase()) return true;
+            if (covid_provinces[country] && covid_provinces[country].toLowerCase() === args[1].toLowerCase()) return true;
+            return false;
+        })
+        if (province !== undefined) {
+            let current_prom = rp({
+                url: `https://api.opencovid.ca/summary?loc=${covid_provinces[province]}`,
+                json:true
+            })
+            let history = await rp({
+                url: `https://api.opencovid.ca/timeseries?stat=cases&loc=${covid_provinces[province]}`,
+                json:true
+            })
+            let active_cases = [];
+            let dates = [];
+            history.cases.forEach(datecase=>{
+                active_cases.push(datecase.cases);
+                dates.push(datecase.date_report)
+            })
+
+            let step = parseInt((dates.length-1) / 5);
+
+            let labels = dates.map((date,index) => {
+                if (index == dates.length-1) return moment(date, "YYYYMMDD").format("MMM D");
+                if (index > dates.length-step/2) return "";
+                if (index % step == 0) return moment(date, "YYYYMMDD").format("MMM D");
+                return "";
+            })
+        
+            const configuration = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "New cases",
+                        data: active_cases,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    legend: {
+                        display: true
+                    }
+                }
+            };
+        
+            let stream = createChartStream(configuration);
+            let desc_lines = []
+            let current = await current_prom;
+            desc_lines.push(`Total cases: ${parseInt(current.summary[0].cumulative_cases)}`)
+            desc_lines.push(`Total active: ${parseInt(current.summary[0].active_cases)}`)
+            if (current.recovered !=null) desc_lines.push(`Total recovered: ${parseInt(current.summary[0].cumalative_recovered)}`)
+            if (current.death !=null) desc_lines.push(`Total deaths: ${parseInt(current.summary[0].cumalative_deaths)}`)
+            desc_lines.push(`Yesterday new cases: ${parseInt(current.summary[0].cases)}`)
+            desc_lines.push(`Yesterday deaths: ${parseInt(current.summary[0].deaths)}`)
+            let rich = new Discord.RichEmbed()
+            rich.setDescription(desc_lines.join("\n"));
+            rich.setTitle(province)
+            rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+            rich.setImage(`attachment://chart.png`)
             return rich;
         }
         return `\`Place not found\``;

@@ -46,8 +46,8 @@ returns a random card
 
 ## teppen
 .teppen (search)
-## ahdb
-.ahdb (search)
+## adb
+.adb (search)
 ## t7
 returns information on a Tekken 7 character's move string
 ### .t7 __character_name__ __condition__

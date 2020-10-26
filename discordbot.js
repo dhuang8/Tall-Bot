@@ -3068,7 +3068,10 @@ commands.push(new Command({
 let poe_stats = {};
 rp({
     url: "https://www.pathofexile.com/api/trade/data/stats",
-    json: true
+    json: true,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+    }
 }).then(json => {
     poe_stats = json;
 })
@@ -3076,7 +3079,10 @@ rp({
 let poe_leagues = [];
 rp({
     url: "https://www.pathofexile.com/api/trade/data/leagues",
-    json: true
+    json: true,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+    }
 }).then(json => {
     poe_leagues = json.result.map(leag => {
         return leag.id
@@ -3354,7 +3360,10 @@ async function poesearch(message, args) {
             method: "POST",
             url: `https://www.pathofexile.com/api/trade/search/${encodeURIComponent(poeleague)}`,
             body: body,
-            json: true
+            json: true,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+            }
         })
     } catch(e){
         try {
@@ -3372,7 +3381,6 @@ async function poesearch(message, args) {
             throw e;
         }
     }
-
     rich.setURL(`https://www.pathofexile.com/trade/search/${encodeURIComponent(poeleague)}/${data.id}`);
     rich.setTitle("Results - " + poeleague);
     rich.setFooter('Type "setpoeleague" to change your PoE league')
@@ -3385,7 +3393,10 @@ async function poesearch(message, args) {
     let hashstring = data.result.slice(0, 6).join(",");
     data = await rp({
         url: `https://www.pathofexile.com/api/trade/fetch/${hashstring}`,
-        json: true
+        json: true,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+        }
     });
     data.result.forEach(ele => {
         let time = moment(ele.listing.indexed).fromNow();
@@ -3662,7 +3673,10 @@ async function checkLeague(leagueid){
     try {
         data = await rp({
             url: "https://www.pathofexile.com/api/trade/data/leagues",
-            json: true
+            json: true,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+            }
         });
     } catch (e) {
         throw e;

@@ -10,7 +10,7 @@
   "dependencies": {
     "@discordjs/opus": "^0.1.0",
     "@vitalets/google-translate-api": "^2.9.0",
-    "better-sqlite3": "^7.1.0",
+    "better-sqlite3": "^7.1.1",
     "bufferutil": "^4.0.1",
     "canvas": "^2.6.1",
     "chartjs-node-canvas": "^3.0.6",
@@ -29,7 +29,7 @@
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "utf-8-validate": "^5.0.2",
-    "ytdl-core": "^3.2.2",
+    "ytdl-core": "^3.4.2",
     "zlib-sync": "^0.1.6"
   },
   "devDependencies": {},

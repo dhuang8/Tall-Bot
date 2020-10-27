@@ -5490,6 +5490,30 @@ updates script`,
         }
         return null;
     }
+}))commands.push(new Command({
+    name: "update",
+    regex: /^update(?: (.+))?$/i,
+    requirePrefix: true,
+    hidden: true,
+    hardAsserts: () => { return config.adminID; },
+    shortDesc: "update script",
+    longDesc: `.update
+updates script`,
+    log: true,
+    points: 0,
+    typing: true,
+    prerun: (message) => { return message.author.id === config.adminID },
+    run: (message, args) => {
+        return (new Promise((res, rej) => {
+            execFile('npm update', (e, stdout, stderr) => {
+                if (e) {
+                    rej(e)
+                } else {
+                    res(`\`${stdout} ${stderr}\``);
+                }
+            })
+        }))
+    }
 }))
 commands.push(new Command({
     name: "test",

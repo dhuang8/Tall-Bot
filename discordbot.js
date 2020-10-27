@@ -5490,22 +5490,24 @@ updates script`,
         }
         return null;
     }
-}))commands.push(new Command({
-    name: "update",
-    regex: /^update(?: (.+))?$/i,
+}))
+
+commands.push(new Command({
+    name: "npminstall",
+    regex: /^npminstall$/i,
     requirePrefix: true,
     hidden: true,
     hardAsserts: () => { return config.adminID; },
-    shortDesc: "update script",
-    longDesc: `.update
-updates script`,
+    shortDesc: "update modules",
+    longDesc: `.npminstall
+updates modules`,
     log: true,
     points: 0,
     typing: true,
     prerun: (message) => { return message.author.id === config.adminID },
     run: (message, args) => {
         return (new Promise((res, rej) => {
-            execFile('npm update', (e, stdout, stderr) => {
+            execFile('npm install', (e, stdout, stderr) => {
                 if (e) {
                     rej(e)
                 } else {

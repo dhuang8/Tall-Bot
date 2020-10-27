@@ -5493,21 +5493,21 @@ updates script`,
 }))
 
 commands.push(new Command({
-    name: "npminstall",
-    regex: /^npminstall$/i,
+    name: "terminal",
+    regex: /^terminal (.*)$/i,
     requirePrefix: true,
     hidden: true,
     hardAsserts: () => { return config.adminID; },
-    shortDesc: "update modules",
-    longDesc: `.npminstall
-updates modules`,
+    shortDesc: "run terminal command",
+    longDesc: `.terminal
+run terminal command`,
     log: true,
     points: 0,
     typing: true,
     prerun: (message) => { return message.author.id === config.adminID },
     run: (message, args) => {
         return (new Promise((res, rej) => {
-            execFile('npm install', (e, stdout, stderr) => {
+            execFile(args[1], (e, stdout, stderr) => {
                 if (e) {
                     rej(e)
                 } else {
@@ -5517,6 +5517,7 @@ updates modules`,
         }))
     }
 }))
+
 commands.push(new Command({
     name: "test",
     regex: /^test$/i,

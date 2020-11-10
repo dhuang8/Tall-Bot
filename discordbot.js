@@ -4,6 +4,7 @@ const fs = require('fs');
 const moment = require('moment-timezone');
 const cheerio = require('cheerio');
 const ytdl = require('ytdl-core');
+const exec = require('child_process').exec;
 const execFile = require('child_process').execFile;
 const execFileSync = require('child_process').execFileSync;
 const CronJob = require('cron').CronJob;
@@ -476,6 +477,7 @@ commands.push(new Command({
         return "^".repeat(args[0].length + 1).slice(0, 2000);
     }
 }))
+/*
 commands.push(new Command({
     name: "k",
     regex: /^k$/i,
@@ -491,6 +493,7 @@ commands.push(new Command({
         return `You fucking do that every damn time I try to talk to you about anything even if it's not important you just say K and to be honest it makes me feel rejected and unheard like nothing would be better that that bullshit who the fuck just says k after you tell them something important I just don't understand how you think that's ok and I swear to god you're probably just gonna say k to this but when you do you'll know that you're slowly killing me inside`;
     }
 }))
+*/
 commands.push(new Command({
     name: "time",
     regex: /^time$/i,
@@ -610,22 +613,24 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
         let wait = (time - now.valueOf());
         //handle long timeouts;
         if (wait > 2147483647) return;
-        let user = bot.users.resolve(user_id)
-        if (!user) throw new Error("Could find user");
-        let channel = bot.channels.resolve(channel_id)
-        if (!channel) throw new Error("Could find channel");
 
         timeouts[id] = bot.setTimeout(function () {
             let info = sql.prepare("UPDATE reminders SET triggered=TRUE where id=?").run(id);
             if (info.changes < 1) throw new Error("Could not modify reminder");
+            let channel = bot.channels.resolve(channel_id)
+            if (!channel) throw new Error("Could not find channel");
             let rich = new Discord.RichEmbed();
-            let member = channel.members ? channel.members.resolve(user) : null
+            let user;
             let username;
-            if (member && member.nickname) {
+            if (channel.type == "text") {
+                let member = channel.members.get(user_id)
+                user = member.user;
                 username = member.nickname;
-            } else {
-                username = user.username;
+            } else if (channel.type == "dm") {
+                user = channel.recipient;
             }
+            if (user == null) throw new Error("Could not find user");
+            if (username == null) username = user.username;
             rich.setAuthor(username, user.displayAvatarURL());
             rich.setDescription(message_text);
             rich.setTimestamp(original_time);
@@ -2359,7 +2364,7 @@ function playSound(channel, URL, options = {}) {
         }
     }).then((connection)=>{
         //play music
-        let setvolume = .25;
+        let setvolume = .3;
         let stream_options = {
             volume: setvolume,
             highWaterMark: 1
@@ -5507,11 +5512,12 @@ run terminal command`,
     prerun: (message) => { return message.author.id === config.adminID },
     run: (message, args) => {
         return (new Promise((res, rej) => {
-            execFile(args[1], (e, stdout, stderr) => {
+            let cmdpart = args[1].split(" ")
+            execFile(cmdpart[0], cmdpart.slice(1), {cwd: __dirname}, (e, stdout, stderr) => {
                 if (e) {
                     rej(e)
                 } else {
-                    res(`\`${stdout} ${stderr}\``);
+                    res([`${stdout} ${stderr}`, {code:true, split: true}]);
                 }
             })
         }))

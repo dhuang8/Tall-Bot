@@ -297,7 +297,7 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-const last_update = "2020-09-07";
+const last_update = "2020-11-11";
 
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
@@ -1660,8 +1660,6 @@ multiple conditions can be linked together using condition1&condition2&condition
 
                 if (poslist.length < 1) {
                     let conditionstring = move.split("&");
-
-
                     conditions = conditionstring.map((cur) => {
                         let b;
                         if (b = /^(.+?)([<>]=|[:=<>])(.+)$/.exec(cur)) {
@@ -1670,8 +1668,17 @@ multiple conditions can be linked together using condition1&condition2&condition
                             return parseConditionArgs("startupframe", ":", b[1]);
                         } else {
                             return (arg1, arg2) => {
-                                return parseConditionArgs("command", ":", cur)(arg1, arg2) || parseConditionArgs("name", ":", cur)(arg1, arg2) || parseConditionArgs("notes", ":", cur)(arg1, arg2) || parseConditionArgs("engrish", ":", cur)(arg1, arg2);
-                                //return parseConditionArgs("command",":",cur)(arg1, arg2) || parseConditionArgs("name",":",cur)(arg1, arg2);
+                                let defaultfields = ["command","name","notes","engrish"];
+                                let found = defaultfields.find(field => {
+                                    return parseConditionArgs(field, ":", cur)(arg1, arg2)
+                                })
+                                if (!found && isNaN(cur)){
+                                    let otherfields = ["startup","hit","counter"];
+                                    found = otherfields.find(field => {
+                                        return parseConditionArgs(field, ":", cur)(arg1, arg2)
+                                    })
+                                }
+                                return found;
                             }
                         }
                     })
@@ -4865,6 +4872,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2020-11-11
+• improved t7 search, I hope
+
 2020-09-07
 • fixed .yt error with certain searh strings. added .gif and .ahdb
 

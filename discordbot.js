@@ -4405,15 +4405,18 @@ async function getImage(message, args){
     let validmime = ["image/png", "image/jpeg", "image/bmp", "image/gif"]
     let extension = [".png", ".jpg", ".bmp", ".gif"]
     if (data.items && data.items.length > 0) {
+        /*
         let imageitems = data.items.filter(element => {
             return validmime.indexOf(element.mime) > -1;
-        })
-        for (let i = 0; i < imageitems.length; i++) {
-            let imagedata = imageitems[i];
+        })*/
+        for (let i = 0; i < data.items.length; i++) {
+            let imagedata = data.items[i];
             if (imagedata.image.byteSize < 8388608) {
                 try {
                     let head = await rp.head(imagedata.link, { timeout: 1000 })
-                    let attach = new Discord.MessageAttachment(imagedata.link, `${encodeURIComponent(args)}${extension[validmime.indexOf(imagedata.mime)]}`);
+                    let mimeindex = validmime.indexOf(head["content-type"])
+                    if (mimeindex < 0 || head["content-length"] >= 8388608) continue;
+                    let attach = new Discord.MessageAttachment(imagedata.link, `${encodeURIComponent(args)}${extension[mimeindex]}`);
                     return attach;
                 } catch (e) {
                     //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);

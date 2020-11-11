@@ -20,17 +20,17 @@
     "discord.js": "github:discordjs/discord.js",
     "erlpack": "github:discordapp/erlpack",
     "gifencoder": "^2.0.1",
-    "libsodium-wrappers": "^0.7.6",
+    "libsodium-wrappers": "^0.7.8",
     "moment-timezone": "^0.5.28",
     "request": "^2.88.2",
-    "request-promise": "^4.2.5",
-    "rss-parser": "^3.7.6",
+    "request-promise": "^4.2.6",
+    "rss-parser": "^3.9.0",
     "simple-oauth2": "^3.4.0",
     "sodium": "^3.0.2",
     "unescape": "^1.0.1",
     "utf-8-validate": "^5.0.2",
     "ytdl-core": "^3.4.2",
-    "zlib-sync": "^0.1.6"
+    "zlib-sync": "^0.1.7"
   },
   "devDependencies": {},
   "description": ""

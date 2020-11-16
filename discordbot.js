@@ -695,7 +695,7 @@ commands.push(new Command({
                 return rich;
             }
             let lines = rows.map((reminder, index) => {
-                return `**${index + 1}.** ${reminder.message_text}`
+                return `**${index + 1}.** ${reminder.message_text} — ${moment(reminder.time).format("MMM D YYYY h:mm:ss a z")}`
             })
             let rich = new Discord.RichEmbed()
                 .setTitle("Reminders")
@@ -728,7 +728,7 @@ commands.push(new Command({
             ret = execFileSync("py", ["-3", "main.pyc", args[1].toUpperCase()], { cwd: "external_scripts/dateparse/", encoding: "utf8" })
         }
         let time = moment.unix(parseFloat(ret));
-        return ["", { embed: createReminder(message.author.id, message.channel.id, args[1], message.id, time, message.createdTimestamp, message.url) }]
+        return ["", { embed: createReminder(message.author.id, message.channel.id, message.content, message.id, time, message.createdTimestamp, message.url) }]
     }
 }))
 

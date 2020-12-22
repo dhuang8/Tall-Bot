@@ -22,6 +22,7 @@ const Pokemon = require('./utils/Pokemon');
 const oauth2 = require('simple-oauth2')
 const { Readable, PassThrough } = require('stream')
 const prism = require('prism-media');
+const ipc=require('node-ipc');
 //const heapdump = require('heapdump');
 
 
@@ -50,6 +51,27 @@ let config = {
 const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/);
 sql.prepare("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, points INTEGER, poeleague TEXT) WITHOUT ROWID;").run();
 sql.prepare("CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, channel_id TEXT, message_text TEXT, message_id TEXT, time DATETIME, original_time DATETIME, url TEXT, triggered BOOLEAN DEFAULT(FALSE), FOREIGN KEY(user_id) REFERENCES users(user_id));").run();
+
+ipc.config.id = 'tallbot';
+ipc.config.retry= 1500;
+ipc.config.silent=true;
+
+ipc.serve(
+    function(){
+        ipc.server.on(
+            'message',
+            function(data,socket){
+                try {
+                    if (typeof data.message == "object") data.message = new Discord.RichEmbed(data.message);
+                    bot.channels.resolve(data.channelid).send(data.message);
+                } catch (e) {
+                    console.error("cannot decipher data:", data)
+                }
+            }
+        );
+    }
+);
+ipc.server.start();
 
 let globalvars = { bot, config, sql }
 module.exports = globalvars
@@ -329,7 +351,7 @@ fs.readFile("./config.json", "utf8", (e, data) => {
         })
         bot.login(config.token).catch(console.error);
         new CronJob('0 0 0 * * 0', function () {
-            sql.prepare("UPDATE users SET points=points - points/10;").run();
+            sql.prepare("UPDATE users SET points=points - points/20;").run();
         }, null, true, 'America/New_York');
         if (config.weatherChannelID) {
             new CronJob('0 0 8 * * *', function () {
@@ -595,7 +617,6 @@ function createReminder(user_id, channel_id, message_text, message_id, time, ori
     try {
         let info = sql.prepare("INSERT INTO reminders(user_id, channel_id, message_text, message_id, time, original_time, url) VALUES (?,?,?,?,?,?,?)").run(user_id, channel_id, message_text, message_id, time.valueOf(), original_time, url);
         if (info.changes < 1) throw new Error("Could not create reminder");
-        let now = moment();
         let rich = Discord.RichEmbed();
         rich.setTitle(message_text);
         rich.setDescription(`Setting reminder to ${time.format("MMM D YYYY h:mm:ss a z")}`);
@@ -624,6 +645,7 @@ function setReminder(id, user_id, channel_id, message_text, message_id, time, or
             let username;
             if (channel.type == "text") {
                 let member = channel.members.get(user_id)
+                if (member == null) throw new Error("Could not find member");
                 user = member.user;
                 username = member.nickname;
             } else if (channel.type == "dm") {
@@ -1668,7 +1690,7 @@ multiple conditions can be linked together using condition1&condition2&condition
                             return parseConditionArgs("startupframe", ":", b[1]);
                         } else {
                             return (arg1, arg2) => {
-                                let defaultfields = ["command","name","notes","engrish"];
+                                let defaultfields = ["command","name","notes","rbnorway","engrish"];
                                 let found = defaultfields.find(field => {
                                     return parseConditionArgs(field, ":", cur)(arg1, arg2)
                                 })
@@ -5199,7 +5221,7 @@ commands.push(new Command({
     }
 }))
 */
-
+/*
 commands.push(new Command({
     name: "whens",
     regex: /^(?:so )?when(?:s|'s| is| are) (.+)$/i,
@@ -5216,6 +5238,7 @@ commands.push(new Command({
         return "never";
     }
 }))
+*/
 /*
 commands.push(new Command({
     name: "what",

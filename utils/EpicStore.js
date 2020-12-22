@@ -69,7 +69,6 @@ class EpicStore {
             this.sql = sql;
             sql.prepare("CREATE TABLE IF NOT EXISTS channels (channel_id TEXT PRIMARY KEY NOT NULL, disable BOOLEAN DEFAULT false, egs BOOLEAN DEFAULT false) WITHOUT ROWID;").run();
             this.bot = bot
-            this.time = new Date();
             this.error_channel = error_channel;
             this.lastlist = [];
             this.__setup(true);
@@ -80,6 +79,7 @@ class EpicStore {
 
     async __setup(firsttime=false) {
         let gamelist = await this.__getList();
+        let curtime = new Date();
         let isnew = gamelist.curlist.some(game=>{
             return this.lastlist.indexOf(game.title) < 0;
         })
@@ -93,7 +93,7 @@ class EpicStore {
         }
         let waittime = 0;
         if (gamelist.upcominglist.length > 0){
-            waittime = gamelist.upcominglist[0].start.valueOf()-this.time.valueOf()
+            waittime = gamelist.upcominglist[0].start.valueOf()-curtime.valueOf()
         }
         //add an extra 10 minutes just in case
         waittime = waittime + 60*1000*10

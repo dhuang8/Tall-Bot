@@ -2001,6 +2001,141 @@ multiple conditions can be linked together using condition1&condition2&condition
     }
 }))
 */
+
+let ssbu = null;
+fs.readFile("./data/ssbu.json", 'utf8', function (e, data) {
+    if (e) {
+        return console.error("SSBU data not found");
+    } else {
+        ssbu = JSON.parse(data);
+    }
+})
+
+commands.push(new Command({
+    name: "ssbu",
+    regex: /^ssbu (\S+)(?: ([^\n\r]+?))?$/i,
+    prefix: ".",
+    requirePrefix: true,
+    req: () => { return ssbu},
+    testString: ".ssbu peach jab",
+    log: true,
+    points: 1,
+    typing: false,
+    shortDesc: "returns info on Super Smash Bros. Ultimate moves",
+    longDesc: {
+        title: `.ssbu __character_name__ __move_name__`,
+        description: `returns info on Super Smash Bros. Ultimate moves`,
+        fields: [{
+            name: `character_name`,
+            value: `full or part of a character's name (no spaces)`
+        }, {
+            name: `**move_name**`,
+            value: `name of the move`
+        }]
+    },
+    run: async (message, args) => {
+        function simplifyName(s) {
+            s = s.toLowerCase();
+            s = replaceAll(s, " ", "");
+            return s.trim();
+        }
+
+        function simplifyMove(s) {
+            s = s.toLowerCase();
+            s = replaceAll(s, " ", "");
+            s = replaceAll(s, "forward", "f");
+            s = replaceAll(s, "back", "b");
+            s = replaceAll(s, "up", "u");
+            s = replaceAll(s, "down", "d");
+            s = replaceAll(s, "neutral", "n");
+            return s.trim();
+        }
+
+        //find character
+        let charfound = [];
+        let charfoundmid = [];
+        let nameinput = simplifyName(args[1]);
+        args[2] = args[2] || " ";
+
+        ssbu.forEach(char=>{
+            if (simplifyName(char.name) == nameinput) {
+                charfound.push(char);
+            } else if (simplifyName(char.name).indexOf(nameinput)>-1) {
+                charfoundmid.push(char)
+            }
+        })
+
+        function parseCharList(charfound) {
+            if (charfound.length == 1) return getMove(charfound[0], args[2]);
+            else if (charfound.length > 1) {
+                extraCommand[message.channel.id] = new CustomCommand(/^(\d+)$/, (message) => {
+                    var num = parseInt(message.content) - 1;
+                    if (num < charfound.length && num > -1) {
+                        message.channel.send.apply(message.channel, getMove(charfound[num], args[2])).catch(err);
+                        return true;
+                    }
+                    return false;
+                })
+                let msg = charfound.map((e, i) => {
+                    return `**${i + 1}**. ${e.name}`
+                }).join("\n");
+                let rich = new Discord.RichEmbed();
+                rich.setDescription(msg);
+                rich.setTitle("Choose your fighter")
+                return ["", rich];
+            }
+            return false;
+        }        
+
+        function getMove(char, move) {
+            let poslist = [];
+            let simplifiedinput = simplifyMove(move);
+            char.moves.forEach(move=>{
+                if (!move.movename) return;
+                //console.log(simplifyMove(move.movename),simplifiedinput)
+                if (simplifyMove(move.movename) == simplifiedinput) {
+                    poslist.push(move);
+                } else if (simplifyMove(move.movename).indexOf(simplifiedinput)>-1) {
+                    poslist.push(move)
+                }
+            })
+            if (poslist.length == 1) return [createMoveMessage(char, poslist[0])];
+            else if (poslist.length > 1) {
+                let data_array = poslist.map((v, i) => {
+                    return [v.movename, [createMoveMessage(char, v)]]
+                })
+                let rich = new Discord.RichEmbed({
+                    title: "Multiple moves found",
+                    description: createCustomNumCommand3(message, data_array)
+                })
+                return ["", { embed: rich }]
+            }
+            return "`Move not found`";
+        }
+
+        function createMoveMessage(char, move) {
+            let rich = new Discord.RichEmbed();
+            rich.setTitle(char.name)
+            let mes = Object.keys(move).filter(key=>{
+                if (key == "gifs" || key == "hitbox") return false;
+                if (move[key] == "" || move[key] == "--") return false
+                return true;
+            }).map((key) => {
+                return `**${key}**: ${move[key]}`
+            }).join("\n");
+            rich.setDescription(mes);
+            if (move.gifs!=null && move.gifs.length > 0) {
+                rich.setImage(move.gifs[0]);
+            }
+            rich.setFooter("Data from ultimateframedata.com")
+            return rich;
+        }
+
+        let msg = parseCharList(charfound) || parseCharList(charfoundmid) || "`Character not found`";
+        return msg;
+    }
+}))
+
 let sts = null;
 fs.readFile("./data/sts.json", 'utf8', function (e, data) {
     if (e) {

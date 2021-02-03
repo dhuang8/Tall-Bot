@@ -77,6 +77,79 @@ let globalvars = { bot, config, sql }
 module.exports = globalvars
 const Command = require('./utils/Command');
 
+
+const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
+    //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
+    ChartJS.defaults.global.legend.display = false;
+    ChartJS.defaults.global.legend.labels.fontStyle = "bold";
+    ChartJS.defaults.global.legend.labels.fontSize = 10;
+    ChartJS.defaults.global.showLines = true;
+    //ChartJS.defaults.global.spanGaps = true;
+    ChartJS.defaults.global.elements.line.tension = 0;
+    ChartJS.defaults.line.scales.xAxes[0].ticks = {
+        callback: (tick) => {
+            if (tick == "") return undefined;
+            return tick;
+        },
+        fontStyle: "bold",
+        fontSize: 10,
+        autoSkip: false,
+        maxRotation: 0
+    }
+    ChartJS.defaults.line.scales.yAxes[0].ticks = {
+        fontStyle: "bold",
+        fontSize: 10
+    }
+
+    let scatterScale = ChartJS.scaleService.getScaleConstructor('linear').extend ({
+        buildTicks: function() {
+            this.ticks = this.chart.config.data.labels;
+            this.ticksAsNumbers = this.chart.config.data.labels.map(label=>{
+                return label.tick;
+            })
+            this.zeroLineIndex = this.ticks.indexOf(0);
+        },        
+        convertTicksToLabels: function() {
+            this.ticks = this.chart.config.data.labels.map(label=>{
+                return label.label;
+            })
+        }
+    });
+    ChartJS.scaleService.registerScaleType('scatterScale', scatterScale, ChartJS.scaleService.getScaleDefaults("linear"));
+});
+
+function getDefaultConfiguration() {
+    return {
+        type: 'line',
+        data: {
+            datasets: [{
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                pointRadius: 0
+            }]
+        },
+        plugins: [annotation],
+        options: {
+            annotation: {
+                annotations: null
+            },
+            scales: {
+                xAxes: [],
+                yAxes: [{
+                    ticks: {
+                        fontStyle: "bold",
+                        fontSize: 10
+                    }
+                }]
+            }
+        }
+    };
+}
+
+function createChartStream(configuration) {
+    return canvasRenderService.renderToStream(configuration);
+}
+
 bot.on('guildCreate', (guild) => {
     try {
         let msg = `${moment().format('h:mma')} ${guild.name} (${guild.id}) guild joined.`;
@@ -319,7 +392,7 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-const last_update = "2020-11-11";
+const last_update = "2021-02-03";
 
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
@@ -2331,7 +2404,6 @@ commands.push(new Command({
     }
 }))
 
-
 commands.push(new Command({
     name: "pokemon",
     regex: /^(?:pokemon|pkmn) (.+)$/i,
@@ -2367,17 +2439,17 @@ rp("https://www.cryptocompare.com/api/data/coinlist/").then(body => {
 })
 
 commands.push(new Command({
-    name: "price",
-    regex: /^price(?: (\d*(?:\.\d+)?))? (\S+)(?: (\w+))?$/i,
+    name: "crypto",
+    regex: /^crypto(?: (\d*(?:\.\d+)?))? (\S+)(?: (\w+))?$/i,
     prefix: ".",
-    testString: ".price 10 btc cad",
+    testString: ".crypto 10 btc cad",
     req: () => { return coin; },
     hidden: false,
     requirePrefix: true,
     log: true,
     points: 1,
     shortDesc: "returns the exchange rate and graph of the price of a cryptocurrency",
-    longDesc: `.price [amount] (from_symbol) [to_symbol]
+    longDesc: `.crypto [amount] (from_symbol) [to_symbol]
 returns a 30 hour graph of the price of a cryptocurrency
 amount (optional) - the amount of from_symbol currency. Default is 1.
 from_symbol - the currency symbol you are exchanging from. ex: BTC
@@ -2398,7 +2470,6 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         let datapoints = res.Data.map(data => {
             return data.close;
         })
-
         let labels = res.Data.map(data => {
             let thisMoment = moment.tz(data.time * 1000, "America/New_York");
             if (thisMoment.minute() == 0 && thisMoment.hour() % 3 == 0) {
@@ -2439,11 +2510,7 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
                 }
             }
         };
-
-        let stream = createChartStream(configuration);
         let rich = new Discord.RichEmbed();
-        rich.attachFiles([{ attachment: stream, name: `chart.png` }])
-        rich.setImage(`attachment://chart.png`)
 
         body = await price_prom;
         res = JSON.parse(body);
@@ -2467,12 +2534,34 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
         }
         if (coin && coin.Data[to]) to += ` (${coin.Data[to].CoinName})`;
         let msg = `${fromsym} ${amt} ${from} = ${tosym} ${to_amt} ${to} (${updown}${pctchange}%)`;
-        //rich.setDescription(msg)
-        //rich.setFooter(msg,image)
+
+        let stream = createChartStream(configuration);
+        rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+        rich.setImage(`attachment://chart.png`)
         rich.setAuthor(msg, image);
         rich.setFooter("Time is in EDT, the only relevant timezone.");
 
         return rich;
+    }
+}))
+
+commands.push(new Command({
+    name: "price",
+    regex: /^price.*$/i,
+    prefix: ".",
+    testString: ".price",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "use .curr for foreign currencies, .stock for stocks, .crypto for cryptocurrency",
+    longDesc: {
+        title: `.price`,
+        description: `use .curr for foreign currencies, .stock for stocks, .crypto for cryptocurrency`
+    },
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) => {
+        return `\`use .curr for foreign currencies, .stock for stocks, .crypto for cryptocurrency\``
     }
 }))
 
@@ -2508,6 +2597,135 @@ to_symbol (optional) - the currency symbol you are exchanging to. Default is USD
             return `\`${amt} ${from} = ${Math.round(amt * rate * 1000000) / 1000000} ${to}\``
         }
         return "`Wrong format. .curr help for additional information`"
+    }
+}))
+
+commands.push(new Command({
+    name: "stock",
+    regex: /^stock ([\w\d]+)$/i,
+    prefix: ".",
+    testString: ".stock aapl",
+    hidden: false,
+    requirePrefix: true,
+    req: () => { return config.api.stock; },
+    shortDesc: ".returns price and chart of stock symbol",
+    longDesc: `.stock (symbol)
+returns price and chart of stock symbol`,
+    log: true,
+    points: 1,
+    run: async (message, args) => {
+        //https://iexcloud.io/console/usage
+        //https://iexcloud.io/docs/api/#historical-prices
+        let base = `https://cloud.iexapis.com/stable/`
+        let symbol = args[1]
+        let token = config.api.stock;
+
+        let response = await rp(`${base}ref-data/us/dates/trade/last/2?token=${token}`)
+        response = JSON.parse(response);
+        let promprice = rp(`${base}stock/${symbol}/quote?token=${token}`)
+        let promlist = [];
+        response.forEach(data => {
+            promlist.push(rp(`${base}stock/${symbol}/chart/date/${data.date.replace(/-/g, "")}?token=${token}&chartInterval=1`))
+        })
+        try {
+            response = await rp(`${base}stock/${symbol}/intraday-prices?token=${token}&chartInterval=1`)
+        } catch (e) {
+            if (e.error == "Unknown symbol") return `\`${e.error}\``;
+        }
+        console.log(123)
+        response = JSON.parse(response);
+        let stock_data = response;
+        let thisdate = stock_data.length > 0 ? stock_data[0].date : "";
+        for (let promnum = 1; promnum < promlist.length; promnum++) {
+            response = await promlist[promnum]
+            response = JSON.parse(response);
+            if (response[0].date == thisdate) {
+                continue;
+            }
+            stock_data = response.concat(stock_data);
+        }
+        stock_data = stock_data.map((data, index) => {
+            return {
+                close: data.close,
+                index: index,
+                time: moment.tz(`${data.date} ${data.minute}`, "YYYY-MM-DD HH:mm", "America/New_York")
+            }
+        })
+        let stock_price = JSON.parse(await promprice);
+        let horizontal = []
+        let labels = [];
+        let datapoints = [];
+        let previouspoint = stock_data[0].time;
+        let offset = 0;
+        stock_data.forEach((data, ind, arr) => {
+            if (previouspoint.date() != data.time.date()) {
+                offset += data.time.diff(previouspoint, "seconds")
+            }
+            if (!data.close) return;
+            datapoints.push({
+                x: data.time.unix() - offset,
+                y: data.close
+            })
+            if (data.time.minute() == 30 && data.time.hour() == 9) {
+                horizontal.push(data.time.unix() - offset);
+                labels.push({
+                    tick: data.time.unix() - offset,
+                    label: data.time.format("MMM D")
+                })
+            } else if (ind == arr.length - 1 && data.time.minute() == 59 && data.time.hour() == 15) {
+                labels.push({
+                    tick: data.time.unix() - offset,
+                    label: "4pm"
+                })
+            }
+            if (data.time.minute() == 0 && (data.time.hour() == 12 || data.time.hour() == 14)) {
+                labels.push({
+                    tick: data.time.unix() - offset,
+                    label: data.time.format("ha")
+                })
+            }
+            previouspoint = data.time;
+        })
+
+        let annotations = horizontal.map(label => {
+            return {
+                type: "line",
+                mode: "vertical",
+                scaleID: "x-axis-0",
+                value: label,
+                borderColor: 'rgba(255, 255, 255, 1)',
+                borderWidth: 1
+            }
+        })
+        //https://www.chartjs.org/docs/latest/configuration/
+        //console.log(datapoints)
+        //console.log(labels)
+        let configuration = getDefaultConfiguration();
+        configuration.type = 'line';
+        configuration.data.labels = labels;
+        configuration.data.datasets[0].data = datapoints
+        configuration.options.annotation.annotations = annotations;
+        configuration.options.scales.xAxes[0] = {type: "scatterScale"};
+        configuration.options.interaction = {mode: "point"};
+        configuration.options.scales.yAxes[0].ticks.callback = (value) => {
+            if (value % 1 == 0) {
+                return '$' + value
+            } else if (value < .01) {
+                return '$' + value;
+            }
+            return '$' + value.toFixed(2);
+        }
+
+        let stream = createChartStream(configuration);
+        let updown = "";
+        if (stock_price.change > 0) updown = "▲";
+        else if (stock_price.change < 0) updown = "▼";
+        let rich = new Discord.RichEmbed();
+        rich.setTitle(escapeMarkdownText(stock_price.companyName));
+        rich.setDescription(`${stock_price.symbol} $${stock_price.latestPrice} (${updown}${Math.abs(stock_price.change)}%)`);
+        rich.attachFiles([{ attachment: stream, name: `${stock_price.symbol}.png` }])
+        rich.setImage(`attachment://${stock_price.symbol}.png`)
+        return rich;
     }
 }))
 
@@ -4631,175 +4849,6 @@ returns the first gif search result. safesearch is off if the channel is nsfw.`,
     }
 }))
 
-function createChartStream(configuration) {
-    const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
-        //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
-        ChartJS.defaults.global.legend.display = false;
-        ChartJS.defaults.global.legend.labels.fontStyle = "bold";
-        ChartJS.defaults.global.legend.labels.fontSize = 10;
-        ChartJS.defaults.global.showLines = true;
-        ChartJS.defaults.global.elements.line.tension = 0;
-        ChartJS.defaults.line.scales.xAxes[0].ticks = {
-            callback: (tick) => {
-                if (tick == "") return undefined;
-                return tick;
-            },
-            fontStyle: "bold",
-            fontSize: 10,
-            autoSkip: false,
-            maxRotation: 0
-        }
-        ChartJS.defaults.line.scales.yAxes[0].ticks = {
-            fontStyle: "bold",
-            fontSize: 10
-        }
-    });
-    const chart = canvasRenderService.renderChart(configuration);
-    const canvas = chart.canvas;
-    let PNGStream = canvas.createPNGStream();
-    PNGStream.on("end", () => {
-        chart.destroy();
-    })
-    return PNGStream;
-}
-
-commands.push(new Command({
-    name: "stock",
-    regex: /^stock ([\w\d]+)$/i,
-    prefix: ".",
-    testString: ".stock aapl",
-    hidden: false,
-    requirePrefix: true,
-    req: () => { return config.api.stock; },
-    shortDesc: ".returns price and chart of stock symbol",
-    longDesc: `.stock (symbol)
-returns price and chart of stock symbol`,
-    log: true,
-    points: 1,
-    run: async (message, args) => {
-        //https://iexcloud.io/console/usage
-        //https://iexcloud.io/docs/api/#historical-prices
-        let base = `https://cloud.iexapis.com/stable/`
-        let symbol = args[1]
-        let token = config.api.stock;
-
-        let response = await rp(`${base}ref-data/us/dates/trade/last/2?token=${token}`)
-        response = JSON.parse(response);
-        let promprice = rp(`${base}stock/${symbol}/quote?token=${token}`)
-        let promlist = [];
-        response.forEach(data => {
-            promlist.push(rp(`${base}stock/${symbol}/chart/date/${data.date.replace(/-/g, "")}?token=${token}&chartInterval=1`))
-        })
-        response = await rp(`${base}stock/${symbol}/intraday-prices?token=${token}&chartInterval=1`)
-        response = JSON.parse(response);
-        let stock_data = response;
-        let thisdate = stock_data.length > 0 ? stock_data[0].date : "";
-        for (let promnum = 1; promnum < promlist.length; promnum++) {
-            response = await promlist[promnum]
-            response = JSON.parse(response);
-            if (response[0].date == thisdate) {
-                continue;
-            }
-            stock_data = response.concat(stock_data);
-        }
-        stock_data = stock_data.map((data, index) => {
-            return {
-                close: data.close,
-                index: index,
-                time: moment.tz(`${data.date} ${data.minute}`, "YYYY-MM-DD HH:mm", "America/New_York")
-            }
-        })
-        let stock_price = JSON.parse(await promprice);
-        let horizontal = []
-        let labels = stock_data.map((data, ind, arr) => {
-            if (data.time.minute() == 30 && data.time.hour() == 9) {
-                horizontal.push(data.time.format("MMM D"));
-                return data.time.format("MMM D")
-            } else if (ind == arr.length - 1 && data.time.minute() == 59 && data.time.hour() == 15) {
-                return "4pm"
-            }
-            if (data.time.minute() == 0 && (data.time.hour() == 12 || data.time.hour() == 14))
-                return data.time.format("ha");
-            return "";
-        })
-        let datapoints = stock_data.map((data) => {
-            return {
-                x: data.index,
-                y: data.close
-            }
-        }).filter(data => {
-            return data.y;
-        }).map(data => {
-            if (data.x < 700) data.x -= 100;
-            return data;
-        })
-        /*
-        datapoints = [
-            {x:0, y:100},
-            {x:800, y:102}
-        ]*/
-
-        //console.log(datapoints.slice(datapoints.length-100))
-
-        let annotations = horizontal.map(label => {
-            return {
-                type: "line",
-                mode: "vertical",
-                scaleID: "x-axis-0",
-                value: label,
-                borderColor: 'rgba(255, 255, 255, 1)',
-                borderWidth: 1
-            }
-        })
-        //https://www.chartjs.org/docs/latest/configuration/
-        const configuration = {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: datapoints,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1,
-                    pointRadius: 0
-                }]
-            },
-            plugins: [annotation],
-            options: {
-                annotation: {
-                    annotations: annotations
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            callback: (value) => {
-                                if (value % 1 == 0) {
-                                    return '$' + value
-                                } else if (value < .01) {
-                                    return '$' + value;
-                                }
-                                return '$' + value.toFixed(2);
-                            },
-                            fontStyle: "bold",
-                            fontSize: 10
-                        }
-                    }]
-                }
-            }
-        };
-
-        let stream = createChartStream(configuration);
-        let updown = "";
-        if (stock_price.change > 0) updown = "▲";
-        else if (stock_price.change < 0) updown = "▼";
-        let rich = new Discord.RichEmbed();
-        rich.setTitle(escapeMarkdownText(stock_price.companyName));
-        rich.setDescription(`${stock_price.symbol} $${stock_price.latestPrice} (${updown}${Math.abs(stock_price.change)}%)`);
-        rich.attachFiles([{ attachment: stream, name: `${stock_price.symbol}.png` }])
-        rich.setImage(`attachment://${stock_price.symbol}.png`)
-        return rich;
-    }
-}))
-
 commands.push(new Command({
     name: "news",
     regex: /^news(?: (.+))?$/i,
@@ -5029,6 +5078,10 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2021-02-03
+• added .ssbu
+• split .price to .curr, .stock, and .crypto
+
 2020-11-11
 • improved t7 search, I hope
 

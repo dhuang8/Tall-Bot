@@ -423,8 +423,8 @@ fs.readFile("./config.json", "utf8", (e, data) => {
             })
         })
         bot.login(config.token).catch(console.error);
-        new CronJob('0 0 0 * * 0', function () {
-            sql.prepare("UPDATE users SET points=points - points/20;").run();
+        new CronJob('0 0 0 1 * 0', function () {
+            sql.prepare("UPDATE users SET points=points*9/10;").run();
         }, null, true, 'America/New_York');
         if (config.weatherChannelID) {
             new CronJob('0 0 8 * * *', function () {
@@ -2632,11 +2632,10 @@ returns price and chart of stock symbol`,
         } catch (e) {
             if (e.error == "Unknown symbol") return `\`${e.error}\``;
         }
-        console.log(123)
         response = JSON.parse(response);
         let stock_data = response;
         let thisdate = stock_data.length > 0 ? stock_data[0].date : "";
-        for (let promnum = 1; promnum < promlist.length; promnum++) {
+        for (let promnum = 0; promnum < promlist.length; promnum++) {
             response = await promlist[promnum]
             response = JSON.parse(response);
             if (response[0].date == thisdate) {
@@ -2657,8 +2656,29 @@ returns price and chart of stock symbol`,
         let datapoints = [];
         let previouspoint = stock_data[0].time;
         let offset = 0;
+        function addLabelsForDate(time) {
+            let time2 = time.clone().hour(9).minute(30).seconds(0);
+            horizontal.push(time2.unix() - offset);
+            labels.push({
+                tick: time2.unix() - offset,
+                label: time2.format("MMM D")
+            })
+            time2.hour(12).minute(0).seconds(0);
+            if (time2.isSameOrAfter(time)) return;
+            labels.push({
+                tick: time2.unix() - offset,
+                label: time2.format("ha")
+            })
+            time2.hour(14).minute(0).seconds(0);
+            if (time2.isSameOrAfter(time)) return;
+            labels.push({
+                tick: time2.unix() - offset,
+                label: time2.format("ha")
+            })
+        }
         stock_data.forEach((data, ind, arr) => {
             if (previouspoint.date() != data.time.date()) {
+                addLabelsForDate(previouspoint)
                 offset += data.time.diff(previouspoint, "seconds")
             }
             if (!data.close) return;
@@ -2666,26 +2686,16 @@ returns price and chart of stock symbol`,
                 x: data.time.unix() - offset,
                 y: data.close
             })
-            if (data.time.minute() == 30 && data.time.hour() == 9) {
-                horizontal.push(data.time.unix() - offset);
-                labels.push({
-                    tick: data.time.unix() - offset,
-                    label: data.time.format("MMM D")
-                })
-            } else if (ind == arr.length - 1 && data.time.minute() == 59 && data.time.hour() == 15) {
-                labels.push({
-                    tick: data.time.unix() - offset,
-                    label: "4pm"
-                })
-            }
-            if (data.time.minute() == 0 && (data.time.hour() == 12 || data.time.hour() == 14)) {
-                labels.push({
-                    tick: data.time.unix() - offset,
-                    label: data.time.format("ha")
-                })
-            }
             previouspoint = data.time;
         })
+        addLabelsForDate(previouspoint)
+        let time2 = previouspoint.clone().hour(3).minute(59).seconds(0);
+        if (time2.isSameOrAfter(previouspoint)) {
+            labels.push({
+                tick: time2.unix() - offset,
+                label: "4pm"
+            })
+        }
 
         let annotations = horizontal.map(label => {
             return {
@@ -2698,8 +2708,6 @@ returns price and chart of stock symbol`,
             }
         })
         //https://www.chartjs.org/docs/latest/configuration/
-        //console.log(datapoints)
-        //console.log(labels)
         let configuration = getDefaultConfiguration();
         configuration.type = 'line';
         configuration.data.labels = labels;
@@ -5424,6 +5432,27 @@ commands.push(new Command({
     typing: false,
     run: (message, args) => {
         return "never";
+    }
+}))
+*/
+/*
+commands.push(new Command({
+    name: "based",
+    regex: /^based$/i,
+    prefix: "",
+    testString: "based",
+    hidden: true,
+    requirePrefix: false,
+    shortDesc: "",
+    longDesc: ``,
+    log: true,
+    points: 1,
+    typing: false,
+    run: async (message, args) => {
+        let responses = [];
+        responses.push(`"Based"? Are you fucking kidding me? I spent a decent portion of my life writing all of that and your response to me is "Based"? Are you so mentally handicapped that the only word you can comprehend is "Based" - or are you just some fucking asshole who thinks that with such a short response, he can make a statement about how meaningless what was written was? Well, I'll have you know that what I wrote was NOT meaningless, in fact, I even had my written work proof-read by several professors of literature. Don't believe me? I doubt you would, and your response to this will probably be "Based" once again. Do I give a fuck? No, does it look like I give even the slightest fuck about five fucking letters? I bet you took the time to type those five letters too, I bet you sat there and chuckled to yourself for 20 hearty seconds before pressing "send". You're so fucking pathetic. I'm honestly considering directing you to a psychiatrist, but I'm simply far too nice to do something like that. You, however, will go out of your way to make a fool out of someone by responding to a well-thought-out, intelligent, or humorous statement that probably took longer to write than you can last in bed with a chimpanzee. What do I have to say to you? Absolutely nothing. I couldn't be bothered to respond to such a worthless attempt at a response. Do you want "Based" on your gravestone?`)
+        responses.push(`Based? Based on what? In your dick? Please shut the fuck up and use words properly you fuckin troglodyte, do you think God gave us a freedom of speech just to spew random words that have no meaning that doesn't even correllate to the topic of the conversation? Like please you always complain about why no one talks to you or no one expresses their opinions on you because you're always spewing random shit like poggers based cringe and when you try to explain what it is and you just say that it's funny like what? What the fuck is funny about that do you think you'll just become a stand-up comedian that will get a standing ovation just because you said "cum" in the stage? HELL NO YOU FUCKIN IDIOT, so please shut the fuck up and use words properly you dumb bitch`)
+        return responses[parseInt(Math.random() * responses.length)];
     }
 }))
 */

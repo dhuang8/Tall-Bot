@@ -3334,7 +3334,6 @@ commands.push(new Command({
                 if (index % step == 0) return moment(date, "YYYYMMDD").format("MMM D");
                 return "";
             })
-        
             const configuration = {
                 type: 'line',
                 data: {
@@ -3367,7 +3366,7 @@ commands.push(new Command({
             rich.setTitle(state.name)
             rich.attachFiles([{ attachment: stream, name: `chart.png` }])
             rich.setImage(`attachment://chart.png`)
-            rich.setTitle(state.name);
+            rich.setTitle(`${state.name}, US`);
             return rich;
         }
         let country = covid_countries.find(country=>{
@@ -3414,9 +3413,9 @@ commands.push(new Command({
             let step = parseInt((dates.length-1) / 5);
 
             let labels = dates.map((date,index) => {
-                if (index == dates.length-1) return moment(date, "YYYYMMDD").format("MMM D");
+                if (index == dates.length-1) return moment(date, "DD-MM-YYYY").format("MMM D");
                 if (index > dates.length-step/2) return "";
-                if (index % step == 0) return moment(date, "YYYYMMDD").format("MMM D");
+                if (index % step == 0) return moment(date, "DD-MM-YYYY").format("MMM D");
                 return "";
             })
         
@@ -3438,19 +3437,18 @@ commands.push(new Command({
                     }
                 }
             };
-        
+            let current = await current_prom;
             let stream = createChartStream(configuration);
             let desc_lines = []
-            let current = await current_prom;
             desc_lines.push(`Total cases: ${parseInt(current.summary[0].cumulative_cases)}`)
-            desc_lines.push(`Total active: ${parseInt(current.summary[0].active_cases)}`)
+            desc_lines.push(`Active cases: ${parseInt(current.summary[0].active_cases)}`)
             if (current.recovered !=null) desc_lines.push(`Total recovered: ${parseInt(current.summary[0].cumalative_recovered)}`)
             if (current.death !=null) desc_lines.push(`Total deaths: ${parseInt(current.summary[0].cumalative_deaths)}`)
             desc_lines.push(`Yesterday new cases: ${parseInt(current.summary[0].cases)}`)
             desc_lines.push(`Yesterday deaths: ${parseInt(current.summary[0].deaths)}`)
             let rich = new Discord.RichEmbed()
             rich.setDescription(desc_lines.join("\n"));
-            rich.setTitle(province)
+            rich.setTitle(`${province}, Canada`)
             rich.attachFiles([{ attachment: stream, name: `chart.png` }])
             rich.setImage(`attachment://chart.png`)
             return rich;

@@ -5518,6 +5518,21 @@ commands.push(new Command({
 }))
 
 commands.push(new Command({
+    name: "gamerday",
+    regex: /^gamerday$/i,
+    prefix: ".",
+    testString: "gamerday",
+    hidden: true,
+    requirePrefix: true,
+    shortDesc: "",
+    longDesc: ``,
+    typing: false,
+    run: (message, args) => {
+        return `fuck you`;
+    }
+}))
+
+commands.push(new Command({
     name: "bad bot",
     regex: /^bad bot$/i,
     prefix: "",

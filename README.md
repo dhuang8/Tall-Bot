@@ -94,6 +94,14 @@ multiple conditions can be linked together using condition1&condition2&condition
 
 **.t7 aku block<10 & startup<15 & hitlevel>m** - returns moves that are < 10 on block, startup > 15, and begin with a mid
 
+## ssbu
+returns info on Super Smash Bros. Ultimate moves
+### .ssbu __character_name__ __move_name__
+#### character_name
+full or part of a character's name (no spaces)
+#### **move_name**
+name of the move
+
 ## sts
 .sts (card_name or relic_name)
 
@@ -114,8 +122,8 @@ return info on pokemon, moves, and abilities
 #### __search__
 search term for a pokemon name, move, or ability
 
-## price
-.price \[amount] (from_symbol) \[to_symbol]
+## crypto
+.crypto \[amount] (from_symbol) \[to_symbol]
 
 returns a 30 hour graph of the price of a cryptocurrency
 
@@ -134,6 +142,10 @@ amount (optional) - the amount of from_symbol currency. Default is 1.
 from_symbol - the currency symbol you are exchanging from. ex: CAD
 
 to_symbol (optional) - the currency symbol you are exchanging to. Default is USD.
+## stock
+.stock (symbol)
+
+returns price and chart of stock symbol
 ## yt
 returns or plays audio from YouTube video to a voice channel
 ### .yt __youtube link, id, or search term__
@@ -254,10 +266,6 @@ returns the first image result. safesearch is off if the channel is nsfw. add gi
 .gif (term)
 
 returns the first gif search result. safesearch is off if the channel is nsfw.
-## stock
-.stock (symbol)
-
-returns price and chart of stock symbol
 ## news
 returns news articles containing search term
 ### .news __search_term__

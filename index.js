@@ -127,4 +127,3 @@ client.once("ready", async ()=>{
 })
 
 client.login(config.token).catch(console.error);
-//client.login("NzA3NzQ3Mjc2MjUxOTg4MDk5.XrNTfA.4Kh9z6_BpNSF7auaIGizWlMfA5w").catch(console.error);

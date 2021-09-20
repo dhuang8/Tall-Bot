@@ -67,12 +67,12 @@ async function createSlashCommands() {
             if (guild_slash_commands[command.guild]) guild_slash_commands[command.guild].push(command.slash_command)
             else guild_slash_commands[command.guild] = [command.slash_command];
         } else {
-            client.application.commands.create(command.slash_command);
-            //global_slash_commands.push(command.slash_command);
+            //client.application.commands.create(command.slash_command);
+            global_slash_commands.push(command.slash_command);
         }
     });
     
-    //client.application.commands.set(global_slash_commands);
+    client.application.commands.set(global_slash_commands);
     for (let key in guild_slash_commands) {
         client.application.commands.set(guild_slash_commands[key],key);
     }

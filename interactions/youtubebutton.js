@@ -16,11 +16,12 @@ function escapeMarkdownText(str, noemotes = true) {
 module.exports = {
 	name: 'youtubebutton',
 	async execute(interaction) {
-        console.log(interaction);
         let args = interaction.customId.split("|")
         switch (args[0]){
             case "play":
+                console.log("args[1]",args[1])
                 let source = await yt.stream(args[1]);
+                console.log("source",source)
                 let audioResource = voice.createAudioResource(source.stream, {
                     inputType : source.type,
                     inlineVolume: true

@@ -43,24 +43,24 @@ module.exports = {
                     interaction.deferUpdate();
                     return;
                 }
-                const subscription = connection.subscribe(audioPlayer);
+                connection.subscribe(audioPlayer);
                 interaction.message.components[1].components[0].setPlaceholder(`Volume: 100%`)
                 interaction.update({content: interaction.message.content, components: interaction.message.components})
                 break;
             case "stop":
+                interaction.deferUpdate();
                 let connection2 = voice.getVoiceConnection(interaction.guildId);
                 connection2.destroy();
                 //audioPlayer.stop();
-                interaction.deferUpdate();
                 //leave
                 break;
             case "volume":
+                interaction.update({content: interaction.message.content, components: interaction.message.components})
                 let connection3 = voice.getVoiceConnection(interaction.guildId);
                 //console.log(connection2._state.subscription.player._state.resource)
                 let audioResource3 = connection3._state.subscription.player._state.resource;
                 audioResource3.volume.setVolume(.3*parseInt(interaction.values[0])/100);
                 interaction.message.components[1].components[0].setPlaceholder(`Volume: ${interaction.values[0]}%`)
-                interaction.update({content: interaction.message.content, components: interaction.message.components})
                 break;
         }
     }

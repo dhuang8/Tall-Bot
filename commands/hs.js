@@ -122,7 +122,7 @@ module.exports = new Command({
         } else if (cards.length == 1) {
             return cards[0].response;
         } else {
-            return MessageResponse.addList(interaction.channelID, cards);
+            return MessageResponse.addList(interaction.channelId, cards);
         }
     }
 });

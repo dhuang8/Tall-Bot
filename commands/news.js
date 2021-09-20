@@ -63,7 +63,7 @@ module.exports = new Command({
         } else if (desc.length < 1) {
             return "`No results found`";
         } else {
-            let rich = MessageResponse.addList(interaction.channelID, desc);
+            let rich = MessageResponse.addList(interaction.channelId, desc);
             rich.setTitle(`Recent News${interaction.options.data[0].value ? `: ${escapeMarkdownText(interaction.options.data[0].value)}` : ""}`);
             return rich;
         }

@@ -126,7 +126,7 @@ module.exports = new Command({
             }
         })
 
-        let msg = parseCharList(charfound, move_string, interaction.channelID) || parseCharList(charfoundmid, move_string, interaction.channelID) || "`Character not found`";
+        let msg = parseCharList(charfound, move_string, interaction.channelId) || parseCharList(charfoundmid, move_string, interaction.channelId) || "`Character not found`";
         return msg;
     }
 })

@@ -20,7 +20,8 @@ client.on('messageCreate', async (message) => {
         if (typeof msg == "string"){
             if (msg.length > 0) message.channel.send(msg);
             else console.error("Empty message");
-        } else message.channel.send({embeds: [msg]})
+        } else if (msg instanceof Discord.MessageEmbed) message.channel.send({embeds: [msg]})
+        else message.channel.send(response)
     } catch (e) {
         console.error(e);
     }
@@ -39,11 +40,11 @@ client.on('interactionCreate', async (interaction) => {
             else if (response instanceof Discord.MessageEmbed) interaction.reply({embeds: [response]})
             else interaction.reply(response)
         } else {
-            interaction.reply("`Error`");
+            if (!interaction.replied) interaction.reply("`Error`");
         }
     } catch (e) {
         console.error(e)
-        interaction.reply("`Error`");
+        if (!interaction.replied) interaction.reply("`Error`");
     }
 });
 

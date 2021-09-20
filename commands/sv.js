@@ -56,7 +56,7 @@ module.exports = new Command({
         } else if (list.length == 1) {
             return list[0].response;
         } else {
-            return MessageResponse.addList(interaction.channelID, list);
+            return MessageResponse.addList(interaction.channelId, list);
         }
 	}
 });

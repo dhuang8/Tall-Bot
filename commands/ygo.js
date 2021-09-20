@@ -99,7 +99,7 @@ module.exports = new Command({
         if (card_list.length == 1) {
             return card_list[0].execute();
         } else if (card_list.length > 1) {
-            return MessageResponse.addList(interaction.channelID, card_list);
+            return MessageResponse.addList(interaction.channelId, card_list);
         } else {
             return "`No cards found`";
         }

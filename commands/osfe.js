@@ -39,7 +39,7 @@ module.exports = new Command({
         } else if (results.length == 1) {
             return results[0].response();
         } else {
-            let rich = MessageResponse.addList(interaction.channelID, results);
+            let rich = MessageResponse.addList(interaction.channelId, results);
             rich.setTitle("Multiple results found")
             return rich;
         }

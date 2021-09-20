@@ -72,11 +72,10 @@ async function createSlashCommands() {
         }
     });
     
-    client.application.commands.set(global_slash_commands);
-    /*
+    //client.application.commands.set(global_slash_commands);
     for (let key in guild_slash_commands) {
         client.application.commands.set(guild_slash_commands[key],key);
-    }*/
+    }
 }
 
 let slash_commands = new Collection();

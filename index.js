@@ -56,7 +56,7 @@ async function clearSlashCommands() {
 }
 
 async function createSlashCommands() {
-    //let global_slash_commands = [];
+    let global_slash_commands = [];
     let guild_slash_commands = {};
     slash_commands.each(command=>{
         //console.log("create", command.slash_command);

@@ -56,23 +56,27 @@ async function clearSlashCommands() {
 }
 
 async function createSlashCommands() {
-    let global_slash_commands = [];
-    let guild_slash_commands = {};
+    //let global_slash_commands = [];
+    //let guild_slash_commands = {};
     slash_commands.each(command=>{
         //console.log("create", command.slash_command);
         if (config.test) {
             client.guilds.cache.get(config.guild_id).commands.create(command.slash_command);
         } else if (command.guild) {
+            client.application.commands.create(command.slash_command,command.guild);
+            /*
             if (guild_slash_commands[command.guild]) guild_slash_commands[command.guild].push(command.slash_command)
-            else guild_slash_commands[command.guild] = [command.slash_command];
+            else guild_slash_commands[command.guild] = [command.slash_command];*/
         } else {
-            global_slash_commands.push(command.slash_command);
+            client.application.commands.create(command.slash_command);
+            //global_slash_commands.push(command.slash_command);
         }
     });
+    /*
     client.application.commands.set(global_slash_commands);
     for (let key in guild_slash_commands) {
         client.application.commands.set(guild_slash_commands[key],key);
-    }    
+    }*/
 }
 
 let slash_commands = new Collection();

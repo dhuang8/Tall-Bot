@@ -31,8 +31,8 @@ client.on('interactionCreate', async (interaction) => {
     try {
         //todo differentiate between other interactions
         if (!interaction.isCommand() && !interaction.isContextMenu()) {
-            let response = await interaction_commands.get("youtubebutton")?.execute(interaction);
-            return response;
+            interaction_commands.get("youtubebutton")?.execute(interaction);
+            return;
         }
         let response = await slash_commands.get(interaction.commandName)?.execute(interaction);
         if (response != null) {

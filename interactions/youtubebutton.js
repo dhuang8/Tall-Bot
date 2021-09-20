@@ -58,7 +58,7 @@ module.exports = {
             case "volume":
                 let connection3 = voice.getVoiceConnection(interaction.guildId);
                 //console.log(connection2._state.subscription.player._state.resource)
-                let audioResource3 = connection3?._state?.subscription?.player?._state?.resource?;
+                let audioResource3 = connection3?._state?.subscription?.player?._state?.resource;
                 if (audioResource3) {
                     audioResource3.volume.setVolume(.3*parseInt(interaction.values[0])/100);
                     interaction.message.components[1].components[0].setPlaceholder(`Volume: ${interaction.values[0]}%`)

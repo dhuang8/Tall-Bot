@@ -9,10 +9,15 @@ module.exports = new Command({
     guild: config.guild_id,
     type: "CHAT_INPUT",
     admin: true,
-    options: [],
+    options: [{
+        name: 'terminal-command',
+        type: 'STRING',
+        description: 'command to run',
+        required: true,
+    }],
 	async execute(interaction) {
         return (new Promise((res, rej) => {
-            let cmdpart = args[1].split(" ")
+            let cmdpart = interaction.options.data[0].value.split(" ")
             execFile(cmdpart[0], cmdpart.slice(1), {cwd: __dirname}, (e, stdout, stderr) => {
                 if (e) {
                     rej(e)

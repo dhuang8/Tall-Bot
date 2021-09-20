@@ -24,14 +24,11 @@ module.exports = {
                     inputType : source.type,
                     inlineVolume: true
                 });
-                console.log("audioResource",audioResource)
                 audioResource.volume.setVolume(.3);
                 let audioPlayer = voice.createAudioPlayer();
                 audioPlayer.play(audioResource);
-                console.log("audioPlayer",audioPlayer)
                 
                 let connection = voice.getVoiceConnection(interaction.guildId);
-                console.log("connection",connection)
                 if (connection) {
                     if (connection.joinConfig.channelId != interaction.member?.voice.channel.id) connection = undefined;
                 }

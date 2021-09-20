@@ -88,7 +88,7 @@ fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).forEach(fi
 });
 
 client.once("ready", async ()=>{
-    await clearSlashCommands();
+    //await clearSlashCommands();
     client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``)
     createSlashCommands()
 })

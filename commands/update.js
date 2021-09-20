@@ -1,7 +1,7 @@
 "use strict";
 const Command = require('../util/Command');
 const config = require('../util/config');
-const execFileSync = require('child_process').execFileSync;
+const execFile = require('child_process').execFile;
 
 module.exports = new Command({
 	name: 'update',
@@ -10,7 +10,15 @@ module.exports = new Command({
     type: "CHAT_INPUT",
     admin: true,
     options: [],
-	execute(interaction) {
-        return execFileSync('git', ["pull", "https://github.com/dhuang8/Tall-Bot.git", "v4"])
+	async execute(interaction) {
+        return (new Promise((res, rej) => {
+            execFile('git', ["pull", "https://github.com/dhuang8/Tall-Bot", "v4"], (e, stdout, stderr) => {
+                if (e) {
+                    rej(e)
+                } else {
+                    res(`\`${stdout} ${stderr}\``);
+                }
+            })
+        }))
 	},
 });

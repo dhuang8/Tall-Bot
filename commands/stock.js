@@ -1,7 +1,5 @@
 "use strict";
 const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
 const {MessageEmbed} = require('discord.js');
 const fetch = require('node-fetch');
 const { CanvasRenderService } = require('chartjs-node-canvas');
@@ -217,8 +215,8 @@ module.exports = new Command({
         let rich = new MessageEmbed();
         rich.setTitle(escapeMarkdownText(stock_price.companyName));
         rich.setDescription(`${stock_price.symbol} $${stock_price.latestPrice} (${updown}${Math.abs(stock_price.change)}%)`);
-        rich.attachFiles([{ attachment: stream, name: `${stock_price.symbol}.png` }])
-        rich.setImage(`attachment://${stock_price.symbol}.png`)
-        return rich;
+        let file = new MessageAttachment(stream, `chart.png`);
+        rich.setImage(`attachment://chart.png`)
+        return {embeds: [rich], files: [file]};
     }
 })

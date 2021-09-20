@@ -2,7 +2,6 @@
 const Command = require('../util/Command');
 const MessageResponse = require('../util/MessageResponse');
 const fetch = require('node-fetch');
-const cheerio = require('cheerio');
 const {MessageEmbed} = require('discord.js');
 
 function escapeMarkdownText(str, noemotes = true) {

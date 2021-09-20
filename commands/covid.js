@@ -1,12 +1,9 @@
 "use strict";
 const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
 const {MessageEmbed, MessageAttachment} = require('discord.js');
 const fetch = require('node-fetch');
 const { CanvasRenderService } = require('chartjs-node-canvas');
 const moment = require('moment-timezone');
-const config = require('../util/config');
 const csv=require('csvtojson')
 
 //moment.tz.setDefault("America/New_York");
@@ -117,7 +114,7 @@ function getDefaultConfiguration(){
 }
 
 module.exports = new Command({
-	name: 'covid2',
+	name: 'covid',
     description: 'returns covid data for country or state/province',
     type: "CHAT_INPUT",
     options: [{
@@ -139,7 +136,6 @@ module.exports = new Command({
         required: true,
     }],
 	async execute(interaction) {
-        console.log(interaction.options.data);
         let state = covid_states.find(state=>{
             if (state.name.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;
             if (state.initial.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;
@@ -201,19 +197,11 @@ module.exports = new Command({
                     }
                 }]
         
-                let stream = createChartStream(chartconfig);/*
-                let desc_lines = []
-                desc_lines.push(`Total cases: ${current.cases}`)
-                desc_lines.push(`Total active: ${current.active}`)
-                desc_lines.push(`Total recovered: ${current.recovered}`)
-                desc_lines.push(`Total deaths: ${current.deaths}`)
-                desc_lines.push(`Yesterday new cases: ${active_cases[active_cases.length-1]}`)
-                desc_lines.push(`Yesterday deaths: ${history.deaths[dates[dates.length-1]]-history.deaths[dates[dates.length-2]]}`)*/
+                let stream = createChartStream(chartconfig);
                 let rich = new MessageEmbed()
-                //rich.setDescription(desc_lines.join("\n"));
-                rich.setTitle(state.name)
-                rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+                let file = new MessageAttachment(stream, `chart.png`);
                 rich.setImage(`attachment://chart.png`)
+                return {embeds: [rich], files: [file]};
                 return rich;
             } else if (interaction.options.data[0].value == "cases") {
                 let data = await fetch(`https://jhucoronavirus.azureedge.net/api/v1/timeseries/us/cases/${state.initial}.json`).then(res => res.json());
@@ -222,7 +210,6 @@ module.exports = new Command({
                 let infected = false;
                 let step = parseInt(Object.keys(data).length / 5);
                 Object.keys(data).forEach((key,index)=>{
-                    console.log(data[key]["7-day_avg"]);
                     if (!infected && data[key]["7-day_avg"] > 0) infected = true;
                     if (infected) {
                         let time = moment(key, "YYYY-MM-DD");
@@ -248,9 +235,9 @@ module.exports = new Command({
                 let stream = createChartStream(chartconfig);
                 let rich = new MessageEmbed()
                 rich.setTitle(state.name)
-                rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+                let file = new MessageAttachment(stream, `chart.png`);
                 rich.setImage(`attachment://chart.png`)
-                return rich;
+                return {embeds: [rich], files: [file]};
             }
         }
         let country = covid_countries.find(country=>{
@@ -326,7 +313,44 @@ module.exports = new Command({
                 rich.setTitle(country.name)
                 let file = new MessageAttachment(stream, `chart.png`);
                 rich.setImage(`attachment://chart.png`)
-                return {embeds: [rich], files: [file], full: true};
+                return {embeds: [rich], files: [file]};
+            } else {
+                let data = await fetch(`https://corona.lmao.ninja/v2/historical/${country.initial}?lastdays=all`).then(res=>res.json());
+                let active_cases = [];
+                let dates = Object.keys(data.timeline.cases)
+                let date_text = [];
+                
+                let infected = false;
+                let step = parseInt(dates.length / 5);
+                for (let i=1;i<dates.length;i++) {
+                    if (!infected && data.timeline.cases[dates[i+1]] > 0) infected = true;
+                    if (infected) {
+                        let time = moment(dates, "M/D/YY");
+                        let x = time.unix()/86400;
+                        active_cases.push({
+                            x,
+                            y: Math.max(data.timeline.cases[dates[i]]-data.timeline.cases[dates[i-1]],0)
+                        })
+                        if (index == dates.length-1) labels.push({tick: x , label: time.format("MMM D")});
+                        else if (index > dates.length-step/2) {}
+                        else if (index % step == 0) labels.push({tick: x,label:time.format("MMM D")});
+                    }
+                }
+                let chartconfig = getDefaultConfiguration();
+                chartconfig.data.labels = labels;
+                chartconfig.data.datasets = [{
+                    label: "new cases",
+                    data: active_cases,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    pointRadius: 0
+                }]
+                let stream = createChartStream(chartconfig);
+                let rich = new MessageEmbed()
+                rich.setTitle(country.name)
+                let file = new MessageAttachment(stream, `chart.png`);
+                rich.setImage(`attachment://chart.png`)
+                return {embeds: [rich], files: [file]};
             }
         }
         return "`Could not find country or state`";

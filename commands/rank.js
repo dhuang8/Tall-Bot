@@ -1,15 +1,7 @@
 "use strict";
 const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
 const {MessageAttachment} = require('discord.js');
-const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
-const moment = require('moment-timezone');
-const config = require('../util/config');
 const sql = require('../util/SQLite');
-
-moment.tz.setDefault("America/New_York");
 
 module.exports = new Command({
 	name: 'rank',
@@ -19,7 +11,6 @@ module.exports = new Command({
 	async execute(interaction) {
         let stmt = sql.prepare("SELECT rank FROM (SELECT ROW_NUMBER() OVER (ORDER BY points DESC) rank, user_id FROM users) WHERE user_id = ?;")
         let rank = stmt.get(interaction.user.id).rank
-        console.log(rank)
         let url = "";
         if (rank < 3) {
             url = "https://vignette.wikia.nocookie.net/sonic/images/a/a4/League_division_S.png";

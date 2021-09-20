@@ -2,7 +2,6 @@ const Command = require('../util/Command');
 const {MessageEmbed} = require('discord.js');
 const fetch = require('node-fetch');
 const MessageResponse = require('../util/MessageResponse');
-//const oauth2 = require('simple-oauth2')
 const config = require('../util/config');
 const { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } = require('simple-oauth2');
 

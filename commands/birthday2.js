@@ -1,17 +1,9 @@
 "use strict";
 const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
 const moment = require('moment-timezone');
-const config = require('../util/config');
-const {escapeMarkdownText} = require('../util/functions');
 const sql = require('../util/SQLite');
 
 moment.tz.setDefault("America/New_York");
-//sql.prepare(`ALTER TABLE tbl_name`
 
 module.exports = new Command({
 	name: 'getbirthday',

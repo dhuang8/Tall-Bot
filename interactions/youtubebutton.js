@@ -1,11 +1,5 @@
 "use strict";
-const Command = require('../util/Command');
-const fetch = require('node-fetch');
 const moment = require('moment-timezone');
-const config = require('../util/config');
-const ytdl = require('ytdl-core');
-const unescape = require('unescape');
-const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const voice = require('@discordjs/voice');
 const yt = require('play-dl');
 
@@ -44,6 +38,10 @@ module.exports = {
                         guildId: interaction.guildId,
                         adapterCreator: interaction.guild.voiceAdapterCreator,
                     })
+                }
+                if (!connection) {
+                    interaction.deferUpdate();
+                    return;
                 }
                 const subscription = connection.subscribe(audioPlayer);
                 interaction.message.components[1].components[0].setPlaceholder(`Volume: 100%`)

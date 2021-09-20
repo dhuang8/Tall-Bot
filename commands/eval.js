@@ -7,7 +7,7 @@ module.exports = new Command({
     description: 'evaluates JavaScript code',
     guild: config.guild_id,
     type: "CHAT_INPUT",
-    adimn: true,
+    admin: true,
     options: [{
         name: 'eval-string',
         type: 'STRING',

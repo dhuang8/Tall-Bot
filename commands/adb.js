@@ -21,7 +21,6 @@ function parseCardText(s) {
 }
 function createRich(card) {
     let cardanalytics;
-    //if (adbsql) cardanalytics = adbsql.prepare("select * from card where id=?").get(card.code);
     let rich = new MessageEmbed();
     rich.setTitle(card.name);
     if (card.url != null) rich.setURL(card.url)

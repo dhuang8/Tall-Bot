@@ -1,15 +1,9 @@
 "use strict";
 const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
 const {MessageAttachment} = require('discord.js');
 const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
-const moment = require('moment-timezone');
 const config = require('../util/config');
 const AbortController = require("abort-controller")
-
-moment.tz.setDefault("America/New_York");
 
 module.exports = new Command({
 	name: 'image',

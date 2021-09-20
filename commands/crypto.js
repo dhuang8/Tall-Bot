@@ -156,10 +156,11 @@ module.exports = new Command({
         let msg = `${fromsym} ${amt} ${from} = ${tosym} ${to_amt} ${to} (${updown}${pctchange}%)`;
 
         let stream = createChartStream(configuration);
-        rich.attachFiles([{ attachment: stream, name: `chart.png` }])
-        rich.setImage(`attachment://chart.png`)
         rich.setAuthor(msg, image);
         rich.setFooter("Time is in EDT, the only relevant timezone.");
+        let file = new MessageAttachment(stream, `chart.png`);
+        rich.setImage(`attachment://chart.png`)
+        return {embeds: [rich], files: [file]};
 
         return rich;
     }

@@ -166,8 +166,8 @@ module.exports = new Command({
         };
 
         let stream = createChartStream(configuration);
-        rich.attachFiles([{ attachment: stream, name: `chart.png` }])
+        let file = new MessageAttachment(stream, `chart.png`);
         rich.setImage(`attachment://chart.png`)
-        return rich;
+        return {embeds: [rich], files: [file]};
     }
 })

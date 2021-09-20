@@ -1,9 +1,6 @@
 "use strict";
 const Command = require('../util/Command');
 const fetch = require('node-fetch');
-const moment = require('moment-timezone');
-
-moment.tz.setDefault("America/New_York");
 
 module.exports = new Command({
 	name: 'currency',

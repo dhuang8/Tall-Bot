@@ -4,7 +4,6 @@ const moment = require('moment-timezone');
 
 class MessageResponse {
     constructor() {
-        console.log("created embed list")
         this.list = new Collection()
     }
     add(channel, run) {

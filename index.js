@@ -6,7 +6,7 @@ const MessageResponse = require('./util/MessageResponse');
 
 const Collection = Discord.Collection;
 const client = new Discord.Client({
-    intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGES, `GUILD_VOICE_STATES`]
+    intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_VOICE_STATES]
 });
 
 client.on('messageCreate', async (message) => {
@@ -18,10 +18,10 @@ client.on('messageCreate', async (message) => {
         }
         //check max length
         if (typeof msg == "string"){
-            if (msg.length > 0) message.channel.send(msg);
+            if (msg.length > 0) message.channel.send(msg).catch(err);
             else console.error("Empty message");
-        } else if (msg instanceof Discord.MessageEmbed) message.channel.send({embeds: [msg]})
-        else message.channel.send(response)
+        } else if (msg instanceof Discord.MessageEmbed) message.channel.send({embeds: [msg]}).catch(err);
+        else message.channel.send(response).catch(err);
     } catch (e) {
         console.error(e);
     }
@@ -31,27 +31,50 @@ client.on('interactionCreate', async (interaction) => {
     try {
         //todo differentiate between other interactions
         if (!interaction.isCommand() && !interaction.isContextMenu()) {
-            interaction_commands.get("youtubebutton")?.execute(interaction);
+            await interaction_commands.get("youtubebutton")?.execute(interaction);
             return;
         }
         let response = await slash_commands.get(interaction.commandName)?.execute(interaction);
         if (response != null) {
-            if (typeof response == "string") interaction.reply(response);
-            else if (response instanceof Discord.MessageEmbed) interaction.reply({embeds: [response]})
-            else interaction.reply(response)
+            if (typeof response == "string") {
+                let contents = Discord.Util.splitMessage(response,{maxLength: 9999});
+                interaction.reply(contents[0]).catch(err);
+                contents.slice(1).forEach(res=>{
+                    interaction.followUp(res).catch(err);
+                })
+            } else if (response instanceof Discord.MessageEmbed) interaction.reply({embeds: [response]})
+            else if (response instanceof Discord.MessageAttachment) interaction.reply({files: [response]})
+            else interaction.reply(response).catch(err);
         } else {
-            if (!interaction.replied) interaction.reply("`Error`");
+            if (!interaction.replied) interaction.reply("`Error`").catch(err);
         }
     } catch (e) {
+        err(e);
         console.error(e)
-        if (!interaction.replied) interaction.reply("`Error`");
+        if (!interaction.replied) interaction.reply("`Error`").catch(err);
     }
 });
 
+function err(error) {
+    if (config.channel_id) {
+        let contents = Discord.Util.splitMessage("```"+Discord.Util.escapeMarkdown(error.stack)+"```", {prepend: "```", append: "```"});
+        let channel = client.channels.resolve(config.channel_id)
+        contents.forEach(content=>{
+            channel?.send(content).catch(function (e) {
+                console.error(error.stack);
+                console.error(e.stack);
+                console.error("maybe missing bot channel");
+            })
+        })
+    } else {
+        console.error(error);
+    }
+}
+
 async function clearSlashCommands() {
-    await client.application.commands.set([]);
+    await client.application.commands.set([]).catch(err);
     await Promise.all(client.guilds.cache.map((guild)=>{
-        return guild.commands.set([]);
+        return guild.commands.set([]).catch(err);
     }));
 }
 
@@ -61,7 +84,9 @@ async function createSlashCommands() {
     slash_commands.each(command=>{
         //console.log("create", command.slash_command);
         if (config.test) {
-            client.guilds.cache.get(config.guild_id).commands.create(command.slash_command);
+            //client.guilds.cache.get(config.guild_id).commands.create(command.slash_command);
+            if (guild_slash_commands[config.guild_id]) guild_slash_commands[config.guild_id].push(command.slash_command)
+            else guild_slash_commands[config.guild_id] = [command.slash_command];
         } else if (command.guild) {
             //client.application.commands.create(command.slash_command,command.guild);
             if (guild_slash_commands[command.guild]) guild_slash_commands[command.guild].push(command.slash_command)
@@ -72,26 +97,29 @@ async function createSlashCommands() {
         }
     });
     
-    client.application.commands.set(global_slash_commands);
+    console.log("global commands",global_slash_commands.map(slash=>slash.name));
+    client.application.commands.set(global_slash_commands).catch(err);
     for (let key in guild_slash_commands) {
-        client.application.commands.set(guild_slash_commands[key],key);
+        console.log("guild commands",key,guild_slash_commands[key].map(slash=>slash.name));
+        client.application.commands.set(guild_slash_commands[key],key).catch(err);
     }
 }
 
 let slash_commands = new Collection();
 let interaction_commands = new Collection();
-console.log(fs.readdirSync('./commands'))
+//console.log(fs.readdirSync('./commands'))
 fs.readdirSync('./commands').filter(file => file.endsWith('.js')).forEach(file=>{
     const command = require(`./commands/${file}`);
     if (command.slash) slash_commands.set(command.name, command)
 });
-console.log(fs.readdirSync('./interactions'))
+//console.log(fs.readdirSync('./interactions'))
 fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).forEach(file=>{
     const command = require(`./interactions/${file}`);
-    interaction_commands.set(command.name, command)
+    interaction_commands.set(command.name, command);
 });
 
 client.once("ready", async ()=>{
+    console.log(`\`${process.platform} ready\``)
     //await clearSlashCommands();
     client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``)
     createSlashCommands()

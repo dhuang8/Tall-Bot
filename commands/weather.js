@@ -1,6 +1,6 @@
 "use strict";
 const Command = require('../util/Command');
-const {MessageEmbed} = require('discord.js');
+const {MessageEmbed, MessageAttachment} = require('discord.js');
 const fetch = require('node-fetch');
 const { CanvasRenderService } = require('chartjs-node-canvas');
 const moment = require('moment-timezone');

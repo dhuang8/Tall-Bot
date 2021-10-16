@@ -16,18 +16,10 @@ function escapeMarkdownText(str, noemotes = true) {
 module.exports = {
 	name: 'youtubebutton',
 	async execute(interaction) {
+        //interaction.deferUpdate();
         let args = interaction.customId.split("|")
         switch (args[0]){
             case "play":
-                let source = await yt.stream(args[1]);
-                let audioResource = voice.createAudioResource(source.stream, {
-                    inputType : source.type,
-                    inlineVolume: true
-                });
-                audioResource.volume.setVolume(.3);
-                let audioPlayer = voice.createAudioPlayer();
-                audioPlayer.play(audioResource);
-                
                 let connection = voice.getVoiceConnection(interaction.guildId);
                 if (connection) {
                     if (connection.joinConfig.channelId != interaction.member?.voice.channel.id) connection = undefined;
@@ -43,9 +35,25 @@ module.exports = {
                     interaction.deferUpdate();
                     return;
                 }
+
+                let audioPlayer = connection._state?.subscription?.player?.removeAllListeners();
+                if (audioPlayer) audioPlayer.stop();
+                else audioPlayer = voice.createAudioPlayer();
+                let source = await yt.stream(args[1]);
+                let audioResource = voice.createAudioResource(source.stream, {
+                    inputType : source.type,
+                    inlineVolume: true
+                });
+                audioResource.volume.setVolume(.3);
+                audioPlayer.play(audioResource);
+                audioPlayer.on("idle",()=>connection.destroy());
+
                 connection.subscribe(audioPlayer);
-                interaction.message.components[1].components[0].setPlaceholder(`Volume: 100%`)
-                interaction.update({content: interaction.message.content, components: interaction.message.components})
+                /*if (interaction.message.components[1].components[0].placeholder != `Volume: 100%`){
+                    interaction.message.components[1].components[0].setPlaceholder(`Volume: 100%`)
+                    interaction.update({content: interaction.message.content, components: interaction.message.components})
+                } else */
+                interaction.deferUpdate();
                 break;
             case "stop":
                 interaction.deferUpdate();
@@ -60,8 +68,9 @@ module.exports = {
                 let audioResource3 = connection3?._state?.subscription?.player?._state?.resource;
                 if (audioResource3) {
                     audioResource3.volume.setVolume(.3*parseInt(interaction.values[0])/100);
-                    interaction.message.components[1].components[0].setPlaceholder(`Volume: ${interaction.values[0]}%`)
-                    interaction.update({content: interaction.message.content, components: interaction.message.components})
+                    //interaction.message.components[1].components[0].setPlaceholder(`Volume: ${interaction.values[0]}%`)
+                    //interaction.update({content: interaction.message.content, components: interaction.message.components})
+                    interaction.deferUpdate()
                 }
                 break;
         }

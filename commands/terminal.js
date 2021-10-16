@@ -16,7 +16,6 @@ module.exports = new Command({
         required: true,
     }],
 	async execute(interaction) {
-        console.log(interaction.options.data)
         return (new Promise((res, rej) => {
             let cmdpart = interaction.options.data[0].value.split(" ")
             execFile(cmdpart[0], cmdpart.slice(1), {cwd: __dirname}, (e, stdout, stderr) => {

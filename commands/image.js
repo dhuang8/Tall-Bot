@@ -51,7 +51,7 @@ module.exports = new Command({
                         let mimeindex = validmime.indexOf(head.headers.get("content-type"));
                         if (mimeindex < 0 || parseInt(head.headers.get("content-length")) >= 8388608) continue;
                         let attach = new MessageAttachment(imagedata.link, `${encodeURIComponent(interaction.options.data[0].value)}${extension[mimeindex]}`);
-                        return attach;
+                        return {content: interaction.options.data[0].value, files: [attach]};
                     } catch (e) {
                         //let attach = new Discord.MessageAttachment(imagedata.image.thumbnailLink,`${encodeURIComponent(args[1])}${extension[validmime.indexOf(imagedata.mime)]}`);
                         //return attach;

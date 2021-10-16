@@ -1,4 +1,3 @@
 node_modules
-util/config.js
-util/config2.js
+util/config*.js
 data

@@ -318,22 +318,26 @@ module.exports = new Command({
                 let data = await fetch(`https://corona.lmao.ninja/v2/historical/${country.initial}?lastdays=all`).then(res=>res.json());
                 let active_cases = [];
                 let dates = Object.keys(data.timeline.cases)
-                let date_text = [];
+                let labels = [];
                 
                 let infected = false;
+                let start = 0;
                 let step = parseInt(dates.length / 5);
                 for (let i=1;i<dates.length;i++) {
-                    if (!infected && data.timeline.cases[dates[i+1]] > 0) infected = true;
+                    if (!infected && data.timeline.cases[dates[i]] > 0) {
+                        infected = true;
+                        start = i;
+                    }
                     if (infected) {
-                        let time = moment(dates, "M/D/YY");
+                        let time = moment(dates[i], "M/D/YY");
                         let x = time.unix()/86400;
                         active_cases.push({
                             x,
                             y: Math.max(data.timeline.cases[dates[i]]-data.timeline.cases[dates[i-1]],0)
                         })
-                        if (index == dates.length-1) labels.push({tick: x , label: time.format("MMM D")});
-                        else if (index > dates.length-step/2) {}
-                        else if (index % step == 0) labels.push({tick: x,label:time.format("MMM D")});
+                        if (i == dates.length-1) labels.push({tick: x , label: time.format("MMM D")});
+                        else if (i > dates.length-step/2) {}
+                        else if (i % step == start) labels.push({tick: x,label:time.format("MMM D")});
                     }
                 }
                 let chartconfig = getDefaultConfiguration();

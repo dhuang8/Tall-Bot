@@ -26,11 +26,16 @@ module.exports = new Command({
         let check = yt.yt_validate(interaction.options.data[0].value);
         if (!check) {
             let results = await yt.search(interaction.options.data[0].value, {limit: 1, type: "video"})
-            if (results.length < 1) return "`no videos found`"
+            if (results.length < 1) return "`Video not found`"
             video = results[0];
         } else {
-            video = await yt.video_basic_info(interaction.options.data[0].value)
+            try {
+                video = (await yt.video_basic_info(interaction.options.data[0].value))?.video_details;
+            } catch (e) {
+                return "`Video not found`"
+            }
         }
+        if (!video) return "`Video not found`"
         /*
         await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
         const subscription = connection.subscribe(audioPlayer);
@@ -56,7 +61,7 @@ module.exports = new Command({
         const row2 = new MessageActionRow().addComponents([
             new MessageSelectMenu()
                 .setCustomId('volume')
-                .setPlaceholder("Volume: 100%")
+                .setPlaceholder("Volume")
                 .addOptions(volumemenu),
         ])
 

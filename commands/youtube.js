@@ -56,8 +56,7 @@ module.exports = new Command({
                 .setCustomId('stop')
                 .setLabel('Stop')
                 .setStyle('SECONDARY'),
-            ]
-        );
+        ]);
         const row2 = new MessageActionRow().addComponents([
             new MessageSelectMenu()
                 .setCustomId('volume')

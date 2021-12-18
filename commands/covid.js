@@ -130,12 +130,13 @@ module.exports = new Command({
             value: "vaccine"
         }],
     },{
-        name: 'search-term',
+        name: 'location',
         type: 'STRING',
         description: 'country or state',
         required: true,
     }],
 	async execute(interaction) {
+        console.log(interaction.options.data[1].value);
         let state = covid_states.find(state=>{
             if (state.name.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;
             if (state.initial.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;

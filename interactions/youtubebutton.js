@@ -21,12 +21,13 @@ module.exports = {
         switch (args[0]){
             case "play":
                 let connection = voice.getVoiceConnection(interaction.guildId);
+                let user_channel_id = interaction.member?.voice?.channel?.id
                 if (connection) {
-                    if (connection.joinConfig.channelId != interaction.member?.voice.channel.id) connection = undefined;
+                    if (connection.joinConfig.channelId != user_channel_id) connection = undefined;
                 }
-                if (!connection) {
+                if (!connection && user_channel_id) {
                     connection = voice.joinVoiceChannel({
-                        channelId: interaction.member?.voice.channel.id,
+                        channelId: user_channel_id,
                         guildId: interaction.guildId,
                         adapterCreator: interaction.guild.voiceAdapterCreator,
                     })

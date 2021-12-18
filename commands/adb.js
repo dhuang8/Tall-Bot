@@ -62,7 +62,7 @@ module.exports = new Command({
             }
         })
         if (cardlist.length == 1) {
-            return list[0].response;
+            return cardlist[0].response;
         } else if (cardlist.length > 1) {
             return MessageResponse.addList(interaction.channelId, cardlist);
         } else {

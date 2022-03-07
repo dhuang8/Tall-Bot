@@ -19,6 +19,7 @@ constructor(data) {
 	this.type = data.type;
 	this.slash = true;
 	this.admin = data.admin ?? false;
+	this.ephemeral = data.ephemeral ?? (()=>{return false}); 
 }
 get slash_command() {
 	if (this.type == "CHAT_INPUT"){

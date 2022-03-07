@@ -36,7 +36,8 @@ client.on('interactionCreate', async (interaction) => {
             return;
         }
         if (slash_commands.get(interaction.commandName)) {
-            let defer = interaction.deferReply();
+            let isEphemeral = slash_commands.get(interaction.commandName).ephemeral(interaction);
+            let defer = interaction.deferReply({ephemeral: isEphemeral});
             try {
                 let response = await slash_commands.get(interaction.commandName)?.execute(interaction);
                 await defer;

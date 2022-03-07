@@ -25,6 +25,7 @@ function item_search(api_key, url, var_name, item_ids, is_character=false) {
             items.bags.forEach(bag=>{
                 if (bag) flatten = flatten.concat(bag.inventory);
             })
+            if (items.equipment) flatten = flatten.concat(items.equipment);
             items = flatten;
         }
         items.forEach(item => {
@@ -32,6 +33,7 @@ function item_search(api_key, url, var_name, item_ids, is_character=false) {
             let found = item_ids.find(item_id=>{
                 return item_id.id == item.id
             })
+            item.count = item.count ?? 1;
             if (found && item.count > 0) {
                 if (item.charges) var_name.push(`${item.count} ${found.name} (${item.charges})`);
                 else var_name.push(`${item.count} ${found.name}`);
@@ -121,6 +123,10 @@ export default new Command({
         type: "SUB_COMMAND",
         options: []
     }],
+    ephemeral(interaction) {
+        if (interaction.options.data[0].name == "key") return true;
+        return false;
+    },
 	async execute(interaction) {
         let embed;
         let api_key;

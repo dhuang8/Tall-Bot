@@ -224,6 +224,7 @@ export default new Command({
             let user = sql.prepare(`SELECT gw2key,gw2tracker FROM users WHERE user_id = ?`).get(interaction.user.id);
             api_key = user.gw2key;
             let eventsdone = [];
+            let dailylist = ["Drakkar", "Auric Basin", "Dragon Stand", "Tangled Depths", "New Kaineng City", "Seitung Province"]
             if (api_key != null) {
                 try {
                     let achievements = fetch(`https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,{
@@ -273,54 +274,17 @@ export default new Command({
                     if (lastseitung?.current != curseitung?.current) eventsdone.push("Seitung Province");
                     embed = new MessageEmbed();
                     embed.setTitle("Dailies")
-                    embed.setDescription(eventsdone.join("\n"));
+                    let desc = dailylist.map(daily=>{
+                        return (eventsdone.indexOf(daily) > -1) ? `~~${daily}~~` : daily
+                    })
+                    embed.setDescription(desc.join("\n"));
                     return embed;
                 } catch (e) {
                     console.log(e);
-                    //failed who cares
+                    return "`Error`";
                 }
             }
-
-            time = (new Date()).valueOf()/1000/60 % 120;
-            embed = new MessageEmbed();
-
-            let progresstext = timers.map(timer=>{
-                if ((time+120) < timer.end) {
-                    timer.start -= 120;
-                    timer.end -= 120;
-                } else if (timer.end < time) {
-                    timer.start += 120;
-                    timer.end += 120;
-                }
-                return timer;
-            }).filter(timer=>{
-                return timer.start < time;
-            }).sort((a,b)=>{
-                return a.end - b.end;
-            }).map(timer=>{
-                let line = `**${timer.name}** ending in ${Math.round(timer.end-time)} min`;
-                if (eventsdone.indexOf(timer.name) > -1) line = `~~${line}~~`;
-                return line;
-            }).join("\n");
-            embed.addField("**__In progress__**", progresstext)
-
-            let upcomingtext = timers.map(timer=>{
-                if (timer.start < time) {
-                    timer.start += 120;
-                    timer.end += 120;
-                }
-                return timer;
-            }).sort((a,b)=>{
-                return a.start - b.start;
-            }).map(timer=>{
-                let line = `**${timer.name}** starting in ${Math.round(timer.start-time)} min`
-                if (eventsdone.indexOf(timer.name) > -1) line = `~~${line}~~`;
-                return line;
-            }).join("\n");
-            embed.addField("**__Upcoming__**", upcomingtext)
-
-            embed.setTitle(`Timer`)
-            return embed;
+            return "`Missing API Key";
         } else if (interaction.options.data[0].name == "timer") {
             time = (new Date()).valueOf()/1000/60 % 120;
             embed = new MessageEmbed();

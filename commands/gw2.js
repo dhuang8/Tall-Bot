@@ -224,7 +224,7 @@ export default new Command({
             let user = sql.prepare(`SELECT gw2key,gw2tracker FROM users WHERE user_id = ?`).get(interaction.user.id);
             api_key = user.gw2key;
             let eventsdone = [];
-            let dailylist = ["Drakkar", "Auric Basin", "Dragon Stand", "Tangled Depths", "New Kaineng City", "Seitung Province"]
+            let dailylist = ["Drakkar", "Auric Basin", "Tangled Depths", "Dragon Stand", "Seitung Province", "New Kaineng City"]
             if (api_key != null) {
                 try {
                     let achievements = fetch(`https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,{

@@ -1,8 +1,7 @@
-"use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fetch = require('node-fetch');
-const {MessageEmbed} = require('discord.js');
+import fetch from 'node-fetch';
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import {MessageEmbed} from 'discord.js';
 
 function simplifyname(s) {
     s = s.replace(/ /g, "");
@@ -40,7 +39,7 @@ function createRich(card) {
 
 let ahdb;
 
-module.exports = new Command({
+export default new Command({
 	name: 'adb',
     description: 'returns Arkham Horror LCG card info',
     type: "CHAT_INPUT",

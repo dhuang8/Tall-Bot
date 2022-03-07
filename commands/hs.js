@@ -1,9 +1,9 @@
-const Command = require('../util/Command');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
-const MessageResponse = require('../util/MessageResponse');
-const config = require('../util/config');
-const { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } = require('simple-oauth2');
+import Command from '../util/Command.js';
+import {MessageEmbed} from 'discord.js';
+import fetch from 'node-fetch';
+import MessageResponse from '../util/MessageResponse.js';
+import config from '../util/config.js';
+import { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } from 'simple-oauth2';
 
 let token;
 let meta;
@@ -55,7 +55,7 @@ function cardRich(card, mode) {
     return rich;
 };
 
-module.exports = new Command({
+export default new Command({
 	name: 'hs',
     description: 'returns Hearthstone card data',
     type: "CHAT_INPUT",

@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fetch = require('node-fetch');
-const {MessageEmbed} = require('discord.js');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fetch from 'node-fetch';
+import {MessageEmbed} from 'discord.js';
 
 function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
@@ -67,7 +67,7 @@ function replaceIcons(text) {
     return text;
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'mtg',
     description: 'returns Magic the Gathering card info',
     type: "CHAT_INPUT",

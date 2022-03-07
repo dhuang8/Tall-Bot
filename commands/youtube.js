@@ -1,7 +1,7 @@
 "use strict";
-const Command = require('../util/Command');
-const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
-const yt = require('play-dl');
+import Command from '../util/Command.js';
+import { MessageActionRow, MessageButton, MessageSelectMenu } from 'discord.js';
+import yt from 'play-dl';
 
 function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
@@ -11,7 +11,7 @@ function escapeMarkdownText(str, noemotes = true) {
     }
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'youtube',
     description: 'play youtube video',
     type: "CHAT_INPUT",

@@ -1,9 +1,9 @@
 "use strict";
-const Command = require('../util/Command');
-const {MessageAttachment} = require('discord.js');
-const sql = require('../util/SQLite');
+import Command from '../util/Command.js';
+import {MessageAttachment} from 'discord.js';
+import sql from '../util/SQLite.js';
 
-module.exports = new Command({
+export default new Command({
 	name: 'rank',
     description: 'have a trophy',
     type: "CHAT_INPUT",

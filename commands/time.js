@@ -1,10 +1,10 @@
 "use strict";
-const Command = require('../util/Command');
-const moment = require('moment-timezone');
+import Command from '../util/Command.js';
+import moment from 'moment-timezone';
 
 moment.tz.setDefault("America/New_York");
 
-module.exports = new Command({
+export default new Command({
 	name: 'time',
     description: 'responds with the time at several time zones',
     type: "CHAT_INPUT",

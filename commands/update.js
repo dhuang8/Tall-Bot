@@ -1,9 +1,9 @@
 "use strict";
-const Command = require('../util/Command');
-const config = require('../util/config');
-const execFile = require('child_process').execFile;
+import Command from '../util/Command.js';
+import config from '../util/config.js';
+import {execFile} from 'child_process';
 
-module.exports = new Command({
+export default new Command({
 	name: 'update',
     description: 'updates the bot from github',
     guild: config.guild_id,

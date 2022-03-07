@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const fetch = require('node-fetch');
+import Command from '../util/Command.js';
+import fetch from 'node-fetch';
 
-module.exports = new Command({
+export default new Command({
 	name: 'currency',
     description: 'exchange rates for foreign currencies',
     type: "CHAT_INPUT",

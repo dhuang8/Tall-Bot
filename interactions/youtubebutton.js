@@ -1,7 +1,7 @@
 "use strict";
-const moment = require('moment-timezone');
-const voice = require('@discordjs/voice');
-const yt = require('play-dl');
+import moment from 'moment-timezone';
+const voice = import('@discordjs/voice');
+import yt from 'play-dl';
 
 moment.tz.setDefault("America/New_York");
 
@@ -13,7 +13,7 @@ function escapeMarkdownText(str, noemotes = true) {
     }
 }
 
-module.exports = {
+export default {
 	name: 'youtubebutton',
 	async execute(interaction) {
         //interaction.deferUpdate();

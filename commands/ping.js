@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const config = require('../util/config');
+import Command from '../util/Command.js';
+import config from '../util/config.js';
 
-module.exports = new Command({
+export default new Command({
 	name: 'ping',
 	description: 'Ping!2',
     type: "CHAT_INPUT",

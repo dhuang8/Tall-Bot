@@ -1,7 +1,7 @@
 "use strict";
-const Command = require('../util/Command');
+import Command from '../util/Command.js';
 
-module.exports = new Command({
+export default new Command({
 	name: 'roll',
     description: 'rolls dice',
     type: "CHAT_INPUT",

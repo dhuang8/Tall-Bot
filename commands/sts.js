@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
-const {MessageEmbed} = require('discord.js');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fs from 'fs';
+import {MessageEmbed} from 'discord.js';
 
 let sts;
 try {
@@ -12,7 +12,7 @@ try {
     console.error("Slay the Spire data not found");
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'sts',
     description: 'returns Slay the Spire card and relic info',
     type: "CHAT_INPUT",

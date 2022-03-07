@@ -1,11 +1,10 @@
-"use strict";
-const Command = require('../util/Command');
-const moment = require('moment-timezone');
-const sql = require('../util/SQLite');
+import Command from '../util/Command.js';
+import moment from 'moment-timezone';
+import sql from '../util/SQLite.js';
 
 moment.tz.setDefault("America/New_York");
 
-module.exports = new Command({
+export default new Command({
 	name: 'getbirthday',
     type: "USER",
 	async execute(interaction) {

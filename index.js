@@ -1,8 +1,9 @@
 "use strict";
-const Discord = require('discord.js');
-const fs = require('fs');
-const config = require('./util/config');
-const MessageResponse = require('./util/MessageResponse');
+import Discord from 'discord.js';
+import fs from 'fs';
+import config from './util/config.js';
+import MessageResponse from './util/MessageResponse.js';
+import cron from './util/gw2tracker.js';
 
 const Collection = Discord.Collection;
 const client = new Discord.Client({
@@ -34,24 +35,31 @@ client.on('interactionCreate', async (interaction) => {
             await interaction_commands.get("youtubebutton")?.execute(interaction);
             return;
         }
-        let response = await slash_commands.get(interaction.commandName)?.execute(interaction);
-        if (response != null) {
-            if (typeof response == "string") {
-                let contents = Discord.Util.splitMessage(response,{maxLength: 9999});
-                interaction.reply(contents[0]).catch(err);
-                contents.slice(1).forEach(res=>{
-                    interaction.followUp(res).catch(err);
-                })
-            } else if (response instanceof Discord.MessageEmbed) interaction.reply({embeds: [response]})
-            else if (response instanceof Discord.MessageAttachment) interaction.reply({files: [response]})
-            else interaction.reply(response).catch(err);
-        } else {
-            if (!interaction.replied) interaction.reply("`Error`").catch(err);
-        }
+        if (slash_commands.get(interaction.commandName)) {
+            let defer = interaction.deferReply();
+            try {
+                let response = await slash_commands.get(interaction.commandName)?.execute(interaction);
+                await defer;
+                if (typeof response == "string") {
+                    let contents = Discord.Util.splitMessage(response,{maxLength: 9999});
+                    interaction.followUp(contents[0]).catch(err);
+                    contents.slice(1).forEach(res=>{
+                        interaction.followUp(res).catch(err);
+                    })
+                } else if (response instanceof Discord.MessageEmbed) interaction.followUp({embeds: [response]})
+                else if (response instanceof Discord.MessageAttachment) interaction.followUp({files: [response]})
+                else interaction.followUp(response).catch(err);
+            } catch (e) {
+                await defer;
+                err(e);
+                interaction.followUp("`Error`").catch(err);
+            }
+        } else throw new Error("Missing command", interaction.commandName);
     } catch (e) {
         err(e);
         console.error(e)
-        if (!interaction.replied) interaction.reply("`Error`").catch(err);
+        if (interaction.deferred) interaction.followUp("`Error`").catch(err);
+        else interaction.reply("`Error`").catch(err);
     }
 });
 
@@ -109,20 +117,27 @@ let slash_commands = new Collection();
 let interaction_commands = new Collection();
 //console.log(fs.readdirSync('./commands'))
 fs.readdirSync('./commands').filter(file => file.endsWith('.js')).forEach(file=>{
-    const command = require(`./commands/${file}`);
-    if (command.slash) slash_commands.set(command.name, command)
+    import(`./commands/${file}`).then(command=>{
+        if (command.default.slash) slash_commands.set(command.default.name, command.default)
+    }).catch(e=>{
+        console.log(`could not load ${file} ${e}`)
+    });
 });
 //console.log(fs.readdirSync('./interactions'))
 fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).forEach(file=>{
-    const command = require(`./interactions/${file}`);
-    interaction_commands.set(command.name, command);
+    import(`./interactions/${file}`).then(command=>{
+        interaction_commands.set(command.default.name, command.default)
+    }).catch(e=>{
+        console.log(`could not load ${file} ${e}`);
+    });
 });
 
 client.once("ready", async ()=>{
     console.log(`\`${process.platform} ready\``)
     //await clearSlashCommands();
-    client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``)
-    createSlashCommands()
+    client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``);
+    createSlashCommands();
+    new cron(client);
 })
 
 client.login(config.token).catch(console.error);

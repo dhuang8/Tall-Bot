@@ -1,11 +1,11 @@
 "use strict";
-const Command = require('../util/Command');
-const {MessageAttachment} = require('discord.js');
-const fetch = require('node-fetch');
-const config = require('../util/config');
-const AbortController = require("abort-controller")
+import Command from '../util/Command.js';
+import {MessageAttachment} from 'discord.js';
+import fetch from 'node-fetch';
+import config from '../util/config.js';
+import AbortController from "abort-controller";
 
-module.exports = new Command({
+export default new Command({
 	name: 'image',
     description: 'image search',
     type: "CHAT_INPUT",

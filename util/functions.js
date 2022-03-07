@@ -31,4 +31,4 @@ f = {
         return a;
     },
 }
-module.exports = f;
+export default f;

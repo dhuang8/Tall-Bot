@@ -1,41 +1,68 @@
 "use strict";
-const Command = require('../util/Command');
-const {MessageEmbed, MessageAttachment} = require('discord.js');
-const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
-const moment = require('moment-timezone');
-const csv=require('csvtojson')
+import Command from '../util/Command.js';
+import {MessageEmbed, MessageAttachment} from 'discord.js';
+import fetch from 'node-fetch';
+import {ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import moment from 'moment-timezone';
+import csv from 'csvtojson';
 
 //moment.tz.setDefault("America/New_York");
 
 function createChartStream(configuration) {
     return canvasRenderService.renderToStream(configuration);
 }
-
-const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
+//const canvasRenderService = new ChartJSNodeCanvas({width: 400, height: 225});
+const canvasRenderService = new ChartJSNodeCanvas({width: 400, height: 225, chartCallback: (ChartJS) => {
     //const canvasRenderService = new CanvasRenderService(729, 410, (ChartJS) => {
-    ChartJS.defaults.global.legend.display = false;
-    ChartJS.defaults.global.legend.labels.fontStyle = "bold";
-    ChartJS.defaults.global.legend.labels.fontSize = 10;
-    ChartJS.defaults.global.showLines = true;
-    //ChartJS.defaults.global.spanGaps = true;
-    ChartJS.defaults.global.elements.line.tension = 0;
-    ChartJS.defaults.line.scales.xAxes[0].ticks = {
-        callback: (tick) => {
-            if (tick == "") return undefined;
-            return tick;
-        },
-        fontStyle: "bold",
-        fontSize: 10,
-        autoSkip: false,
-        maxRotation: 0
+    ChartJS.overrides.line.showLine = true;
+    ChartJS.overrides.line.spanGaps = true;
+    ChartJS.defaults.plugins.legend.display = true;
+    ChartJS.defaults.animation = false;
+    ChartJS.defaults.plugins.legend.labels.font = {
+        weight: "bold",
+        size: 10
     }
-    ChartJS.defaults.line.scales.yAxes[0].ticks = {
-        fontStyle: "bold",
-        fontSize: 10
+    ChartJS.defaults.showLine = true;
+    ChartJS.defaults.spanGaps = true;
+    ChartJS.defaults.elements.line.tension = 1;
+    ChartJS.defaults.scales.linear.x = {
+        ticks: {
+            callback: (tick) => {
+                if (tick == "") return undefined;
+                return tick;
+            },
+            font: {
+                weight: 700,
+                size: 40
+            }
+        }
+    }
+    ChartJS.defaults.scales.scatterScale={
+        y: {
+            ticks: {
+                font: ()=>{
+                    return {
+                        weight: 700,
+                        size: 40
+                    }
+                }
+            }
+        }
     }
 
-    let scatterScale = ChartJS.scaleService.getScaleConstructor('linear').extend ({
+    class ScatterScale extends ChartJS.LinearScale {
+        buildTicks() {
+            return this.chart.config.data.labels;
+        }       
+        generateTickLabels() {
+            return this.chart.config.data.labels;
+        }
+    }
+    ScatterScale.id = "scatterScale";
+    ScatterScale.defaults = ChartJS.defaults.scales.linear;
+//    console.log(ChartJS.defaults.scales);
+/*
+    let scatterScale = ChartJS.defaults.scales.linear.extend ({
         buildTicks: function() {
             this.ticks = this.chart.config.data.labels;
             this.ticksAsNumbers = this.chart.config.data.labels.map(label=>{
@@ -49,8 +76,9 @@ const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
             })
         }
     });
-    ChartJS.scaleService.registerScaleType('scatterScale', scatterScale, ChartJS.scaleService.getScaleDefaults("linear"));
-});
+    ChartJS.scaleService.registerScaleType('scatterScale', scatterScale, ChartJS.scaleService.getScaleDefaults("linear"));*/
+    ChartJS.register(ScatterScale)
+}});
 
 let covid_countries = [];
 let covid_states = [];
@@ -103,17 +131,30 @@ function getDefaultConfiguration(){
         },
         options: {
             scales:{
-                xAxes: [{type: "scatterScale"}]
+                x: {
+                    type: "scatterScale",
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
             },
             legend: {
                 display: true
             }
         },
-        interaction: {mode: "point"}
     };
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'covid',
     description: 'returns covid data for country or state/province',
     type: "CHAT_INPUT",
@@ -136,7 +177,6 @@ module.exports = new Command({
         required: true,
     }],
 	async execute(interaction) {
-        console.log(interaction.options.data[1].value);
         let state = covid_states.find(state=>{
             if (state.name.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;
             if (state.initial.toLowerCase() === interaction.options.data[1].value.toLowerCase()) return true;
@@ -170,9 +210,9 @@ module.exports = new Command({
                             y: row.people_fully_vaccinated_per_hundred
                         })
                     }
-                    if (index == jsondata.length-1) labels.push({tick: x , label: time.format("MMM D")});
+                    if (index == jsondata.length-1) labels.push({value: x , label: time.format("MMM D")});
                     else if (index > jsondata.length-step/2) {}
-                    else if (index % step == 0) labels.push({tick: x,label: time.format("MMM D")});
+                    else if (index % step == 0) labels.push({value: x,label: time.format("MMM D")});
                     //else labels.push({x,y:""});
                 })
                 let chartconfig = getDefaultConfiguration();
@@ -190,13 +230,13 @@ module.exports = new Command({
                     borderWidth: 2,
                     pointRadius: 0
                 })
-                chartconfig.options.scales.yAxes = [{
+                chartconfig.options.scales.y = {
                     ticks: {
                         callback: (value) => {
                             return value + "%";
                         }
                     }
-                }]
+                }
         
                 let stream = createChartStream(chartconfig);
                 let rich = new MessageEmbed()
@@ -219,9 +259,9 @@ module.exports = new Command({
                             x,
                             y: data[key]["7-day_avg"]
                         })
-                        if (index == Object.keys(data).length-1) labels.push({tick: x , label: time.format("MMM D")});
+                        if (index == Object.keys(data).length-1) labels.push({value: x , label: time.format("MMM D")});
                         else if (index > Object.keys(data).length-step/2) {}
-                        else if (index % step == 0) labels.push({tick: x,label:time.format("MMM D")});
+                        else if (index % step == 0) labels.push({value: x,label:time.format("MMM D")});
                     }
                 })
                 let chartconfig = getDefaultConfiguration();
@@ -255,6 +295,7 @@ module.exports = new Command({
                 })
                 let vaccinated = [];
                 let fullyvaccinated = [];
+                let boosters = [];
                 let step = parseInt(jsondata.length / 5);
                 let labels = [];
 
@@ -273,9 +314,15 @@ module.exports = new Command({
                             y: row.people_fully_vaccinated_per_hundred
                         })
                     }
-                    if (index == jsondata.length-1) labels.push({tick: x , label: time.format("MMM D")});
+                    if (row.total_boosters_per_hundred){
+                        boosters.push({
+                            x,
+                            y: row.total_boosters_per_hundred
+                        })
+                    }
+                    if (index == jsondata.length-1) labels.push({value: x , label: time.format("MMM D")});
                     else if (index > jsondata.length-step/2) {}
-                    else if (index % step == 0) labels.push({tick: x,label: time.format("MMM D")});
+                    else if (index % step == 0) labels.push({value: x,label: time.format("MMM D")});
                     //else labels.push({x,y:""});
                 })
                 let chartconfig = getDefaultConfiguration();
@@ -284,33 +331,31 @@ module.exports = new Command({
                     label: "vaccinated",
                     data: vaccinated,
                     borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 2,
+                    borderWidth: 3,
                     pointRadius: 0
                 },{
                     label: "fully vaccinated",
                     data: fullyvaccinated,
                     borderColor: 'rgba(99, 132, 255, 1)',
-                    borderWidth: 2,
+                    borderWidth: 3,
+                    pointRadius: 0
+                },{
+                    label: "boosters",
+                    data: boosters,
+                    borderColor: 'rgba(132, 255, 99, 1)',
+                    borderWidth: 3,
                     pointRadius: 0
                 })
-                chartconfig.options.scales.yAxes = [{
-                    ticks: {
-                        callback: (value) => {
-                            return value + "%";
-                        }
-                    }
-                }]
-        
-                let stream = createChartStream(chartconfig);/*
+                chartconfig.options.scales.y.ticks.callback = (value) => {
+                    return value + "%";
+                }
+                let stream = createChartStream(chartconfig);
                 let desc_lines = []
-                desc_lines.push(`Total cases: ${current.cases}`)
-                desc_lines.push(`Total active: ${current.active}`)
-                desc_lines.push(`Total recovered: ${current.recovered}`)
-                desc_lines.push(`Total deaths: ${current.deaths}`)
-                desc_lines.push(`Yesterday new cases: ${active_cases[active_cases.length-1]}`)
-                desc_lines.push(`Yesterday deaths: ${history.deaths[dates[dates.length-1]]-history.deaths[dates[dates.length-2]]}`)*/
+                desc_lines.push(`**Vaccinated:** ${vaccinated[vaccinated.length-1].y}%`)
+                desc_lines.push(`**Fully vaccinated:** ${fullyvaccinated[fullyvaccinated.length-1].y}%`)
+                desc_lines.push(`**Booster:** ${boosters[boosters.length-1].y}%`)
                 let rich = new MessageEmbed()
-                //rich.setDescription(desc_lines.join("\n"));
+                rich.setDescription(desc_lines.join("\n"));
                 rich.setTitle(country.name)
                 let file = new MessageAttachment(stream, `chart.png`);
                 rich.setImage(`attachment://chart.png`)
@@ -336,9 +381,9 @@ module.exports = new Command({
                             x,
                             y: Math.max(data.timeline.cases[dates[i]]-data.timeline.cases[dates[i-1]],0)
                         })
-                        if (i == dates.length-1) labels.push({tick: x , label: time.format("MMM D")});
+                        if (i == dates.length-1) labels.push({value: x , label: time.format("MMM D")});
                         else if (i > dates.length-step/2) {}
-                        else if (i % step == start) labels.push({tick: x,label:time.format("MMM D")});
+                        else if (i % step == start) labels.push({value: x,label:time.format("MMM D")});
                     }
                 }
                 let chartconfig = getDefaultConfiguration();

@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const fs = require('fs');
-const MessageResponse = require('../util/MessageResponse');
-const {MessageEmbed} = require('discord.js');
+import Command from '../util/Command.js';
+import fs from 'fs';
+import MessageResponse from '../util/MessageResponse.js';
+import {MessageEmbed} from 'discord.js';
 
 let t7;
 try {
@@ -267,7 +267,7 @@ function createMoveMessage(char, move) {
     */
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'tekken7',
     description: 'returns Tekken 7 frame data',
     type: "CHAT_INPUT",

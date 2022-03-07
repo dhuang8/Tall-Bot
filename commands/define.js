@@ -1,7 +1,7 @@
 "use strict";
-const Command = require('../util/Command');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
+import Command from '../util/Command.js';
+import {MessageEmbed} from 'discord.js';
+import fetch from 'node-fetch';
 
 function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
@@ -11,7 +11,7 @@ function escapeMarkdownText(str, noemotes = true) {
     }
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'define',
     description: 'urban dictionary',
     type: "CHAT_INPUT",

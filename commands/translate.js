@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const translate = require('@vitalets/google-translate-api');
+import Command from '../util/Command.js';
+import translate from '@vitalets/google-translate-api';
 
-module.exports = new Command({
+export default new Command({
 	name: 'translate',
     description: 'translate a string to english',
     type: "CHAT_INPUT",

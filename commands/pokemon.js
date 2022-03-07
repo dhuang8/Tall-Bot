@@ -1,9 +1,9 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fs from 'fs';
+import {MessageEmbed} from 'discord.js';
+import fetch from 'node-fetch';
 
 let pkmn;
 try {
@@ -180,7 +180,7 @@ function createPokemonEmbed(embed, pokedex) {
     return rich
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'pokemon',
     description: 'returns Pokemon, moves, etc',
     type: "CHAT_INPUT",

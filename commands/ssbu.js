@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fs = require('fs');
-const {MessageEmbed} = require('discord.js');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fs from 'fs';
+import {MessageEmbed} from 'discord.js';
 
 function simplifyName(s) {
     s = s.toLowerCase();
@@ -96,7 +96,7 @@ try {
     console.error("SSBU data not found");
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'ssbu',
     description: 'returns Super Smash Bros Ult frame data',
     type: "CHAT_INPUT",

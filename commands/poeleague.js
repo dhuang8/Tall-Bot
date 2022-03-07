@@ -1,9 +1,9 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fetch = require('node-fetch');
-const moment = require('moment-timezone');
-const sql = require('../util/SQLite');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fetch from 'node-fetch';
+import moment from 'moment-timezone';
+import sql from '../util/SQLite.js';
 
 moment.tz.setDefault("America/New_York");
 
@@ -26,7 +26,7 @@ fetch("https://www.pathofexile.com/api/trade/data/leagues",{
     });
 })
 
-module.exports = new Command({
+export default new Command({
 	name: 'setpoeleague',
     description: 'sets the poe league for /poetrade search',
     type: "CHAT_INPUT",

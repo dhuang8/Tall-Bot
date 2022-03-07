@@ -1,8 +1,8 @@
 "use strict";
-const Command = require('../util/Command');
-const config = require('../util/config');
+import Command from '../util/Command.js';
+import config from '../util/config.js';
 
-module.exports = new Command({
+export default new Command({
 	name: 'eval',
     description: 'evaluates JavaScript code',
     guild: config.guild_id,

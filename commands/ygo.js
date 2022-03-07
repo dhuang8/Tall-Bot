@@ -1,7 +1,7 @@
-const Command = require('../util/Command');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
-const MessageResponse = require('../util/MessageResponse');
+import Command from '../util/Command.js';
+import {MessageEmbed} from 'discord.js';
+import fetch from 'node-fetch';
+import MessageResponse from '../util/MessageResponse.js';
 
 function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
@@ -74,7 +74,7 @@ function cardRich(card) {
     return rich;
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'ygo',
     description: 'returns Yu-Gi-Oh card info',
     type: "CHAT_INPUT",
@@ -97,7 +97,7 @@ module.exports = new Command({
         })
 
         if (card_list.length == 1) {
-            return card_list[0].execute();
+            return card_list[0].response;
         } else if (card_list.length > 1) {
             return MessageResponse.addList(interaction.channelId, card_list);
         } else {

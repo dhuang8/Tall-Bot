@@ -1,7 +1,6 @@
-"use strict";
-const Command = require('../util/Command');
-const moment = require('moment-timezone');
-const sql = require('../util/SQLite');
+import Command from '../util/Command.js';
+import moment from 'moment-timezone';
+import sql from '../util/SQLite.js';
 
 moment.tz.setDefault("America/New_York");
 
@@ -20,7 +19,7 @@ try {
     sql.prepare(`ALTER TABLE users ADD COLUMN birthday TEXT`).run()
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'birthday',
     description: 'birthday',
     type: "CHAT_INPUT",

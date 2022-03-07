@@ -1,10 +1,10 @@
 "use strict";
-const Command = require('../util/Command');
+import Command from '../util/Command.js';
 const {MessageEmbed, MessageAttachment} = require('discord.js');
-const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
-const moment = require('moment-timezone');
-const config = require('../util/config');
+import fetch from 'node-fetch';
+import { CanvasRenderService } from 'chartjs-node-canvas';
+import moment from 'moment-timezone';
+import config from '../util/config.js';
 
 moment.tz.setDefault("America/New_York");
 
@@ -57,7 +57,7 @@ const canvasRenderService = new CanvasRenderService(400, 225, (ChartJS) => {
     ChartJS.scaleService.registerScaleType('scatterScale', scatterScale, ChartJS.scaleService.getScaleDefaults("linear"));
 });
 
-module.exports = new Command({
+export default new Command({
 	name: 'weather',
     description: 'returns weather forecast of a location',
     type: "CHAT_INPUT",

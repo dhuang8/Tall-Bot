@@ -1,9 +1,9 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const {MessageEmbed, Message} = require('discord.js');
-const fetch = require('node-fetch');
-const unescape = require('unescape');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import {MessageEmbed, Message} from 'discord.js';
+import fetch from 'node-fetch';
+import unescape from 'unescape';
 
 function escapeMarkdownText(str, noemotes = true) {
     if (noemotes) {
@@ -13,7 +13,7 @@ function escapeMarkdownText(str, noemotes = true) {
     }
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'poewiki',
     description: 'search path of exile wiki',
     type: "CHAT_INPUT",

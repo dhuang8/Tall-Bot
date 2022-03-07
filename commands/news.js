@@ -1,13 +1,13 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const {MessageEmbed} = require('discord.js');
-const fetch = require('node-fetch');
-const config = require('../util/config');
-const {escapeMarkdownText} = require('../util/functions');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import {MessageEmbed} from 'discord.js';
+import fetch from 'node-fetch';
+import config from '../util/config.js';
+import {escapeMarkdownText} from '../util/functions.js';
 //var HttpsProxyAgent = require('https-proxy-agent');
 
-module.exports = new Command({
+export default new Command({
 	name: 'news',
     description: 'search news articles',
     type: "CHAT_INPUT",

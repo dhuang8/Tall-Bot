@@ -1,6 +1,6 @@
 "use strict";
-const {Collection, MessageEmbed} = require('discord.js');
-const moment = require('moment-timezone');
+import {Collection, MessageEmbed} from 'discord.js';
+import moment from 'moment-timezone';
 
 class MessageResponse {
     constructor() {
@@ -43,4 +43,4 @@ class MessageResponse {
     }
 }
 
-module.exports = new MessageResponse();
+export default new MessageResponse();

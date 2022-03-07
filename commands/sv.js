@@ -1,12 +1,12 @@
 "use strict";
-const Command = require('../util/Command');
-const MessageResponse = require('../util/MessageResponse');
-const fetch = require('node-fetch');
-const cheerio = require('cheerio');
-const {MessageEmbed} = require('discord.js');
-const {escapeMarkdownText, htmldecode} = require('../util/functions');
+import Command from '../util/Command.js';
+import MessageResponse from '../util/MessageResponse.js';
+import fetch from 'node-fetch';
+import cheerio from 'cheerio';
+import {MessageEmbed} from 'discord.js';
+import {escapeMarkdownText, htmldecode} from '../util/functions.js';
 
-module.exports = new Command({
+export default new Command({
 	name: 'sv',
     description: 'returns shadowverse card info',
     type: "CHAT_INPUT",

@@ -1,10 +1,10 @@
 "use strict";
-const Command = require('../util/Command');
-const {MessageEmbed,MessageAttachment} = require('discord.js');
-const fetch = require('node-fetch');
-const { CanvasRenderService } = require('chartjs-node-canvas');
-const config = require('../util/config');
-const moment = require('moment-timezone');
+import Command from '../util/Command.js';
+import {MessageEmbed,MessageAttachment} from 'discord.js';
+import fetch from 'node-fetch';
+import { CanvasRenderService } from 'chartjs-node-canvas';
+import config from '../util/config.js';
+import moment from 'moment-timezone';
 //const annotation = require('chartjs-plugin-annotation');
 
 moment.tz.setDefault("America/New_York");
@@ -89,7 +89,7 @@ function createChartStream(configuration) {
     return canvasRenderService.renderToStream(configuration);
 }
 
-module.exports = new Command({
+export default new Command({
 	name: 'stock',
     description: 'returns price and chart of a stock',
     type: "CHAT_INPUT",

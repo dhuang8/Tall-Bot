@@ -117,6 +117,12 @@ export default new Command({
         type: "SUB_COMMAND",
         options: []
     },{
+        name: 'daily',
+        type: 'STRING',
+        description: 'checks which dailies you\'ve done',
+        type: "SUB_COMMAND",
+        options: []
+    },{
         name: 'timer',
         type: 'STRING',
         description: 'displays upcoming metas',
@@ -244,8 +250,6 @@ export default new Command({
                     daily = await daily;
                     worldboss = await worldboss;
                     mapchest = await mapchest;
-
-                    console.log(worldboss)
                     
                     if (worldboss.indexOf("drakkar") > -1) eventsdone.push("Drakkar");
                     if (mapchest.indexOf("tangled_depths_heros_choice_chest") > -1) eventsdone.push("Tangled Depths");
@@ -259,7 +263,6 @@ export default new Command({
                     let curkaineng = achievements.find(achievement => {
                         return achievement.id == 6385
                     });
-                    console.log(lastkaineng, curkaineng)
                     if (lastkaineng?.current != curkaineng?.current) eventsdone.push("New Kaineng City");
                     let lastseitung = lastachievements.find(achievement => {
                         return achievement.id == 6409
@@ -267,8 +270,11 @@ export default new Command({
                     let curseitung = achievements.find(achievement => {
                         return achievement.id == 6409
                     });
-                    console.log(lastseitung, curseitung)
                     if (lastseitung?.current != curseitung?.current) eventsdone.push("Seitung Province");
+                    embed = new MessageEmbed();
+                    embed.setTitle("Dailies")
+                    embed.setDescription(eventsdone.join("\n"));
+                    return embed;
                 } catch (e) {
                     console.log(e);
                     //failed who cares

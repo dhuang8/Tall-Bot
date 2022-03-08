@@ -95,7 +95,7 @@ class gw2tracker {
                     console.error(e)
                 }
             })
-        }, null, true);
+        }, null, true, "UTC");
         job.start();
         
         var job2 = new CronJob('00 */5 * * * *', function() {
@@ -103,7 +103,7 @@ class gw2tracker {
             channels.forEach(channel=>{
                 client.channels.resolve(channel.channel_id).messages.edit(channel.gw2timer, {embeds: [getTimer()]})/5;
             })
-        }, null, true);
+        }, null, true, "UTC");
         job2.start();
     }
 }

@@ -80,7 +80,7 @@ function getTimer (){
 class gw2tracker {
     constructor(client) {
         this.client = client;
-        var job = new CronJob('00 00 00 * * *', function() {
+        var job = new CronJob('00 46 00 * * *', function() {
             let api_keys = sql.prepare(`SELECT user_id, gw2key FROM users WHERE gw2key IS NOT NULL;`).all();
             let stmt = sql.prepare(`UPDATE users SET gw2tracker=? WHERE user_id=?`);
             api_keys.forEach(async (user)=>{
@@ -90,7 +90,7 @@ class gw2tracker {
                             Authorization: `Bearer ${user.gw2key}`
                         }
                     }).then(res => res.text());
-                    stmt.run(achievements, user.gw2key);
+                    stmt.run(achievements, user);
                 } catch (e) {
                     console.error(e)
                 }

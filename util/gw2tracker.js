@@ -80,17 +80,17 @@ function getTimer (){
 class gw2tracker {
     constructor(client) {
         this.client = client;
-        var job = new CronJob('00 46 00 * * *', function() {
-            let api_keys = sql.prepare(`SELECT user_id, gw2key FROM users WHERE gw2key IS NOT NULL;`).all();
+        var job = new CronJob('00 50 00 * * *', function() {
+            let users = sql.prepare(`SELECT user_id, gw2key FROM users WHERE gw2key IS NOT NULL;`).all();
             let stmt = sql.prepare(`UPDATE users SET gw2tracker=? WHERE user_id=?`);
-            api_keys.forEach(async (user)=>{
+            users.forEach(async (user)=>{
                 try {
                     let achievements = await fetch(`https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,{
                         headers: {
                             Authorization: `Bearer ${user.gw2key}`
                         }
                     }).then(res => res.text());
-                    stmt.run(achievements, user);
+                    stmt.run(achievements, user.user_id);
                 } catch (e) {
                     console.error(e)
                 }

@@ -8,36 +8,54 @@ function getTimer (){
     let timers = [{
         name: "Drakkar",
         start: 65,
-        end: 100
+        end: 100,
+        wp: "[&BDkMAAA=]"
     },{
         name: "Dragonstorm",
         start: 60,
-        end: 80
+        end: 80,
+        wp: "[&BAkMAAA=]"
     },{
         name: "Echovald Forest",
         start: 30,
-        end: 65
+        end: 65,
+        wp: "[&BMwMAAA=]"
     },{
         name: "Seitung Province",
         start: 90,
-        end: 120
+        end: 120,
+        wp: "[&BGUNAAA=]"
     },{
         name: "New Kaineng City",
         start: 0,
-        end: 30
+        end: 30,
+        wp: "[&BBkNAAA=]"
     },{
         name: "Dragon's End prep",
         start: 0,
-        end: 60
+        end: 60,
+        wp: "[&BKIMAAA=]"
     },{
         name: "Dragon's End",
         start: 60,
-        end: 120
-    }/*,{
-        name: "Dragonfall",
-        start: 90,
-        end: 180
-    }*/]
+        end: 120,
+        wp: "[&BKIMAAA=]"
+    },{
+        name: "Auric Basin",
+        start: 60,
+        end: 80,
+        wp: "[&BAIIAAA=]"
+    },{
+        name: "Tangled Depths",
+        start: 30,
+        end: 50,
+        wp: "[&BPUHAAA=]"
+    },{
+        name: "Death-Branded Shatterer",
+        start: 75,
+        end: 90,
+        wp: "[&BJMLAAA=]"
+    }]
     let time = (new Date()).valueOf()/1000/60 % 120;
     let embed = new MessageEmbed();
     
@@ -55,7 +73,7 @@ function getTimer (){
     }).sort((a,b)=>{
         return a.end - b.end;
     }).map(timer=>{
-        let line = `**${timer.name}** ending in ${Math.round(timer.end-time)} min`;
+        let line = `\`${timer.wp}\` **${timer.name}** ending in ${Math.round(timer.end-time)} min`;
         return line;
     }).join("\n");
     embed.addField("**__In progress__**", progresstext)
@@ -69,7 +87,7 @@ function getTimer (){
     }).sort((a,b)=>{
         return a.start - b.start;
     }).map(timer=>{
-        let line = `**${timer.name}** starting in ${Math.round(timer.start-time)} min`
+        let line = `\`${timer.wp}\` **${timer.name}** starting in ${Math.round(timer.start-time)} min`
         return line;
     }).join("\n");
     embed.addField("**__Upcoming__**", upcomingtext);
@@ -101,7 +119,7 @@ class gw2tracker {
         var job2 = new CronJob('00 */5 * * * *', function() {
             let channels = sql.prepare(`SELECT channel_id, gw2timer FROM channels WHERE gw2timer IS NOT NULL;`).all();
             channels.forEach(channel=>{
-                client.channels.resolve(channel.channel_id).messages.edit(channel.gw2timer, {embeds: [getTimer()]})/5;
+                client.channels.resolve(channel.channel_id).messages.edit(channel.gw2timer, {embeds: [getTimer()]});
             })
         }, null, true, "UTC");
         job2.start();

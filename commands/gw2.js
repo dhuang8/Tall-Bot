@@ -224,7 +224,7 @@ export default new Command({
             let user = sql.prepare(`SELECT gw2key,gw2tracker FROM users WHERE user_id = ?`).get(interaction.user.id);
             api_key = user.gw2key;
             let eventsdone = [];
-            let dailylist = ["Drakkar", "Auric Basin", "Tangled Depths", "Dragon Stand", "Seitung Province", "New Kaineng City"]
+            let dailylist = ["Drakkar", "Verdant Brink", "Auric Basin", "Tangled Depths", "Dragon Stand", "Seitung Province", "New Kaineng City"]
             if (api_key != null) {
                 try {
                     let achievements = fetch(`https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,{
@@ -252,10 +252,15 @@ export default new Command({
                     worldboss = await worldboss;
                     mapchest = await mapchest;
                     
-                    if (worldboss.indexOf("drakkar") > -1) eventsdone.push("Drakkar");
+                    if (mapchest.indexOf("verdant_brink_heros_choice_chest") > -1) eventsdone.push("Verdant Brink");
                     if (mapchest.indexOf("tangled_depths_heros_choice_chest") > -1) eventsdone.push("Tangled Depths");
                     if (mapchest.indexOf("auric_basin_heros_choice_chest") > -1) eventsdone.push("Auric Basin");
                     if (mapchest.indexOf("dragons_stand_heros_choice_chest") > -1) eventsdone.push("Dragon Stand");
+                    if (mapchest.indexOf("crystal_oasis_heros_choice_chest") > -1) eventsdone.push("Crystal Oasis");
+                    if (mapchest.indexOf("elon_riverlands_heros_choice_chest") > -1) eventsdone.push("Elon Riverlands");
+                    if (mapchest.indexOf("the_desolation_heros_choice_chest") > -1) eventsdone.push("Desolation");
+                    if (mapchest.indexOf("domain_of_vabbi_heros_choice_chest") > -1) eventsdone.push("Domain of Vabbi");
+                    if (worldboss.indexOf("drakkar") > -1) eventsdone.push("Drakkar");
 
                     let lastachievements = JSON.parse(user.gw2tracker);
                     let lastkaineng = lastachievements.find(achievement => {

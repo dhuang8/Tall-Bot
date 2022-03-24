@@ -55,6 +55,11 @@ function getTimer (){
         start: 75,
         end: 90,
         wp: "[&BJMLAAA=]"
+    },{
+        name: "Verdant Brink",
+        start: 10,
+        end: 30,
+        wp: "[&BAgIAAA=]"
     }]
     let time = (new Date()).valueOf()/1000/60 % 120;
     let embed = new MessageEmbed();

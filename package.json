@@ -12,7 +12,7 @@
     "@vitalets/google-translate-api": "^2.9.0",
     "better-sqlite3": "^7.1.1",
     "bufferutil": "^4.0.1",
-    "canvas": "^2.6.1",
+    "canvas": "^2.8.0",
     "chartjs-node-canvas": "^3.0.6",
     "chartjs-plugin-annotation": "^0.5.7",
     "cheerio": "^1.0.0-rc.3",
@@ -33,6 +33,5 @@
     "ytdl-core": "^4.3.0",
     "zlib-sync": "^0.1.7"
   },
-  "devDependencies": {},
   "description": ""
 }

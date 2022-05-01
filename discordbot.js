@@ -1236,7 +1236,7 @@ commands.push(new Command({
                 return card.multiverseid !== undefined;
             })]
         } else {
-            response = await rp(`https://api.magicthegathering.io/v1/cards?name=${encodeURIComponent(args[1])}&orderBy=name`)
+            response = await rp(`https://api.magicthegathering.io/v1/cards?name=${encodeURIComponent(args[1])}`)
             response = JSON.parse(response);
         }
         let card_list = {}
@@ -5380,13 +5380,13 @@ returns the time converted to different time zones. can be anywhere in a message
                 inputTime.add(1, 'days');
             }
         }
-        let msg = "`" + inputTime.valueOf() + "\n" + inputTime.fromNow() + "\n";
-
+        let msg = `<t:${inputTime.unix()}>`;
+/*
         msg = msg + fullZones2.map(zone => {
             return inputTime.tz(zone).format('ddd, MMM Do YYYY, h:mma z');
         }).join("\n")
 
-        msg += "`";
+        msg += "`";*/
         return msg;
     }
 }))

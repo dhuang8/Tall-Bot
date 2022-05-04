@@ -4,6 +4,7 @@ import fs from 'fs';
 import config from './util/config.js';
 import MessageResponse from './util/MessageResponse.js';
 import cron from './util/gw2tracker.js';
+import birthdayschedule from './schedule/birthday.js';
 
 const Collection = Discord.Collection;
 const client = new Discord.Client({
@@ -47,8 +48,8 @@ client.on('interactionCreate', async (interaction) => {
                     contents.slice(1).forEach(res=>{
                         interaction.followUp(res).catch(err);
                     })
-                } else if (response instanceof Discord.MessageEmbed) interaction.followUp({embeds: [response]})
-                else if (response instanceof Discord.MessageAttachment) interaction.followUp({files: [response]})
+                } else if (response instanceof Discord.MessageEmbed) interaction.followUp({embeds: [response]}).catch(err);
+                else if (response instanceof Discord.MessageAttachment) interaction.followUp({files: [response]}).catch(err);
                 else interaction.followUp(response).catch(err);
             } catch (e) {
                 await defer;
@@ -139,6 +140,7 @@ client.once("ready", async ()=>{
     client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``);
     createSlashCommands();
     new cron(client);
+    new birthdayschedule(client);
 })
 
 client.login(config.token).catch(console.error);

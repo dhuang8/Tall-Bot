@@ -28,6 +28,7 @@ function item_search(api_key, url, var_name, item_ids, is_character=false) {
             if (items.equipment) flatten = flatten.concat(items.equipment);
             items = flatten;
         }
+        if (!items.forEach) return;
         items.forEach(item => {
             if (item == null) return;
             let found = item_ids.find(item_id=>{
@@ -181,11 +182,13 @@ export default new Command({
             let shared_inventory = [];
             let bank = [];
             let materials = [];
+            let trading_post = [];
             let character_inventory = {};
             let promises = [
                 item_search(api_key, `https://api.guildwars2.com/v2/account/inventory`, shared_inventory, item_ids),
                 item_search(api_key, `https://api.guildwars2.com/v2/account/bank`, bank, item_ids),
                 item_search(api_key, `https://api.guildwars2.com/v2/account/materials`, materials, item_ids),
+                item_search(api_key, `https://api.guildwars2.com/v2/commerce/delivery`, trading_post, item_ids),
             ]
             //characters
             /*
@@ -213,10 +216,12 @@ export default new Command({
             })
             await Promise.all(promises);
             embed = new MessageEmbed();
-            if (bank.length > 0) embed.addField("Bank", bank.join("\n"));
-            if (materials.length > 0) embed.addField("Material Storage", materials.join("\n"));
+            if (shared_inventory.length > 0) embed.addField("Shared Inventory", shared_inventory.join("\n").slice(0,1024));
+            if (bank.length > 0) embed.addField("Bank", bank.join("\n").slice(0,1024));
+            if (materials.length > 0) embed.addField("Material Storage", materials.join("\n").slice(0,1024));
+            if (trading_post.length > 0) embed.addField("Trading Post", trading_post.join("\n").slice(0,1024));
             Object.keys(character_inventory).forEach(character=>{
-                if (character_inventory[character].length > 0) embed.addField(character, character_inventory[character].join("\n"));
+                if (character_inventory[character].length > 0) embed.addField(character, character_inventory[character].join("\n").slice(0,1024));
             });
             embed.setTitle(`Item search - ${interaction.options.data[0].options[0].value}`)
             return embed;

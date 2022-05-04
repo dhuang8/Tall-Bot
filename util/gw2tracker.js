@@ -51,9 +51,9 @@ function getTimer (){
         end: 50,
         wp: "[&BPUHAAA=]"
     },{
-        name: "Death-Branded Shatterer",
-        start: 75,
-        end: 90,
+        name: "Dragon Stand",
+        start: 90,
+        end: 155,
         wp: "[&BJMLAAA=]"
     },{
         name: "Verdant Brink",

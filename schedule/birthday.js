@@ -9,13 +9,13 @@ import {MessageEmbed} from 'discord.js';
 class birthdayschedule {
     constructor(client) {
         this.client = client;
-        var job = new CronJob('0 0 0 * * *', function() {
+        var job = new CronJob('0 0 14 * * *', function() {
             let users = sql.prepare(`SELECT user_id FROM users WHERE birthday LIKE ?`).all(`%${moment().format("-MM-DD")}`);
             users.forEach(user=>{
                 //temp
-                client.channels.resolve("536325719425286147").send(`Happy birthday <@${user.user_id}>`);
+                client.channels.resolve("113049258172637184").send(`Happy birthday <@${user.user_id}>`);
             })
-        }, null, true, "America/Los_Angeles");
+        }, null, true, "UTC");
         job.start();
     }
 }

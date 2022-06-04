@@ -392,7 +392,7 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-const last_update = "2021-02-03";
+const last_update = "2021-05-28";
 
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
@@ -5084,36 +5084,9 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
-2021-02-03
-• added .ssbu
-• split .price to .curr, .stock, and .crypto
-
-2020-11-11
-• improved t7 search, I hope
-
-2020-09-07
-• fixed .yt error with certain searh strings. added .gif and .ahdb
-
-2020-07-05
-• auto quote messages that contain a message link
-
-2020-05-25
-• .yts will refer to .yt if a YouTube URL is detected
-• Fixed YouTube playback issues
-• Removed .gundam, .sc6, and soon alexa play
-• Added .egs
-
-2020-05-07
-• switched .t7 to gifs. They look worse but it keeps the messages cleaner.
-• added battleground cards to .hs
-• added newest set to .lor
-
-2020-04-22
-• improved YouTube audio playback
-• alexa play and .yt both work with search terms and YouTube URLs. They also do the same thing. 
-
-2020-04-09
-• added .osfe/eden and .covid commands
+2022-05-28
+• time parsing switched to discord local time
+• fixed time parsing bug with 2:30pm est
 \``
     }
 }))
@@ -5363,7 +5336,7 @@ returns the time converted to different time zones. can be anywhere in a message
         let fullZones2 = ["America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland", "Asia/Tokyo", "Etc/UTC"];
         let fullName = convertTZ(args[4]);
         //msg += fullName;
-        let inputTime = moment.tz(`${args[1]}${args[2]}${args[3]}`, ["h:mma", "hmma"], fullName).subtract(1, 'days');
+        let inputTime = moment.tz(`${args[1]}${args[2] ?? "00"}${args[3]}`, ["hmma"], fullName).subtract(1, 'days');
         if (!inputTime.isValid()) return;
         if (parseInt(args[1]) < 13 && args[3] === undefined) {
             for (let i = 0; i < 4; i++) {

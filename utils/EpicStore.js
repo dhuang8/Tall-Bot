@@ -232,25 +232,6 @@ class EpicStore {
 			}
 
 			function check(offers, thislist) {
-				if (offers.length > 0) {
-					console.log("offers", offers)
-					console.log("flatmap", offers.flatMap(offer=>{
-						return offer.promotionalOffers;
-					}))
-					console.log("map", offers.flatMap(offer=>{
-						return offer.promotionalOffers;
-					}).filter(promo => {
-						return promo.discountSetting?.discountType === 'PERCENTAGE' && promo.discountSetting?.discountPercentage === 0;
-					}).map(promo => {
-						return {
-							title: ele.title,
-							image: image,
-							url: `https://www.epicgames.com/store/en-US/p/${ele.urlSlug}`,
-							start: moment(promo.startDate),
-							end: moment(promo.endDate)
-						}
-					}))
-				}
 				return thislist.concat(offers.flatMap(offer=>{
 					return offer.promotionalOffers;
 				}).filter(promo => {
@@ -281,11 +262,6 @@ class EpicStore {
 		})
 		upcominglist.sort((a, b) => {
 			return a.start.isSameOrAfter(b.start);
-		})
-		console.log({
-			curlist,
-			upcominglist,
-			unknownlist
 		})
 		return {
 			curlist,

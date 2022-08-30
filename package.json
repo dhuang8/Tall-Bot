@@ -21,7 +21,7 @@
     "erlpack": "github:discordapp/erlpack",
     "gifencoder": "^2.0.1",
     "libsodium-wrappers": "^0.7.6",
-    "moment-timezone": "^0.5.28",
+    "moment-timezone": "^0.5.35",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
     "rss-parser": "^3.7.6",

@@ -8,8 +8,7 @@ let osfe;
 try {
     osfe = JSON.parse(fs.readFileSync("./data/osfe.json", 'utf8'));
 } catch (e) {
-    console.error(e);
-    console.error("One Step From Eden data not found");
+    console.error("One Step From Eden data not found", e);
 }
 
 export default new Command({

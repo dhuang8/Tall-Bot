@@ -23,17 +23,17 @@ constructor(data) {
 }
 get slash_command() {
 	if (this.type == "CHAT_INPUT"){
-	return {
-		name: this.name,
-		description: this.description,
-		options: this.options,
-		type: this.type,
-	} 
+		return {
+			name: this.name,
+			description: this.description,
+			options: this.options,
+			type: this.type,
+		}
 	} else {
-	return {
-		name: this.name,
-		type: this.type
-	}
+		return {
+			name: this.name,
+			type: this.type
+		}
 	}
 }
 }

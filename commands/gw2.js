@@ -1,46 +1,47 @@
 "use strict";
 import Command from '../util/Command.js';
+import Util from '../util/functions.js';
 import {MessageEmbed} from 'discord.js';
-import fetch from 'node-fetch';
 import sql from '../util/SQLite.js';
 import Database from "better-sqlite3";
+import fetch from 'node-fetch';
 
 const gw2sql = new Database('data/gw2.sqlite');
 
-function item_search(api_key, url, var_name, item_ids, is_character=false) {
+async function item_search(api_key, url, var_name, item_ids, is_character=false) {
     let res;
     if (!is_character) {
-        res = fetch(url,{
+        res = Util.request({
+            url: url,
             headers: {
                 Authorization: `Bearer ${api_key}`
             }
-        }).then(res => res.json())
+        })
     } else {
         res = url;
     };
-    
-    return res.then(items=>{
-        if (items.bags) {
-            let flatten = []
-            items.bags.forEach(bag=>{
-                if (bag) flatten = flatten.concat(bag.inventory);
-            })
-            if (items.equipment) flatten = flatten.concat(items.equipment);
-            items = flatten;
+    let items = await res;
+    if (res.text) throw res.text;
+    if (items.bags) {
+        let flatten = []
+        items.bags.forEach(bag=>{
+            if (bag) flatten = flatten.concat(bag.inventory);
+        })
+        if (items.equipment) flatten = flatten.concat(items.equipment);
+        items = flatten;
+    }
+    if (!items.forEach) return;
+    items.forEach(item => {
+        if (item == null) return;
+        let found = item_ids.find(item_id=>{
+            return item_id.id == item.id
+        })
+        item.count = item.count ?? 1;
+        if (found && item.count > 0) {
+            if (item.charges) var_name.push(`${item.count} ${found.name} (${item.charges})`);
+            else var_name.push(`${item.count} ${found.name}`);
         }
-        if (!items.forEach) return;
-        items.forEach(item => {
-            if (item == null) return;
-            let found = item_ids.find(item_id=>{
-                return item_id.id == item.id
-            })
-            item.count = item.count ?? 1;
-            if (found && item.count > 0) {
-                if (item.charges) var_name.push(`${item.count} ${found.name} (${item.charges})`);
-                else var_name.push(`${item.count} ${found.name}`);
-            }
-        });
-    })
+    });
 }
 
 let timers = [{
@@ -143,16 +144,18 @@ export default new Command({
                 case "set":
                     let key = interaction.options.data[0].options[0].options[0].value;
                     try {
-                        let achievements = await fetch(`https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,{
+                        let achievements = await Util.request({
+                            url: `https://api.guildwars2.com/v2/account/achievements?ids=6385,6409`,
                             headers: {
                                 Authorization: `Bearer ${key}`
                             }
-                        }).then(res => res.text());
+                        });
+                        if (achievements.text) throw achievements.text;
                         let stmt = sql.prepare("INSERT INTO users(user_id,gw2key,gw2tracker) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET gw2key=excluded.gw2key, gw2tracker=excluded.gw2tracker;");
-                        stmt.run(interaction.user.id, key, achievements);
+                        stmt.run(interaction.user.id, key, JSON.stringify(achievements,null,0));
                         return {content: "`API key set`", ephemeral: true};
                     } catch (e) {
-                        return {content: "`Failed to add API key`", ephemeral: true};
+                        return {content: `\`${e}\``, ephemeral: true};
                     }
                 case "get":
                     let response = sql.prepare("SELECT gw2key FROM users WHERE user_id=?").get(interaction.user.id);
@@ -204,17 +207,16 @@ export default new Command({
             })*/
 
             
-            await fetch(`https://api.guildwars2.com/v2/characters?ids=all`,{
+            let characters = await Util.request({
+                url: `https://api.guildwars2.com/v2/characters?ids=all`,
                 headers: {
                     Authorization: `Bearer ${api_key}`
                 }
-            }).then(res => res.json()).then(characters=>{
-                characters.forEach(character=>{
-                    character_inventory[character.name] = []
-                    promises.push(item_search(api_key, new Promise(resolve=>resolve(character)), character_inventory[character.name], item_ids, true))
-                })
             })
-            await Promise.all(promises);
+            if (characters.text) return characters.text;
+            await Promise.all(promises).catch(e=>{
+                return e;
+            });
             embed = new MessageEmbed();
             if (shared_inventory.length > 0) embed.addField("Shared Inventory", shared_inventory.join("\n").slice(0,1024));
             if (bank.length > 0) embed.addField("Bank", bank.join("\n").slice(0,1024));
@@ -252,10 +254,16 @@ export default new Command({
                             Authorization: `Bearer ${api_key}`
                         }
                     }).then(res => res.json());
+
                     achievements = await achievements;
                     daily = await daily;
                     worldboss = await worldboss;
                     mapchest = await mapchest;
+
+                    if (achievements.text) return achievements.text;
+                    if (daily.text) return daily.text;
+                    if (worldboss.text) return worldboss.text;
+                    if (mapchest.text) return mapchest.text;
                     
                     if (mapchest.indexOf("verdant_brink_heros_choice_chest") > -1) eventsdone.push("Verdant Brink");
                     if (mapchest.indexOf("tangled_depths_heros_choice_chest") > -1) eventsdone.push("Tangled Depths");

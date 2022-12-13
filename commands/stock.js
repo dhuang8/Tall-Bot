@@ -2,7 +2,8 @@
 import Command from '../util/Command.js';
 import {MessageEmbed,MessageAttachment} from 'discord.js';
 import fetch from 'node-fetch';
-import { CanvasRenderService } from 'chartjs-node-canvas';
+import pkg from 'chartjs-node-canvas';
+const { CanvasRenderService } = pkg;
 import config from '../util/config.js';
 import moment from 'moment-timezone';
 //const annotation = require('chartjs-plugin-annotation');

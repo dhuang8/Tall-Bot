@@ -15,6 +15,7 @@ export default new Command({
         required: true,
     }],
 	execute(interaction) {
+        console.log(interaction.options.data[0].value)
 		return eval(interaction.options.data[0].value);
 	},
 });

@@ -1,7 +1,7 @@
 "use strict";
 import Command from '../util/Command.js';
 import MessageResponse from '../util/MessageResponse.js';
-import fetch from 'node-fetch';
+import Util from '../util/functions.js';
 import {MessageEmbed} from 'discord.js';
 
 function escapeMarkdownText(str, noemotes = true) {
@@ -81,15 +81,14 @@ export default new Command({
         //https://docs.magicthegathering.io/#api_v1cards_list
         let response;
         if (interaction.options.data[0].value.toLowerCase() === "random") {
-            response = await fetch(`https://api.magicthegathering.io/v1/cards?random=true&pageSize=100`).then(res => res.json());
+            response = await Util.request(`https://api.magicthegathering.io/v1/cards?random=true&pageSize=100`);
             response.cards = [response.cards.find(card => {
                 return card.multiverseid !== undefined;
             })]
         } else {
-            response = await rp(`https://api.magicthegathering.io/v1/cards?name=${encodeURIComponent(interaction.options.data[0].value)}&orderBy=name`).then(res => res.json());
+            response = await Util.request(`https://api.magicthegathering.io/v1/cards?name=${encodeURIComponent(interaction.options.data[0].value)}`);
         }
         let card_list = {}
-
         response.cards.forEach((card) => {
             card.checkid = card.multiverseid || 0;
             if (!card_list[card.name]) card_list[card.name] = card;
@@ -105,7 +104,7 @@ export default new Command({
         } else if (card_list.length == 1) {
             return card_list[0].response;
         } else {
-            return MessageResponse.addList(interaction.channelId, card_list);
+            return MessageResponse.addList(interaction.channelId, card_list).setTitle("Multiple cards found");
         }
     }
 })

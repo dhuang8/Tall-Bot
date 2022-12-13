@@ -5,10 +5,16 @@ import config from './util/config.js';
 import MessageResponse from './util/MessageResponse.js';
 import cron from './util/gw2tracker.js';
 import birthdayschedule from './schedule/birthday.js';
+import Util from './util/functions.js';
 
 const Collection = Discord.Collection;
 const client = new Discord.Client({
-    intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_VOICE_STATES]
+    intents: [
+        Discord.Intents.FLAGS.GUILDS, 
+        Discord.Intents.FLAGS.GUILD_MESSAGES, 
+        Discord.Intents.FLAGS.DIRECT_MESSAGES, 
+        Discord.Intents.FLAGS.GUILD_VOICE_STATES
+    ]
 });
 
 client.on('messageCreate', async (message) => {
@@ -48,8 +54,10 @@ client.on('interactionCreate', async (interaction) => {
                     contents.slice(1).forEach(res=>{
                         interaction.followUp(res).catch(err);
                     })
-                } else if (response instanceof Discord.MessageEmbed) interaction.followUp({embeds: [response]}).catch(err);
-                else if (response instanceof Discord.MessageAttachment) interaction.followUp({files: [response]}).catch(err);
+                } else if (response instanceof Discord.MessageEmbed) {
+                    Util.validateEmbed(response);
+                    interaction.followUp({embeds: [response]}).catch(err);
+                } else if (response instanceof Discord.MessageAttachment) interaction.followUp({files: [response]}).catch(err);
                 else interaction.followUp(response).catch(err);
             } catch (e) {
                 await defer;
@@ -117,24 +125,30 @@ async function createSlashCommands() {
 
 let slash_commands = new Collection();
 let interaction_commands = new Collection();
+let not_loaded = [];
 //console.log(fs.readdirSync('./commands'))
-fs.readdirSync('./commands').filter(file => file.endsWith('.js')).forEach(file=>{
+
+fs.readdirSync('./commands').filter(file => file.endsWith('.js') || file.endsWith('.mjs')).filter(file => file.indexOf("test") < 0).forEach(file=>{
     import(`./commands/${file}`).then(command=>{
         if (command.default.slash) slash_commands.set(command.default.name, command.default)
     }).catch(e=>{
-        console.log(`could not load ${file} ${e}`)
+        console.log(`could not load ${file} ${e}`);
+        not_loaded.push(`/commands/${file}`);
     });
 });
 //console.log(fs.readdirSync('./interactions'))
-fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).forEach(file=>{
+
+fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).filter(file => file.indexOf("test") < 0).forEach(file=>{
     import(`./interactions/${file}`).then(command=>{
         interaction_commands.set(command.default.name, command.default)
     }).catch(e=>{
-        console.log(`could not load ${file} ${e}`);
+        console.log(`could not load ${file}`);
+        not_loaded.push(`/interactions/${file}`);
     });
 });
 
 client.once("ready", async ()=>{
+    console.log("not loaded", not_loaded)
     console.log(`\`${process.platform} ready\``)
     //await clearSlashCommands();
     client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``);
@@ -142,5 +156,4 @@ client.once("ready", async ()=>{
     new cron(client);
     new birthdayschedule(client);
 })
-
 client.login(config.token).catch(console.error);

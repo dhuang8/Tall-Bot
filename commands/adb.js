@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import Util from '../util/functions.js';
 import Command from '../util/Command.js';
 import MessageResponse from '../util/MessageResponse.js';
 import {MessageEmbed} from 'discord.js';
@@ -50,7 +50,7 @@ export default new Command({
         required: true,
     }],
 	async execute(interaction) {
-        if (ahdb == null) ahdb = await fetch("https://arkhamdb.com/api/public/cards/").then(res => res.json());
+        if (ahdb == null) ahdb = await Util.request("https://arkhamdb.com/api/public/cards/");
         let cardlist = ahdb.filter(card=>{
             return simplifyname(card.name).indexOf(simplifyname(interaction.options.data[0].value))>-1 || card.code == interaction.options.data[0].value
         }).map(card=>{
@@ -60,12 +60,6 @@ export default new Command({
                 response: createRich(card)
             }
         })
-        if (cardlist.length == 1) {
-            return cardlist[0].response;
-        } else if (cardlist.length > 1) {
-            return MessageResponse.addList(interaction.channelId, cardlist);
-        } else {
-            return "`No results`";
-        }
+        return MessageResponse.addList(interaction.channelId, cardlist);
     }
 })

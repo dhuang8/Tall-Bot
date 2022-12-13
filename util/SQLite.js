@@ -17,4 +17,9 @@ if (sql.pragma("user_version")[0].user_version == 2) {
     sql.pragma("user_version = 3");
 }
 
+if (sql.pragma("user_version")[0].user_version == 3) {
+    sql.prepare("ALTER TABLE users ADD COLUMN birthday_channel TEXT").run();
+    sql.pragma("user_version = 4");
+}
+
 export default sql;

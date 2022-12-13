@@ -1,9 +1,9 @@
 import Command from '../util/Command.js';
 import {MessageEmbed} from 'discord.js';
-import fetch from 'node-fetch';
 import MessageResponse from '../util/MessageResponse.js';
 import config from '../util/config.js';
 import { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } from 'simple-oauth2';
+import Util from '../util/functions.js';
 
 let token;
 let meta;
@@ -104,14 +104,14 @@ export default new Command({
             //token = thisoauth.accessToken.create(result);
         }
         if (token.expired()){
-            accessToken = await accessToken.refresh();
+            token = await token.refresh();
         }
 
-        let data = fetch(`https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${interaction.options.data[0].value}&gameMode=${interaction.options.data[1].value}&access_token=${token.token.access_token}`).then(res => res.json());
+        let data = Util.request(`https://us.api.blizzard.com/hearthstone/cards?locale=en_US&textFilter=${interaction.options.data[0].value}&gameMode=${interaction.options.data[1].value}&access_token=${token.token.access_token}`);
         if (!meta) {
-            meta = await fetch(`https://us.api.blizzard.com/hearthstone/metadata?locale=en_US&access_token=${token.token.access_token}`).then(res => res.json());
+            meta = await Util.request(`https://us.api.blizzard.com/hearthstone/metadata?locale=en_US&access_token=${token.token.access_token}`);
         }
-        cards = (await data).cards;
+        let cards = (await data).cards;
         cards = cards.map(card => {
             let title = card.name
             if (card.battlegrounds) title += " (BG)";

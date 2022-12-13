@@ -12,13 +12,6 @@ let months = month_names.map((name, index) =>{
     }
 })
 
-try {
-    sql.prepare(`SELECT birthday FROM users`).run()
-} catch (e) {
-    console.log("adding birthday to table")
-    sql.prepare(`ALTER TABLE users ADD COLUMN birthday TEXT`).run()
-}
-
 export default new Command({
 	name: 'birthday',
     description: 'birthday',
@@ -60,7 +53,7 @@ export default new Command({
             case "set":
                 let args = interaction.options.data[0].options;
                 let date = moment(new Date(args[0].value,args[1].value,args[2].value+1));
-                sql.prepare("INSERT INTO users(user_id, birthday) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET birthday=excluded.birthday;").run(interaction.user.id, date.format("YYYY-MM-DD"));
+                sql.prepare("INSERT INTO users(user_id, birthday, birthday_channel) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET birthday=excluded.birthday, birthday_channel=excluded.birthday_channel;").run(interaction.user.id, date.format("YYYY-MM-DD"), interaction.channelId);
                 return `\`Birthday set to ${date.format("MMMM D, YYYY")}\``;
             case "get":
                 let data = sql.prepare("SELECT birthday FROM users WHERE user_id = ?").get(interaction.options.data[0].options[0].user.id);

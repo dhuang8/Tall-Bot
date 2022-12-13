@@ -12,7 +12,7 @@ class birthdayschedule {
         var job = new CronJob('0 0 14 * * *', function() {
             let users = sql.prepare(`SELECT user_id FROM users WHERE birthday LIKE ?`).all(`%${moment().format("-MM-DD")}`);
             users.forEach(user=>{
-                //temp
+                //TODO fill and use birthday_channel
                 client.channels.resolve("113049258172637184").send(`Happy birthday <@${user.user_id}>`);
             })
         }, null, true, "UTC");

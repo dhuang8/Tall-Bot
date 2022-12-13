@@ -82,7 +82,7 @@ const canvasRenderService = new ChartJSNodeCanvas({width: 400, height: 225, char
 
 let covid_countries = [];
 let covid_states = [];
-
+/*
 try {
     fetch("https://covidtracking.com/api/v1/states/info.json").then(res => res.json()).then(json => {
         covid_states = json.map(state=>{
@@ -106,7 +106,7 @@ try {
 } catch (e) {
     console.error(e);
 }
-
+*/
 let covid_provinces = {"Alberta":"AB",
     "British Columbia":"BC",
     "Manitoba":"MB",
@@ -243,11 +243,10 @@ export default new Command({
                 let file = new MessageAttachment(stream, `chart.png`);
                 rich.setImage(`attachment://chart.png`)
                 return {embeds: [rich], files: [file]};
-                return rich;
             } else if (interaction.options.data[0].value == "cases") {
                 let data = await fetch(`https://jhucoronavirus.azureedge.net/api/v1/timeseries/us/cases/${state.initial}.json`).then(res => res.json());
                 let cases = [];
-                let labels = []
+                let labels = [];
                 let infected = false;
                 let step = parseInt(Object.keys(data).length / 5);
                 Object.keys(data).forEach((key,index)=>{

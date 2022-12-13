@@ -11,7 +11,6 @@ export default new Command({
 	name: 'ai',
 	description: 'Use AI to write stuff',
     type: "CHAT_INPUT",
-    guild: config.guild_id,
     options: [{
         name: 'prompt',
         type: 'STRING',

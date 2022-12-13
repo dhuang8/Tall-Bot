@@ -392,7 +392,7 @@ function escapeMarkdownText(str, noemotes = true) {
     return str;
 }
 
-const last_update = "2021-05-28";
+const last_update = "2022-12-13";
 
 fs.readFile("./config.json", "utf8", (e, data) => {
     if (e && e.code === "ENOENT") {
@@ -3038,13 +3038,18 @@ commands.push(new Command({
 }))
 
 async function weather(location_name) {
-    let body = await rp(`https://api.weather.com/v3/location/search?apiKey=6532d6454b8aa370768e63d6ba5a832e&language=en-US&query=${encodeURIComponent(location_name)}&format=json`)
+    // TODO: dark sky api support ending 2023-03-31
+    let body;
+    try {
+        body = await rp(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(location_name)}/next7days?unitGroup=us&key=${config.api.visualcrossing}&contentType=json&elements=datetime%2CdatetimeEpoch%2Cname%2Caddress%2CresolvedAddress%2Clatitude%2Clongitude%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslikemax%2Cfeelslikemin%2Cfeelslike%2Cconditions%2Cdescription%2Cicon`)
+    } catch (e) {
+        return "`Location not found`";
+    }
     //let body = await rp(`http://autocomplete.wunderground.com/aq?query=${encodeURIComponent(location_name)}`)
     let data = JSON.parse(body);
-    if (data.location.address.length < 1) return "`Location not found`";
-    let locName = data.location.address[0];
-    let lat = data.location.latitude[0];
-    let lon = data.location.longitude[0];
+    let locName = data.resolvedAddress;
+    let lat = data.latitude;
+    let lon = data.longitude;
     body = await rp(`https://api.darksky.net/forecast/${config.api.darksky}/${lat},${lon}?units=auto&exclude=minutely`)
     data = JSON.parse(body);
     let tM;
@@ -3148,7 +3153,7 @@ commands.push(new Command({
     testString: ".weather nyc",
     hidden: false,
     requirePrefix: true,
-    req: () => { return config.api.darksky; },
+    req: () => { return config.api.visualcrossing; },
     log: true,
     points: 1,
     shortDesc: "returns 8 day forecast and chart of the temp for the next 2 days",
@@ -3162,6 +3167,7 @@ location - can be several things like the name of a city or a zip code`,
 
 let covid_countries = [];
 let covid_states = [];
+/*
 rp({
     url: "https://covidtracking.com/api/v1/states/info.json",
     json: true
@@ -3185,6 +3191,7 @@ rp({
         }
     })
 })
+*/
 
 let covid_provinces = {"Alberta":"AB",
     "British Columbia":"BC",
@@ -5084,6 +5091,10 @@ lists recent changes`,
     typing: false,
     run: (message, args) => {
         return `\`
+2022-12-13
+• fixed .weather
+• fixed .egs list links
+
 2022-05-28
 • time parsing switched to discord local time
 • fixed time parsing bug with 2:30pm est

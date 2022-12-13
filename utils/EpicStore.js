@@ -129,7 +129,6 @@ class EpicStore {
 			}).join("\n");
 			rich.addField("Upcoming free games", desc)
 		}
-		rich.setFooter("Direct links to games may not work")
 		/*
 		if (gamelist.unknownlist.length > 0) {
 		    let desc = gamelist.unknownlist.map(cur=>{
@@ -231,6 +230,24 @@ class EpicStore {
 				image = null;
 			}
 
+			let url = getUrl();
+			//ele.productSlug
+			function getUrl() {
+				if (ele.offerMappings?.length > 0) return `https://www.epicgames.com/store/en-US/p/${ele.offerMappings[0].pageSlug}`
+				if (ele.catalogNs?.mappings?.length > 0) {
+					let cat = ele.catalogNs.mappings.find(cat => {
+						return cat.pageType == "productHome"
+					})
+					return `https://www.epicgames.com/store/en-US/p/${cat.pageSlug}`
+				}
+				if (ele.categories?.some((cat) => {
+					return cat.path == "bundles"
+				})) {
+					return `https://www.epicgames.com/store/en-US/bundles/${ele.productSlug}`
+				}
+				return "";
+			}
+
 			function check(offers, thislist) {
 				return thislist.concat(offers.flatMap(offer=>{
 					return offer.promotionalOffers;
@@ -240,7 +257,7 @@ class EpicStore {
 					return {
 						title: ele.title,
 						image: image,
-						url: `https://www.epicgames.com/store/en-US/p/${ele.urlSlug}`,
+						url,
 						start: moment(promo.startDate),
 						end: moment(promo.endDate)
 					}
@@ -253,7 +270,7 @@ class EpicStore {
 				unknownlist.push({
 					title: ele.title,
 					image: image,
-					url: `https://www.epicgames.com/store/en-US/p/${ele.urlSlug}`
+					url
 				})
 			}
 		})

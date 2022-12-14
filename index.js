@@ -151,7 +151,7 @@ client.once("ready", async ()=>{
     console.log("not loaded", not_loaded)
     console.log(`\`${process.platform} ready\``)
     //await clearSlashCommands();
-    client.channels.resolve(config.channel_id).send(`\`${process.platform} ready\``);
+    client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
     createSlashCommands();
     new cron(client);
     new birthdayschedule(client);

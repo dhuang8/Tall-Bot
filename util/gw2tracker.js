@@ -170,7 +170,7 @@ class gw2tracker {
         }, null, true, "UTC");
         job.start();
         
-        var job2 = new CronJob('00 */5 * * * *', function() {
+        var job2 = new CronJob('00 * * * * *', function() {
             let channels = sql.prepare(`SELECT channel_id, gw2timer FROM channels WHERE gw2timer IS NOT NULL;`).all();
             let embed = getTimer();
             embed.addFields(getWowTimer());

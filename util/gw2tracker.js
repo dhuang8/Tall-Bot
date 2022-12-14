@@ -100,6 +100,55 @@ function getTimer (){
     return embed;
 }
 
+function getWowTimer() {
+    const wow_timers = [
+        {
+            name: "Community Feast",
+            start: new Date('2022-12-14T18:00:00'),
+            duration: 15*60*1000,
+            every: 3.5*60*60*1000
+        },
+        {
+            name: "Dragonbane Keep",
+            start: new Date('2022-12-14T19:00:00'),
+            duration: 30*60*1000,
+            every: 2*60*60*1000
+        }
+    ]
+
+    let now = Date.now();
+    let in_progress_timers = [];
+    let upcoming_timers = [];
+    let timers = wow_timers.map(timer => {
+        let end = ((timer.start.getTime() + timer.duration - now) % timer.every + timer.every) % timer.every;
+        let start = end - timer.duration;
+        return {start,end,name:timer.name};
+    }).sort((a,b)=>{
+        return a.start - b.start;
+    }).forEach(timer=>{
+        if (timer.start <= 0) in_progress_timers.push(timer);
+        else upcoming_timers.push(timer);
+    });
+    
+    let fields = [];
+    if (in_progress_timers.length > 0) {
+        let progresstext = in_progress_timers.map(timer=>{
+            let line = `**${timer.name}** active for ${Math.abs(Math.round(timer.start / 60/1000))} min`;
+            return line;
+        }).join("\n");
+        fields.push({name: "**__In progress__**", value: progresstext});
+    }
+    
+    if (upcoming_timers.length > 0) {
+        let upcomingtext = upcoming_timers.map(timer=>{
+            let line = `**${timer.name}** starting in ${Math.round(timer.start / 60/1000)} min`
+            return line;
+        }).join("\n");
+        fields.push({name: "**__Upcoming__**", value:upcomingtext});
+    }
+    return fields;
+}
+
 class gw2tracker {
     constructor(client) {
         this.client = client;
@@ -121,10 +170,17 @@ class gw2tracker {
         }, null, true, "UTC");
         job.start();
         
-        var job2 = new CronJob('00 */5 * * * *', function() {
+        var job2 = new CronJob('*/5 * * * * *', function() {
             let channels = sql.prepare(`SELECT channel_id, gw2timer FROM channels WHERE gw2timer IS NOT NULL;`).all();
+            let embed = getTimer();
+            embed.addFields(getWowTimer());
             channels.forEach(channel=>{
-                client.channels.resolve(channel.channel_id).messages.edit(channel.gw2timer, {embeds: [getTimer()]});
+                try {
+                    client.channels.resolve(channel.channel_id)?.messages.resolve(channel.gw2timer)?.edit({embeds: [embed]});
+                } catch (e) {
+                    console.log(e)
+                    //ignore for now
+                }
             })
         }, null, true, "UTC");
         job2.start();

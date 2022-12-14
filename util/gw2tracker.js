@@ -176,7 +176,7 @@ class gw2tracker {
             embed.addFields(getWowTimer());
             channels.forEach(channel=>{
                 try {
-                    client.channels.resolve(channel.channel_id)?.messages.resolve(channel.gw2timer)?.edit({embeds: [embed]});
+                    client.channels.resolve(channel.channel_id)?.messages.edit(channel.gw2timer,{embeds: [embed]})
                 } catch (e) {
                     console.log(e)
                     //ignore for now

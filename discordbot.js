@@ -3153,7 +3153,7 @@ commands.push(new Command({
     testString: ".weather nyc",
     hidden: false,
     requirePrefix: true,
-    req: () => { return config.api.visualcrossing; },
+    req: () => { return config.api.visualcrossing && config.api.darksky; },
     log: true,
     points: 1,
     shortDesc: "returns 8 day forecast and chart of the temp for the next 2 days",

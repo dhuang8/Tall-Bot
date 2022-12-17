@@ -233,18 +233,26 @@ class EpicStore {
 			let url = getUrl();
 			//ele.productSlug
 			function getUrl() {
-				if (ele.offerMappings?.length > 0) return `https://www.epicgames.com/store/en-US/p/${ele.offerMappings[0].pageSlug}`
+				if (ele.offerMappings?.length > 0) return `https://store.epicgames.com/en-US/p/${ele.offerMappings[0].pageSlug}`
 				if (ele.catalogNs?.mappings?.length > 0) {
 					let cat = ele.catalogNs.mappings.find(cat => {
 						return cat.pageType == "productHome"
 					})
-					return `https://www.epicgames.com/store/en-US/p/${cat.pageSlug}`
+					return `https://store.epicgames.com/en-US/p/${cat.pageSlug}`
 				}
 				if (ele.categories?.some((cat) => {
 					return cat.path == "bundles"
 				})) {
-					return `https://www.epicgames.com/store/en-US/bundles/${ele.productSlug}`
+					return `https://store.epicgames.com/en-US/bundles/${ele.productSlug}`
 				}
+				let attr = ele.customAttributes.find(attr => {
+					return attr.key == "com.epicgames.app.productSlug";
+				})
+				if (attr != null && attr.value && attr.value != "[]") return `https://store.epicgames.com/en-US/p/${attr.value}`;
+				attr = ele.customAttributes.find(attr => {
+					return attr.key == "com.epicgames.app.freegames.vault.slug";
+				})
+				if (attr != null && attr.value && attr.value != "[]") return `https://store.epicgames.com/en-US/${attr.value}`;
 				return "";
 			}
 

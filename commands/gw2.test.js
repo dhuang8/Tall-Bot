@@ -35,7 +35,7 @@ test('full-mat', async () => {
     expect(response.title).toBe("Full materials in storage");
 });
 
-test('item search', async () => {
+test('item search good key', async () => {
     let embed = await gw2.execute(Util.createInteractionOptions(["item", "shard"], "113060802252054528"));
     expect(embed.title).toBe("Item search - shard");
 }, 20000);

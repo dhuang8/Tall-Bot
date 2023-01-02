@@ -17,7 +17,6 @@ let f = {
             }
         }
         return fetch(param.url, param).then(response => {
-            console.log(param.url)
             if (response.headers.get('content-type')?.includes('application/json')) {
                 return response.json();
             }

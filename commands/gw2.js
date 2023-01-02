@@ -214,6 +214,10 @@ export default new Command({
                 }
             })
             if (characters.text) return characters.text;
+            characters.forEach(character=>{
+                character_inventory[character.name] = []
+                promises.push(item_search(api_key, character, character_inventory[character.name], item_ids, true))
+            })
             await Promise.all(promises).catch(e=>{
                 return e;
             });

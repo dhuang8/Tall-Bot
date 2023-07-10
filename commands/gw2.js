@@ -103,7 +103,6 @@ export default new Command({
         }]
     },{
         name: 'item',
-        type: 'STRING',
         description: 'search for an item',
         type: "SUB_COMMAND",
         options: [{

@@ -1,6 +1,5 @@
 "use strict";
-import Command from '../util/Command.js';
-import { MessageActionRow, MessageButton, MessageSelectMenu } from 'discord.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuOptionBuilder, StringSelectMenuBuilder } from 'discord.js';
 import yt from 'play-dl';
 
 function escapeMarkdownText(str, noemotes = true) {
@@ -11,59 +10,62 @@ function escapeMarkdownText(str, noemotes = true) {
     }
 }
 
-export default new Command({
-	name: 'youtube',
-    description: 'play youtube video',
-    type: "CHAT_INPUT",
-    options: [{
-        name: 'search-or-url',
-        type: 'STRING',
-        description: 'url to youtube video or search',
-        required: true,
-    }],
-	async execute(interaction) {
-        let video;
-        let check = yt.yt_validate(interaction.options.data[0].value);
-        if (!check) {
-            let results = await yt.search(interaction.options.data[0].value, {limit: 1, type: "video"})
-            if (results.length < 1) return "`Video not found`"
-            video = results[0];
-        } else {
-            try {
-                video = (await yt.video_basic_info(interaction.options.data[0].value))?.video_details;
-            } catch (e) {
-                return "`Video not found`"
-            }
+const slash = new SlashCommandBuilder()
+    .setName('youtube')
+    .setDescription('play youtube video')
+    .addStringOption(option => 
+        option.setName('search-or-url')
+        .setDescription('url to youtube video or search')
+        .setRequired(true)
+    );
+const execute = async (interaction) => {
+    let video;
+    let query = interaction.options.getString('search-or-url');
+    let check = yt.yt_validate(query);
+    if (check !== "video") {
+        let results = await yt.search(query, {limit: 1, type: "video"})
+        if (results.length < 1) return "`Video not found`"
+        video = results[0];
+    } else {
+        try {
+            video = (await yt.video_basic_info(query))?.video_details;
+        } catch (e) {
+            return "`Video not found`"
         }
-        if (!video) return "`Video not found`"
-        /*
-        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
-        const subscription = connection.subscribe(audioPlayer);
-        entersState(audioPlayer, AudioPlayerStatus.Playing, 5e3);*/
-
-        let volumemenu = [25,50,75,100,125,150,175,200].map(val=>{
-            return {
-                label: `${val}%`,
-                value: `${val}`
-            }
-        })
-        const row = new MessageActionRow().addComponents([
-            new MessageButton()
-                .setCustomId(`play|${video.id}`)
-                .setLabel('Play')
-                .setStyle('PRIMARY'),
-            new MessageButton()
-                .setCustomId('stop')
-                .setLabel('Stop')
-                .setStyle('SECONDARY'),
-        ]);
-        const row2 = new MessageActionRow().addComponents([
-            new MessageSelectMenu()
-                .setCustomId('volume')
-                .setPlaceholder("Volume")
-                .addOptions(volumemenu),
-        ])
-
-        return {content: `${video.title} ${video.url}`, components: [row, row2]};
     }
-})
+    if (!video) return "`Video not found`"
+
+    const play = new ButtonBuilder()
+        .setCustomId(`play|${video.id}`)
+        .setLabel('Play')
+        .setStyle(ButtonStyle.Primary);
+
+    const stop = new ButtonBuilder()
+        .setCustomId(`stop`)
+        .setLabel('Stop')
+        .setStyle(ButtonStyle.Secondary);
+
+
+    const row = new ActionRowBuilder()
+    	.addComponents(play, stop);
+
+    let volumemenu = [25,50,75,100,125,150,175,200].map(val=>{
+        return new StringSelectMenuOptionBuilder()
+            .setLabel(`${val}%`)
+            .setValue(val.toString());
+    })
+    
+    const volume = new StringSelectMenuBuilder()
+        .setCustomId('volume')
+        .setPlaceholder("Volume")
+        .addOptions(volumemenu)
+
+    const row2 = new ActionRowBuilder()
+        .addComponents(volume);
+
+
+    return {content: `${video.title} ${video.url}`, components: [row]};
+}
+export {
+    slash, execute
+};

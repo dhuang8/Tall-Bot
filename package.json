@@ -1,28 +1,24 @@
 {
+  "name": "tall-botv14",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "type": "module",
   "dependencies": {
-    "@discordjs/voice": "^0.7.5",
-    "@vitalets/google-translate-api": "^7.0.0",
-    "abort-controller": "^3.0.0",
-    "better-sqlite3": "^7.4.1",
-    "chartjs-node-canvas": "^4.1.5",
-    "cheerio": "*",
-    "cron": "^1.8.2",
-    "cross-env": "^7.0.3",
-    "csvtojson": "^2.0.10",
-    "discord.js": "^13.16.0",
-    "moment-timezone": "^0.5.33",
-    "node-fetch": "^3.1.0",
-    "openai": "^3.1.0",
-    "play-dl": "^1.7.7",
-    "simple-oauth2": "^4.2.0",
-    "unescape": "^1.0.1"
-  },
-  "devDependencies": {
-    "jest": "^28.1.0"
+    "@discordjs/opus": "^0.9.0",
+    "@discordjs/voice": "^0.16.0",
+    "better-sqlite3": "^8.4.0",
+    "discord.js": "^14.11.0",
+    "hoyoapi": "^1.2.0",
+    "play-dl": "^1.9.6",
+    "sodium": "^3.0.2"
   },
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
-    "start": "node index.js"
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.6.1"
   }
 }

@@ -1,22 +1,108 @@
 "use strict";
-import Discord from 'discord.js';
-import fs from 'fs';
-import config from './util/config.js';
-import MessageResponse from './util/MessageResponse.js';
-import cron from './util/gw2tracker.js';
-import birthdayschedule from './schedule/birthday.js';
-import Util from './util/functions.js';
+import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
+//import fs from 'fs';
+//import {token} from ('./config.json');
+//import MessageResponse from './util/MessageResponse.js';
+//import cron from './util/gw2tracker.js';
+//import birthdayschedule from './schedule/birthday.js';
+//import Util from './util/functions.js';
+import config from './config.json' assert { type: "json" };
+//import { createRequire } from 'node:module';
+//const require = createRequire(import.meta.url);
+//const {token} = require("./config.json");
 
-const Collection = Discord.Collection;
-const client = new Discord.Client({
+const client = new Client({
     intents: [
-        Discord.Intents.FLAGS.GUILDS, 
-        Discord.Intents.FLAGS.GUILD_MESSAGES, 
-        Discord.Intents.FLAGS.DIRECT_MESSAGES, 
-        Discord.Intents.FLAGS.GUILD_VOICE_STATES
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
+client.commands = new Collection();
+
+import(`./commands/hsr.js`).then(command=>{
+    client.commands.set(command.slash.name, command);
+}).catch(e=>{
+    console.log(`could not load hsr ${e}`);
+    throw e;
+});
+
+import(`./commands/youtube.js`).then(command=>{
+    client.commands.set(command.slash.name, command);
+}).catch(e=>{
+    console.log(`could not load youtube ${e}`);
+    throw e;
+});
+
+import(`./interactions/youtubebutton.js`).then(command=>{
+    client.commands.set('youtubebutton', command);
+}).catch(e=>{
+    console.log(`could not load youtubebutton ${e}`);
+    throw e;
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+	if (interaction.isChatInputCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
+        }
+        try {
+            const response = await command.execute(interaction);
+            if (typeof response == "string") {
+                interaction.reply(response).catch(console.error);
+            } else {
+                interaction.reply(response).catch(console.error);
+            }
+        } catch (error) {
+            console.error(error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            } else {
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+        }
+    } else if (interaction.isButton()) {
+        const command = interaction.client.commands.get('youtubebutton');
+        await command.execute(interaction);
+    } else if (interaction.isStringSelectMenu()) {
+        const command = interaction.client.commands.get('youtubebutton');
+        await command.execute(interaction);
+    }
+})
+
+async function clearSlashCommands() {
+    await client.application.commands.set([]).catch(console.error);
+    await Promise.all(client.guilds.cache.map((guild)=>{
+        return guild.commands.set([]).catch(console.error);
+    }));
+}
+client.once("ready", async ()=>{
+    //console.log("not loaded", not_loaded)
+    //await clearSlashCommands();
+    if (config.test) {
+        client.guilds.cache.get(config.guild_id).commands.set([
+            client.commands.get('hsr').slash,
+            client.commands.get('youtube').slash
+        ]);
+    } else {
+        client.application.commands.set([
+            client.commands.get('hsr').slash,
+            client.commands.get('youtube').slash
+        ])
+    }
+    console.log(`\`${process.platform} ready\``)
+    //client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
+    //createSlashCommands();
+    //new cron(client);
+    //new birthdayschedule(client);
+})
+
+client.login(config.token).catch(console.error);
+/*
 client.on('messageCreate', async (message) => {
     try {
         if (message.author.bot) return;
@@ -89,20 +175,13 @@ function err(error) {
     }
 }
 
-async function clearSlashCommands() {
-    await client.application.commands.set([]).catch(err);
-    await Promise.all(client.guilds.cache.map((guild)=>{
-        return guild.commands.set([]).catch(err);
-    }));
-}
-
 async function createSlashCommands() {
     let global_slash_commands = [];
     let guild_slash_commands = {};
     slash_commands.each(command=>{
         //console.log("create", command.slash_command);
         if (config.test) {
-            //client.guilds.cache.get(config.guild_id).commands.create(command.slash_command);
+            client.guilds.cache.get(config.guild_id).commands.create(command.slash_command);
             if (guild_slash_commands[config.guild_id]) guild_slash_commands[config.guild_id].push(command.slash_command)
             else guild_slash_commands[config.guild_id] = [command.slash_command];
         } else if (command.guild) {
@@ -146,14 +225,4 @@ fs.readdirSync('./interactions').filter(file => file.endsWith('.js')).filter(fil
         not_loaded.push(`/interactions/${file}`);
     });
 });
-
-client.once("ready", async ()=>{
-    console.log("not loaded", not_loaded)
-    console.log(`\`${process.platform} ready\``)
-    //await clearSlashCommands();
-    client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
-    createSlashCommands();
-    new cron(client);
-    new birthdayschedule(client);
-})
-client.login(config.token).catch(console.error);
+*/

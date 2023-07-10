@@ -22,4 +22,9 @@ if (sql.pragma("user_version")[0].user_version == 3) {
     sql.pragma("user_version = 4");
 }
 
+if (sql.pragma("user_version")[0].user_version == 4) {
+    sql.prepare("ALTER TABLE users ADD COLUMN hsr_cookie TEXT;").run();
+    sql.prepare("ALTER TABLE users ADD COLUMN hsr_uid INTEGER;").run();
+    sql.pragma("user_version = 5");
+}
 export default sql;

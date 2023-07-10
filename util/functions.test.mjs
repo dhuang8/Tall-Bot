@@ -1,6 +1,14 @@
 import {MessageEmbed} from 'discord.js';
 import f from "./functions.js";
 
+test('fetch', async () => {
+    const response = await f.request({
+        url: 'https://api.github.com/users/dhuang8/repos',
+        json: true
+    });
+    expect(response.length).toBeGreaterThan(0);
+});
+
 test('validate embed', () => {
     let embed = new MessageEmbed()
         .setTitle("title")

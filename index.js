@@ -43,6 +43,13 @@ import(`./interactions/youtubebutton.js`).then(command=>{
     throw e;
 });
 
+import(`./schedule/hsr_dailies.js`).then(s=>{
+    new s.HsrDaily(client);
+}).catch(e=>{
+    console.log(`could not load hsr_dailies ${e}`);
+    throw e;
+});
+
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
         const command = interaction.client.commands.get(interaction.commandName);

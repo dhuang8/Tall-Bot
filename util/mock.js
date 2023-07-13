@@ -27,6 +27,7 @@ class mockOption {
 class mockInteraction {
     constructor() {
         this.mockOptions = new mockOption();
+        this.user = {id: "1234567890"}
     }
     get options(){
         return this.mockOptions;

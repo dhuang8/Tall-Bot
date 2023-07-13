@@ -20,15 +20,15 @@ export class HsrDaily {
                         uid: hsr_uid
                     })
                     const claim = await hsrClient.daily.claim()
-                    let discordUser = await client.users.fetch(config.user_id);
+                    let channel = await client.channels.fetch(config.channel_id);
                     if (claim?.status === "OK" || claim?.code === -5003) {
-                        discordUser.send(`good\n${user_id}\n${JSON.stringify(claim)}`);
+                        channel.send(`good\n${user_id}\n${JSON.stringify(claim)}`);
                     } else {
-                        discordUser.send(`bad\n${user_id}\n${JSON.stringify(claim)}`);
+                        channel.send(`bad\n${user_id}\n${JSON.stringify(claim)}`);
                     }
                 } catch (e) {
-                    let discordUser = await client.users.fetch(config.user_id);
-                    discordUser.send(`error\n${user_id}\n${e}`);
+                    let channel = await client.channels.fetch(config.channel_id);
+                    channel.send(`error\n${user_id}\n${e}`);
                 }
             })
         }, null, true, "UTC");

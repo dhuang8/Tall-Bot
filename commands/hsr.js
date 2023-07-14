@@ -116,10 +116,11 @@ const execute = async (interaction) => {
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
         } case 'help' : {
-            return new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setTitle("How to get cookie")
                 .setDescription("Log into [hoyolab](https://www.hoyolab.com/home)")
                 .addFields({name: 'paste this in the url address', value:"javascript: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();"})
+            return {embeds: [embed]};
         } case 'test': {
             const users = sql.prepare("SELECT user_id, hsr_cookie, hsr_uid from users WHERE hsr_cookie IS NOT NULL AND hsr_uid IS NOT NULL").all();            
             users.forEach(async user=>{

@@ -52,6 +52,7 @@ import(`./schedule/hsr_dailies.js`).then(s=>{
 
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
+        interaction.deferReply();
         const command = interaction.client.commands.get(interaction.commandName);
         if (!command) {
             console.error(`No command matching ${interaction.commandName} was found.`);
@@ -73,9 +74,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
         }
     } else if (interaction.isButton()) {
+        interaction.deferUpdate();
         const command = interaction.client.commands.get('youtubebutton');
         await command.execute(interaction);
     } else if (interaction.isStringSelectMenu()) {
+        interaction.deferUpdate();
         const command = interaction.client.commands.get('youtubebutton');
         await command.execute(interaction);
     }

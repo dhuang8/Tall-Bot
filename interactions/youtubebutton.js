@@ -6,11 +6,9 @@ function calcVolume(value) {
 }
 
 const execute = async function(interaction) {
-    //interaction.deferUpdate();
     let args = interaction.customId.split("|");
     switch (args[0]){
-        case "play":
-            interaction.deferUpdate();
+        case "play": {
             let user_channel_id = interaction.member?.voice?.channel?.id
             if (!user_channel_id) return;
             let connection = getVoiceConnection(interaction.guildId);
@@ -50,15 +48,13 @@ const execute = async function(interaction) {
                 interaction.update({content: interaction.message.content, components: interaction.message.components})
             } else */
             break;
-        case "stop":
-            interaction.deferUpdate();
+        } case "stop": {
             let connection2 = getVoiceConnection(interaction.guildId);
             if (connection2) connection2.destroy();
             //audioPlayer.stop();
             //leave
             break;
-        case "volume":
-            interaction.deferUpdate()
+        } case "volume": {
             let connection3 = getVoiceConnection(interaction.guildId);
             let audioResource3 = connection3?._state?.subscription?.player?._state?.resource;
             if (audioResource3) {
@@ -67,6 +63,7 @@ const execute = async function(interaction) {
                 //interaction.update({content: interaction.message.content, components: interaction.message.components})
             }
             break;
+        }
     }
 }
 

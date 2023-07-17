@@ -15,7 +15,8 @@
     "sodium": "^3.0.2"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",

@@ -1,10 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
-import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
+import {request} from '../util/functions.js';
+import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
 
 const slash = new SlashCommandBuilder()
-    .setName('hsr')
-    .setDescription('honkai star rail')
+    .setName('genshin')
+    .setDescription('genshin impact')
     .addSubcommand(subcommand => 
         subcommand.setName("set")
         .setDescription("set cookie and uid")
@@ -12,7 +13,8 @@ const slash = new SlashCommandBuilder()
             option.setName('uid')
             .setDescription('hsr uid')
             .setMinValue(600000000)
-        ).addStringOption(option =>
+        )
+        .addStringOption(option =>
             option.setName('cookie')
             .setDescription('cookie from website')
         )
@@ -40,11 +42,11 @@ function calcTimestampAfter(time) {
 }
 
 function getUidAndCookie(interaction) {
-    const user = sql.prepare("SELECT hsr_cookie, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
-    if (user == null) return {error: "Missing uid and cookie"};
-    const uid = user.hsr_uid;
+    const user = sql.prepare("SELECT hsr_cookie, genshin_uid from users WHERE user_id = ?").get(interaction.user.id);
+    if (user == null) return {error: "`Missing uid and cookie`"};
+    const uid = user.genshin_uid;
     const cookie = user.hsr_cookie;
-    if (uid == null || cookie == null) return {error: "Missing uid and cookie"};
+    if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
     return {uid, cookie};
 }
 
@@ -59,104 +61,88 @@ const execute = async (interaction) => {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
             const cookie = interaction.options.getString("cookie");
-            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, hsr_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=excluded.hsr_cookie, hsr_uid=excluded.hsr_uid RETURNING hsr_cookie, hsr_uid;")
+            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, genshin_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=excluded.hsr_cookie, genshin_uid=excluded.genshin_uid RETURNING hsr_cookie, genshin_uid;")
                 .get(interaction.user.id, cookie, uid);
             const embed = new EmbedBuilder()
-                .setTitle('Honkai Star Rail info')
+                .setTitle('Genshin Impact info')
                 .addFields(
-                    { name: 'uid', value: user.hsr_uid.toString() },
+                    { name: 'uid', value: user.genshin_uid.toString() },
                     { name: 'cookie', value: user.hsr_cookie }
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'info': {
-            const hsr = getUidAndCookie(interaction);
-            if (hsr.error) return hsr.error;
+            const genshin = getUidAndCookie(interaction);
+            if (genshin.error) return genshin.error;
             const defer = interaction.deferReply();
-            const client = new HonkaiStarRail({
+            const client = new GenshinImpact({
                 lang: LanguageEnum.ENGLISH,
-                region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
+                region: GenshinRegion.USA,
+                cookie: genshin.cookie,
+                uid: genshin.uid
             })
-            client.record.region = 'prod_official_usa'
 
             let dailyResponse = client.daily.info()
-            let staminaResponse = client.record.note();
-            //let mocResponse = client.record.forgottenHall();
-            let mocResponse = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: client.record.uid,
-                schedule_type: '1',
-                need_all: 'false',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-            mocResponse = mocResponse.response.data;
-            let suResponse = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: client.record.uid,
-                schedule_type: '3',
-                lang: client.record.lang,
-                need_all: 'false',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/rogue')
-            suResponse = suResponse.response.data;
-
+            let staminaResponse = client.record.dailyNote();
+            let spiralResponse = client.record.spiralAbyss();
             dailyResponse = await dailyResponse;
             staminaResponse = await staminaResponse;
-            mocResponse = await mocResponse;
-            suResponse = await suResponse;
-
+            spiralResponse = await spiralResponse;
             let descLines = [];
+
             if (dailyResponse?.is_sign) {
                 descLines.push(`**Daily check-in** done`)
             } else {
                 descLines.push(`**Daily check-in** incomplete`)
             }
-            descLines.push(`**TP**: ${staminaResponse.current_stamina}/180, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
-            descLines.push(`**SU runs**: ${suResponse.current_record.basic.finish_cnt}`);
-
+            let tTime = staminaResponse.transformer.recovery_time;
+            let milliAfter = tTime.Day*24*60*60 + tTime.Hour*60*60 + tTime.Minute*60 + tTime.Second;
+            milliAfter = parseInt(new Date().getTime()/1000 + milliAfter);
+            descLines.push(`**Resin**: ${staminaResponse.current_resin}/160, capped <t:${calcTimestampAfter(staminaResponse.resin_recovery_time)}:R>`)
+            descLines.push(`**Daily Commissions**: ${staminaResponse.finished_task_num}/${staminaResponse.total_task_num}`)
+            descLines.push(`**Realm Currency**: ${staminaResponse.current_home_coin}/${staminaResponse.max_home_coin}, capped <t:${calcTimestampAfter(staminaResponse.home_coin_recovery_time)}:R>`)
+            descLines.push(`**Transformer** ready <t:${milliAfter}:R>`);
+            
             const embed = new EmbedBuilder()
-                .setTitle('Honkai Star Rail info')
+                .setTitle('Genshin Impact info')
                 .setDescription(descLines.join("\n"));
             
-            let assignmentLines = [];
+            let expeditionLines = [];
             staminaResponse.expeditions.forEach((expedition, i) => {
                 if (expedition.status === "Finished") {
-                    assignmentLines.push(`**Assignment ${i+1}** complete`)
+                    expeditionLines.push(`**Expedition ${i+1}** finished`)
                 } else {
-                    assignmentLines.push(`**Assignment ${i+1}** <t:${calcTimestampAfter(expedition.remaining_time)}:R>`)
+                    expeditionLines.push(`**Expedition ${i+1}** <t:${calcTimestampAfter(expedition.remained_time)}:R>`)
                 }
             })
-            embed.addFields({name: "Assignments", value: assignmentLines.join("\n")});
+            embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
 
-            let mocLines = [];
-            mocLines.push(`**Max floor**: ${mocResponse.max_floor}`);
-            mocLines.push(`**Stars**: ${mocResponse.star_num}/30`);
-            embed.addFields({name: "Memory of Chaos", value: mocLines.join("\n")});
+            let spiralLines = []
+            spiralLines.push(`**Max floor**: ${spiralResponse.max_floor}`);
+            spiralLines.push(`**Stars**: ${spiralResponse.total_star}/36`);
+            embed.addFields({name: "Spiral Abyss", value: spiralLines.join("\n")});
 
             let resetLines = [];
             resetLines.push(`**Daily** reset <t:${timeOnNext(24*60*60, 8*60*60)}:R>`)
             resetLines.push(`**Weekly** reset <t:${timeOnNext(7*24*60*60, 8*60*60+4*24*60*60)}:R>`)
-            let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+4, mocResponse.end_time.minute);
-            resetLines.push(`**MoC** reset <t:${mocDate.getTime()/1000}:R>`);
+            resetLines.push(`**Spiral Abyss** reset <t:${new Date(parseInt(spiralResponse.end_time)).getTime()}:R>`);
             embed.addFields({name: "Resets", value: resetLines.join("\n")});
             await defer;
             return {embeds: [embed]};
         } case 'daily': {
-            const hsr = getUidAndCookie(interaction);
-            if (hsr.error) return hsr.error;
+            const user = sql.prepare("SELECT hsr_cookie, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+            const uid = user.hsr_uid;
+            const cookie = user.hsr_cookie;
             const client = new HonkaiStarRail({
                 lang: LanguageEnum.ENGLISH,
                 region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
+                cookie,
+                uid
             })
             const claim = await client.daily.claim()
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type j into the address bar and paste the rest \`\`\`avascript: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
-        } case 'test': {
-            let hsr = getUidAndCookie(interaction);
-            return "good";
         }
     }
 }

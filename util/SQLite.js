@@ -27,4 +27,10 @@ if (sql.pragma("user_version")[0].user_version == 4) {
     sql.prepare("ALTER TABLE users ADD COLUMN hsr_uid INTEGER;").run();
     sql.pragma("user_version = 5");
 }
+
+if (sql.pragma("user_version")[0].user_version == 5) {
+    sql.prepare("ALTER TABLE users ADD COLUMN genshin_uid INTEGER;").run();
+    sql.prepare("ALTER TABLE users ADD COLUMN hsr_cookie2 TEXT;").run();
+    sql.pragma("user_version = 6");
+}
 export default sql;

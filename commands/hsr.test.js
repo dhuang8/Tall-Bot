@@ -9,8 +9,8 @@ test('hsr set', async () => {
     interaction.options.setSubcommand("set");
     interaction.options.setString("cookie", cookie);
     interaction.options.setInteger("uid", uid);
-    //let response = await execute(interaction);
-    //expect(response.embeds.length).toBe(1);
+    let response = await execute(interaction);
+    expect(response.embeds.length).toBe(1);
 });
 
 test('hsr info', async () => {
@@ -19,16 +19,7 @@ test('hsr info', async () => {
     interaction.options.setSubcommand("info");
     let response = await execute(interaction);
     expect(response.embeds.length).toBe(1);
-});
-
-test('hsr redeem2', async () => {
-    const interaction = new mockInteraction()
-    interaction.user = {id: "1234567890"}
-    interaction.options.setSubcommand("redeem2");
-    interaction.options.setString("code", "somecode");
-    let response = await execute(interaction);
-    console.log(response)
-    expect(response).toBeDefined();
+    console.log(response.embeds[0]);
 });
 
 test('hsr daily', async () => {
@@ -36,6 +27,13 @@ test('hsr daily', async () => {
     interaction.user = {id: "1234567890"}
     interaction.options.setSubcommand("daily");
     let response = await execute(interaction);
-    console.log(response)
+    expect(response).toBeDefined();
+});
+
+test('hsr test', async () => {
+    const interaction = new mockInteraction()
+    interaction.user = {id: "321"}
+    interaction.options.setSubcommand("test");
+    let response = await execute(interaction);
     expect(response).toBeDefined();
 });

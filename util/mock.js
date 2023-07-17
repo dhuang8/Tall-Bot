@@ -32,6 +32,9 @@ class mockInteraction {
     get options(){
         return this.mockOptions;
     }
+    deferReply() {
+        return;
+    }
 }
 
 export {mockInteraction}

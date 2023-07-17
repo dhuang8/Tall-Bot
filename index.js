@@ -36,6 +36,13 @@ import(`./commands/youtube.js`).then(command=>{
     throw e;
 });
 
+import(`./commands/genshin.js`).then(command=>{
+    client.commands.set(command.slash.name, command);
+}).catch(e=>{
+    console.log(`could not load genshin ${e}`);
+    throw e;
+});
+
 import(`./interactions/youtubebutton.js`).then(command=>{
     client.commands.set('youtubebutton', command);
 }).catch(e=>{
@@ -50,9 +57,23 @@ import(`./schedule/hsr_dailies.js`).then(s=>{
     throw e;
 });
 
+import(`./schedule/genshin_dailies.js`).then(s=>{
+    new s.GenshinDaily(client);
+}).catch(e=>{
+    console.log(`could not load genshin_dailies ${e}`);
+    throw e;
+});
+
+function logMessage(title, options) {
+    return `${title}\n${options}`
+}
+
+let logChannel = null;
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
-        interaction.deferReply();
+        if (logChannel) {
+            logChannel.send(logMessage(interaction.commandName, JSON.stringify(interaction.options)));
+        }
         const command = interaction.client.commands.get(interaction.commandName);
         if (!command) {
             console.error(`No command matching ${interaction.commandName} was found.`);
@@ -61,12 +82,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
         try {
             const response = await command.execute(interaction);
             if (typeof response == "string") {
-                interaction.editReply(response).catch(console.error);
+                if (interaction.replied || interaction.deferred) {
+                    interaction.editReply(response).catch(console.error);
+                } else {
+                    interaction.reply(response).catch(console.error);
+                }
             } else {
-                interaction.editReply(response).catch(console.error);
+                if (interaction.replied || interaction.deferred) {
+                    interaction.editReply(response).catch(console.error);
+                }  else {
+                    interaction.reply(response).catch(console.error);
+                }
             }
         } catch (error) {
-            console.error(error);
+            if (logChannel) {
+                logChannel.send(logMessage(interaction.commandName, error.toString()));
+            }
             if (interaction.replied || interaction.deferred) {
                 await interaction.editReply({ content: 'There was an error while executing this command!', ephemeral: true });
             } else {
@@ -74,10 +105,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
         }
     } else if (interaction.isButton()) {
+        if (logChannel) {
+            logChannel.send(logMessage(interaction.customId, JSON.stringify(interaction.options)));
+        }
         interaction.deferUpdate();
         const command = interaction.client.commands.get('youtubebutton');
         await command.execute(interaction);
     } else if (interaction.isStringSelectMenu()) {
+        if (logChannel) {
+            logChannel.send(logMessage(interaction.customId, JSON.stringify(interaction.options)));
+        }
         interaction.deferUpdate();
         const command = interaction.client.commands.get('youtubebutton');
         await command.execute(interaction);
@@ -96,15 +133,18 @@ client.once("ready", async ()=>{
     if (config.test) {
         client.guilds.cache.get(config.guild_id).commands.set([
             client.commands.get('hsr').slash,
-            client.commands.get('youtube').slash
+            client.commands.get('youtube').slash,
+            client.commands.get('genshin').slash
         ]);
     } else {
         client.application.commands.set([
             client.commands.get('hsr').slash,
-            client.commands.get('youtube').slash
+            client.commands.get('youtube').slash,
+            client.commands.get('genshin').slash
         ])
     }
     console.log(`\`${process.platform} ready\``)
+    logChannel = await client.channels.fetch(config.channel_id);
     //client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
     //createSlashCommands();
     //new cron(client);

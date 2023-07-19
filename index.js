@@ -43,13 +43,6 @@ import(`./commands/genshin.js`).then(command=>{
     throw e;
 });
 
-import(`./interactions/youtubebutton.js`).then(command=>{
-    client.commands.set('youtubebutton', command);
-}).catch(e=>{
-    console.log(`could not load youtubebutton ${e}`);
-    throw e;
-});
-
 import(`./schedule/hsr_dailies.js`).then(s=>{
     new s.HsrDaily(client);
 }).catch(e=>{
@@ -64,15 +57,15 @@ import(`./schedule/genshin_dailies.js`).then(s=>{
     throw e;
 });
 
-function logMessage(title, options) {
-    return `${title}\n${options}`
+function logMessage(...lines) {
+    return `${lines.join("\n")}`
 }
 
 let logChannel = null;
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
         if (logChannel) {
-            logChannel.send(logMessage(interaction.commandName, JSON.stringify(interaction.options)));
+            logChannel.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options)));
         }
         const command = interaction.client.commands.get(interaction.commandName);
         if (!command) {
@@ -96,27 +89,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
         } catch (error) {
             if (logChannel) {
-                logChannel.send(logMessage(interaction.commandName, error.toString()));
+                logChannel.send(logMessage(interaction.user.id, interaction.commandName, error.toString()));
             }
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.editReply({ content: '`There was an error while executing this command!`', ephemeral: true });
             } else {
-                await interaction.editReply({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.reply({ content: '`There was an error while executing this command!`', ephemeral: true });
             }
         }
     } else if (interaction.isButton()) {
+        let args = interaction.customId.split("|");
         if (logChannel) {
-            logChannel.send(logMessage(interaction.customId, JSON.stringify(interaction.options)));
+            logChannel.send(logMessage(interaction.user.id, interaction.customId));
         }
-        interaction.deferUpdate();
-        const command = interaction.client.commands.get('youtubebutton');
-        await command.execute(interaction);
+        const command = interaction.client.commands.get(args[0]);
+        await command.buttonClick(interaction);
     } else if (interaction.isStringSelectMenu()) {
+        let args = interaction.customId.split("|");
         if (logChannel) {
-            logChannel.send(logMessage(interaction.customId, JSON.stringify(interaction.options)));
+            logChannel.send(logMessage(interaction.user.id, interaction.customId));
         }
-        interaction.deferUpdate();
-        const command = interaction.client.commands.get('youtubebutton');
+        const command = interaction.client.commands.get(args[0]);
         await command.execute(interaction);
     }
 })

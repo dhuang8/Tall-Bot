@@ -64,9 +64,7 @@ function logMessage(...lines) {
 let logChannel = null;
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
-        if (logChannel) {
-            logChannel.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options)));
-        }
+        logChannel?.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options)));
         const command = interaction.client.commands.get(interaction.commandName);
         if (!command) {
             console.error(`No command matching ${interaction.commandName} was found.`);
@@ -88,9 +86,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             }
         } catch (error) {
-            if (logChannel) {
-                logChannel.send(logMessage(interaction.user.id, interaction.commandName, error.toString()));
-            }
+            logChannel?.send(logMessage(interaction.user.id, interaction.commandName, error.toString()));
             if (interaction.replied || interaction.deferred) {
                 await interaction.editReply({ content: '`There was an error while executing this command!`', ephemeral: true });
             } else {
@@ -99,16 +95,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     } else if (interaction.isButton()) {
         let args = interaction.customId.split("|");
-        if (logChannel) {
-            logChannel.send(logMessage(interaction.user.id, interaction.customId));
-        }
+        logChannel?.send(logMessage(interaction.user.id, interaction.customId));
         const command = interaction.client.commands.get(args[0]);
         await command.buttonClick(interaction);
     } else if (interaction.isStringSelectMenu()) {
         let args = interaction.customId.split("|");
-        if (logChannel) {
-            logChannel.send(logMessage(interaction.user.id, interaction.customId));
-        }
+        logChannel?.send(logMessage(interaction.user.id, interaction.customId));
         const command = interaction.client.commands.get(args[0]);
         await command.execute(interaction);
     }

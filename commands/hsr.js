@@ -54,6 +54,11 @@ function timeOnNext(interval, offset){
     return Math.floor(((Math.floor((new Date().getTime()-offset) / interval)+1) * interval + offset) / 1000);
 }
 
+function crossIfTrue(test, string) {
+    if (test) return `~~${string}~~`;
+    return string
+}
+
 async function generateInfo(hsr, userId) {
     const client = new HonkaiStarRail({
         lang: LanguageEnum.ENGLISH,
@@ -88,13 +93,8 @@ async function generateInfo(hsr, userId) {
     suResponse = await suResponse;
 
     let descLines = [];
-    if (dailyResponse?.is_sign) {
-        descLines.push(`**Daily check-in** done`)
-    } else {
-        descLines.push(`**Daily check-in** incomplete`)
-    }
-    descLines.push(`**TP**: ${staminaResponse.current_stamina}/180, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
-    descLines.push(`**SU runs**: ${suResponse.current_record.basic.finish_cnt}`);
+    descLines.push(crossIfTrue(dailyResponse?.is_sign, `**Daily check-in**`));
+    descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
 
     const embed = new EmbedBuilder()
         .setTitle('Honkai Star Rail info')
@@ -111,17 +111,33 @@ async function generateInfo(hsr, userId) {
     })
     embed.addFields({name: "Assignments", value: assignmentLines.join("\n")});
 
-    let mocLines = [];
-    mocLines.push(`**Max floor**: ${mocResponse.max_floor}`);
-    mocLines.push(`**Stars**: ${mocResponse.star_num}/30`);
-    embed.addFields({name: "Memory of Chaos", value: mocLines.join("\n")});
+    let dailyLines = [];
+    dailyLines.push(crossIfTrue(
+        staminaResponse.current_train_score == staminaResponse.max_train_score,
+        `**Daily Training**: ${staminaResponse.current_train_score}/${staminaResponse.max_train_score}`
+    ))
+    embed.addFields({name: `Daily reset <t:${timeOnNext(24*60*60, 9*60*60)}:R>`, value: dailyLines.join("\n")});
 
-    let resetLines = [];
-    resetLines.push(`**Daily** reset <t:${timeOnNext(24*60*60, 8*60*60)}:R>`)
-    resetLines.push(`**Weekly** reset <t:${timeOnNext(7*24*60*60, 8*60*60+4*24*60*60)}:R>`)
-    let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+4, mocResponse.end_time.minute);
-    resetLines.push(`**MoC** reset <t:${mocDate.getTime()/1000}:R>`);
-    embed.addFields({name: "Resets", value: resetLines.join("\n")});
+    let weeklyLines = [];
+    weeklyLines.push(crossIfTrue(
+        staminaResponse.weekly_cocoon_cnt === 0,
+        `**Echo of War attempts**: ${staminaResponse.weekly_cocoon_cnt}/${staminaResponse.weekly_cocoon_limit}`
+    ));
+    weeklyLines.push(crossIfTrue(
+        staminaResponse.current_rogue_score == staminaResponse.max_rogue_score,
+        `**SU Score**: ${staminaResponse.current_rogue_score}/${staminaResponse.max_rogue_score}`
+    ));
+    weeklyLines.push(`**SU Runs**: ${suResponse.current_record.basic.finish_cnt}`);
+    embed.addFields({name: `Weekly reset <t:${timeOnNext(7*24*60*60, 9*60*60+4*24*60*60)}:R>`, value: weeklyLines.join("\n")});
+
+    let mocLines = [];
+    let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+    mocLines.push(`**Max floor**: ${mocResponse.max_floor}`);
+    mocLines.push(crossIfTrue(
+        mocResponse.star_num == 30,
+        `**Stars**: ${mocResponse.star_num}/30`
+    ));
+    embed.addFields({name: `Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
 
     const refreshButton = new ButtonBuilder()
         .setCustomId(`hsr|${userId}`)
@@ -168,7 +184,7 @@ const execute = async (interaction) => {
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
         } case 'help' : {
-            return `Log into <https://www.hoyolab.com/home>, type j into the address bar and paste the rest \`\`\`avascript: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
+            return `Log into <https://www.hoyolab.com/home>, type java into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         } case 'test': {
             let hsr = getUidAndCookie(interaction.user.id);
             return "good";

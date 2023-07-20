@@ -138,7 +138,8 @@ export default new Command({
         let embed;
         let api_key;
         let time;
-        if (interaction.options.data[0].name == "key") {
+        switch (interaction.options.data[0].name) {
+        case "key": {
             switch (interaction.options.data[0].options[0].name) {
                 case "set":
                     let key = interaction.options.data[0].options[0].options[0].value;
@@ -160,7 +161,7 @@ export default new Command({
                     let response = sql.prepare("SELECT gw2key FROM users WHERE user_id=?").get(interaction.user.id);
                     return {content: `\`${response.gw2key}\``, ephemeral: true};
             }
-        } else if (interaction.options.data[0].name == "full-mat") {
+        } case "full-mat": {
             api_key = sql.prepare(`SELECT gw2key FROM users WHERE user_id = ?`).get(interaction.user.id).gw2key;
             let response = await fetch(`https://api.guildwars2.com/v2/account/materials`,{
                 headers: {
@@ -178,7 +179,7 @@ export default new Command({
             embed.setTitle("Full materials in storage");
             embed.setDescription(desc2.join("\n"))
             return embed;
-        } else if (interaction.options.data[0].name == "item") {
+        } case "item": {
             api_key = sql.prepare(`SELECT gw2key FROM users WHERE user_id = ?`).get(interaction.user.id).gw2key;
             let item_ids = gw2sql.prepare(`SELECT * FROM items WHERE name LIKE ?`).all(`%${interaction.options.data[0].options[0].value}%`);
             let shared_inventory = [];
@@ -230,7 +231,7 @@ export default new Command({
             });
             embed.setTitle(`Item search - ${interaction.options.data[0].options[0].value}`)
             return embed;
-        } else if (interaction.options.data[0].name == "daily") {
+        } case "daily": {
             let user = sql.prepare(`SELECT gw2key,gw2tracker FROM users WHERE user_id = ?`).get(interaction.user.id);
             api_key = user.gw2key;
             let eventsdone = [];
@@ -306,7 +307,7 @@ export default new Command({
                 }
             }
             return "`Missing API Key";
-        } else if (interaction.options.data[0].name == "timer") {
+        } case "timer": {
             time = (new Date()).valueOf()/1000/60 % 120;
             embed = new MessageEmbed();
 
@@ -347,6 +348,7 @@ export default new Command({
             let stmt = sql.prepare("INSERT INTO channels(channel_id,gw2timer) VALUES (?,?) ON CONFLICT(channel_id) DO UPDATE SET gw2timer=excluded.gw2timer;");
             stmt.run(message.channel.id, message.id);
             return "set";
+            }
         }
     }
 })

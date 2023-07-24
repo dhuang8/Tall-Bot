@@ -7,7 +7,7 @@ export class GenshinDaily {
     constructor(client) {
         this.client = client;
         var job = new CronJob('0 2 16 * * *', function() {
-            const users = sql.prepare("SELECT user_id, hsr_cookie, genshin_uid from users WHERE hsr_cookie IS NOT NULL AND genshin_uid IS NOT NULL").all();            
+            const users = sql.prepare("SELECT user_id, hsr_cookie, genshin_uid from users WHERE hsr_cookie IS NOT NULL AND genshin_uid IS NOT NULL").all();
             users.forEach(async user=>{
                 const user_id = user.user_id;
                 const cookie = user.hsr_cookie;

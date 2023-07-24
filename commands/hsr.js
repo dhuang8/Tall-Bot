@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
+import {crossIfTrue, calcTimestampAfter} from '../util/hoyo.js';
+import {timeOnNext} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
 
 const slash = new SlashCommandBuilder()
@@ -12,9 +14,11 @@ const slash = new SlashCommandBuilder()
             option.setName('uid')
             .setDescription('hsr uid')
             .setMinValue(600000000)
+            .setRequired(true)
         ).addStringOption(option =>
             option.setName('cookie')
             .setDescription('cookie from website')
+            .setRequired(true)
         )
     )
     .addSubcommand(subcommand => 
@@ -35,10 +39,6 @@ const slash = new SlashCommandBuilder()
         .setDescription("how to get cookie")
     )
 
-function calcTimestampAfter(time) {
-    return parseInt(new Date(new Date().getTime()+time*1000).getTime()/1000)
-}
-
 function getUidAndCookie(userId) {
     const user = sql.prepare("SELECT hsr_cookie, hsr_uid from users WHERE user_id = ?").get(userId);
     if (user == null) return {error: "Missing uid and cookie"};
@@ -46,17 +46,6 @@ function getUidAndCookie(userId) {
     const cookie = user.hsr_cookie;
     if (uid == null || cookie == null) return {error: "Missing uid and cookie"};
     return {uid, cookie};
-}
-
-function timeOnNext(interval, offset){
-    interval *= 1000;
-    offset *= 1000;
-    return Math.floor(((Math.floor((new Date().getTime()-offset) / interval)+1) * interval + offset) / 1000);
-}
-
-function crossIfTrue(test, string) {
-    if (test) return `~~${string}~~`;
-    return string
 }
 
 async function generateInfo(hsr, userId) {
@@ -92,8 +81,13 @@ async function generateInfo(hsr, userId) {
     mocResponse = await mocResponse;
     suResponse = await suResponse;
 
+    let nextUpdate = null;
+    const newCapped = staminaResponse.current_stamina >= staminaResponse.max_stamina-1 ? 1 : 0;
+    if (newCapped) nextUpdate = calcTimestampAfter(60*60*12)
+    else nextUpdate = calcTimestampAfter(staminaResponse.stamina_recover_time)
+    sql.prepare("UPDATE users SET hsr_capped=?, hsr_next_update=? WHERE user_id = ?;").run(newCapped, nextUpdate, userId);
+
     let descLines = [];
-    descLines.push(crossIfTrue(dailyResponse?.is_sign, `**Daily check-in**`));
     descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
 
     const embed = new EmbedBuilder()
@@ -117,17 +111,22 @@ async function generateInfo(hsr, userId) {
         `**Daily Training**: ${staminaResponse.current_train_score}/${staminaResponse.max_train_score}`
     ))
     embed.addFields({name: `Daily reset <t:${timeOnNext(24*60*60, 9*60*60)}:R>`, value: dailyLines.join("\n")});
+    
+    embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
 
     let weeklyLines = [];
     weeklyLines.push(crossIfTrue(
-        staminaResponse.weekly_cocoon_cnt === 0,
-        `**Echo of War attempts**: ${staminaResponse.weekly_cocoon_cnt}/${staminaResponse.weekly_cocoon_limit}`
+        staminaResponse.weekly_cocoon_cnt == 0,
+        `**Echo of War**: ${staminaResponse.weekly_cocoon_limit-staminaResponse.weekly_cocoon_cnt}/${staminaResponse.weekly_cocoon_limit}`
     ));
     weeklyLines.push(crossIfTrue(
         staminaResponse.current_rogue_score == staminaResponse.max_rogue_score,
-        `**SU Score**: ${staminaResponse.current_rogue_score}/${staminaResponse.max_rogue_score}`
+        `**SU score**: ${staminaResponse.current_rogue_score}/${staminaResponse.max_rogue_score}`
     ));
-    weeklyLines.push(`**SU Runs**: ${suResponse.current_record.basic.finish_cnt}`);
+    weeklyLines.push(crossIfTrue(
+        suResponse.current_record.basic.finish_cnt > 33,
+        `**SU runs**: ${suResponse.current_record.basic.finish_cnt}/34 (100 elites)` 
+    ));
     embed.addFields({name: `Weekly reset <t:${timeOnNext(7*24*60*60, 9*60*60+4*24*60*60)}:R>`, value: weeklyLines.join("\n")});
 
     let mocLines = [];
@@ -184,7 +183,7 @@ const execute = async (interaction) => {
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
         } case 'help' : {
-            return `Log into <https://www.hoyolab.com/home>, type java into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
+            return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         } case 'test': {
             let hsr = getUidAndCookie(interaction.user.id);
             return "good";

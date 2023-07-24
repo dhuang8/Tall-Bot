@@ -62,6 +62,14 @@ function logMessage(...lines) {
 }
 
 let logChannel = null;
+client.sendToLog = function(...lines) {
+    logChannel?.send(lines.join("\n"));
+}
+
+client.on(Events.Error, async (e) => {
+    console.error("error event", e);
+})
+
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
         logChannel?.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options)));
@@ -130,6 +138,13 @@ client.once("ready", async ()=>{
     }
     console.log(`\`${process.platform} ready\``)
     logChannel = await client.channels.fetch(config.channel_id);
+
+    import(`./schedule/hsr_cap.js`).then(s=>{
+        new s.HsrCap(client);
+    }).catch(e=>{
+        console.log(`could not load hsr_cap ${e}`);
+        throw e;
+    });
     //client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
     //createSlashCommands();
     //new cron(client);

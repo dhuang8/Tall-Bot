@@ -33,4 +33,14 @@ if (sql.pragma("user_version")[0].user_version == 5) {
     sql.prepare("ALTER TABLE users ADD COLUMN hsr_cookie2 TEXT;").run();
     sql.pragma("user_version = 6");
 }
+
+if (sql.pragma("user_version")[0].user_version == 6) {
+    sql.prepare("ALTER TABLE users ADD COLUMN hsr_capped BOOLEAN DEFAULT FALSE;").run();
+    sql.pragma("user_version = 7");
+}
+
+if (sql.pragma("user_version")[0].user_version == 7) {
+    sql.prepare("ALTER TABLE users ADD COLUMN hsr_next_update INTEGER DEFAULT 0;").run();
+    sql.pragma("user_version = 8");
+}
 export default sql;

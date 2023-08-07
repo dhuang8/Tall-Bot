@@ -57,6 +57,22 @@ import(`./schedule/genshin_dailies.js`).then(s=>{
     throw e;
 });
 
+if (!config.test) {
+    import(`./schedule/hsr_cap.js`).then(s=>{
+        new s.HsrCap(client);
+    }).catch(e=>{
+        console.log(`could not load hsr_cap ${e}`);
+        throw e;
+    });
+    
+    import(`./schedule/genshin_cap.js`).then(s=>{
+        new s.GenshinCap(client);
+    }).catch(e=>{
+        console.log(`could not load genshin_cap ${e}`);
+        throw e;
+    });
+}
+
 function logMessage(...lines) {
     return `${lines.join("\n")}`
 }
@@ -94,7 +110,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             }
         } catch (error) {
-            logChannel?.send(logMessage(interaction.user.id, interaction.commandName, error.toString()));
+            logChannel?.send(logMessage(interaction.user.id, interaction.commandName, error.stack));
+            console.error(error);
             if (interaction.replied || interaction.deferred) {
                 await interaction.editReply({ content: '`There was an error while executing this command!`', ephemeral: true });
             } else {
@@ -138,13 +155,6 @@ client.once("ready", async ()=>{
     }
     console.log(`\`${process.platform} ready\``)
     logChannel = await client.channels.fetch(config.channel_id);
-
-    import(`./schedule/hsr_cap.js`).then(s=>{
-        new s.HsrCap(client);
-    }).catch(e=>{
-        console.log(`could not load hsr_cap ${e}`);
-        throw e;
-    });
     //client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
     //createSlashCommands();
     //new cron(client);

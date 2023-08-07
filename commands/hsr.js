@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
 import {crossIfTrue, calcTimestampAfter} from '../util/hoyo.js';
-import {timeOnNext} from '../util/functions.js';
+import {timeOnNext, request} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
 
 const slash = new SlashCommandBuilder()
@@ -23,9 +23,14 @@ const slash = new SlashCommandBuilder()
     )
     .addSubcommand(subcommand => 
         subcommand.setName("info")
-        .setDescription("battle records")
+        .setDescription("Battle Chronicle")
     )
-    /*.addSubcommand(subcommand => 
+    .addSubcommand(subcommand => 
+        subcommand.setName("moc")
+        .setDescription("Memory of Chaos")
+    )
+    
+    .addSubcommand(subcommand => 
         subcommand.setName("redeem")
         .setDescription("redeem codes")
         .addStringOption(option =>
@@ -33,7 +38,7 @@ const slash = new SlashCommandBuilder()
             .setDescription('code')
             .setRequired(true)
         )
-    )*/
+    )
     .addSubcommand(subcommand => 
         subcommand.setName("help")
         .setDescription("how to get cookie")
@@ -46,6 +51,15 @@ function getUidAndCookie(userId) {
     const cookie = user.hsr_cookie;
     if (uid == null || cookie == null) return {error: "Missing uid and cookie"};
     return {uid, cookie};
+}
+
+let charRequest = request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json");
+let charMap = JSON.parse(await charRequest);
+
+function createListFromAvatarList(avatars) {
+    charMap[8002].name = charMap[8001].name = "Trailblazer (Physical)"
+    charMap[8003].name = charMap[8004].name = "Trailblazer (Fire)"
+    return avatars.map(ava => `Lv.${ava.level} ${charMap[ava.id].name}`).join("\n")
 }
 
 async function generateInfo(hsr, userId) {
@@ -91,7 +105,7 @@ async function generateInfo(hsr, userId) {
     descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
 
     const embed = new EmbedBuilder()
-        .setTitle('Honkai Star Rail info')
+        .setTitle('Honkai: Star Rail — Battle Chronicle')
         .setDescription(descLines.join("\n"))
         .setTimestamp();
     
@@ -104,6 +118,8 @@ async function generateInfo(hsr, userId) {
         }
     })
     embed.addFields({name: "Assignments", value: assignmentLines.join("\n")});
+    
+    embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
 
     let dailyLines = [];
     dailyLines.push(crossIfTrue(
@@ -111,8 +127,6 @@ async function generateInfo(hsr, userId) {
         `**Daily Training**: ${staminaResponse.current_train_score}/${staminaResponse.max_train_score}`
     ))
     embed.addFields({name: `Daily reset <t:${timeOnNext(24*60*60, 9*60*60)}:R>`, value: dailyLines.join("\n")});
-    
-    embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
 
     let weeklyLines = [];
     weeklyLines.push(crossIfTrue(
@@ -131,7 +145,10 @@ async function generateInfo(hsr, userId) {
 
     let mocLines = [];
     let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
-    mocLines.push(`**Max floor**: ${mocResponse.max_floor}`);
+    mocLines.push(crossIfTrue(
+        mocResponse.max_floor.indexOf("10") > -1,
+        `**Max floor**: ${mocResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
+    ));
     mocLines.push(crossIfTrue(
         mocResponse.star_num == 30,
         `**Stars**: ${mocResponse.star_num}/30`
@@ -182,11 +199,79 @@ const execute = async (interaction) => {
             const claim = await client.daily.claim()
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
+        } case 'redeem': {
+            const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+            if (user == null) return {error: "Missing uid and cookie"};
+            const uid = user.hsr_uid;
+            const cookie = user.hsr_cookie2;
+            if (uid == null || cookie == null) return {error: "Missing uid and cookie"};
+            console.log(uid, cookie);
+            const client = new HonkaiStarRail({
+                lang: LanguageEnum.ENGLISH,
+                region: HsrRegion.USA,
+                cookie: cookie,
+                uid: uid
+            })
+            const claim = await client.redeem.claim(interaction.options.getString("code"));
+            console.log(claim);
+            if (claim?.status) return claim.status;
+            throw new Error(JSON.stringify(claim));
+        } case 'moc': {
+            const hsr = getUidAndCookie(interaction.user.id);
+            if (hsr.error) return hsr.error;
+            const defer = interaction.deferReply();
+            const client = new HonkaiStarRail({
+                lang: LanguageEnum.ENGLISH,
+                region: 'prod_official_usa',
+                cookie: hsr.cookie,
+                uid: hsr.uid
+            })
+            client.record.region = 'prod_official_usa'
+            let mocResponse = await client.record.forgottenHall();
+            
+            let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+
+            let descLines = [];
+            descLines.push(`Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`);
+            descLines.push(`**Stars**: ${mocResponse.star_num}/30`);
+            let embed = new EmbedBuilder()
+            .setTitle('Honkai: Star Rail — Memory of Chaos')
+            .setDescription(descLines.join("\n"))
+            let embeds = []
+//            embed.addFields({name: `Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
+            mocResponse.all_floor_detail.forEach((floor, i) => {
+                if (i == 8) {
+                    embeds.push(embed);
+                    embed = new EmbedBuilder();
+                }
+                const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
+                const stars = floor.star_num;
+                const cycles = floor.round_num;
+                let lines = [];
+                lines.push(':star:'.repeat(stars));
+                lines.push(`**Cycles left**: ${40-cycles}/40`)
+                embed.addFields({name, value: lines.join("\n")});
+                embed.addFields({name: 'Team Setup 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
+                embed.addFields({name: 'Team Setup 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+            })
+            embed.setTimestamp();
+            embeds.push(embed);
+            await defer;
+            return {embeds};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         } case 'test': {
-            let hsr = getUidAndCookie(interaction.user.id);
-            return "good";
+            const hsr = getUidAndCookie(interaction.user.id);
+            if (hsr.error) return hsr.error;
+            const defer = interaction.deferReply();
+            const client = new HonkaiStarRail({
+                lang: LanguageEnum.ENGLISH,
+                region: 'prod_official_usa',
+                cookie: hsr.cookie,
+                uid: hsr.uid
+            })
+            client.record.region = 'prod_official_usa'
+            let mocResponse = await client.info();
         }
     }
 }

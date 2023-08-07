@@ -74,3 +74,7 @@ export function validateEmbed(embed) {
         else if (embed.description?.length > 0) embed.setDescription("")
     }
 }
+
+export async function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}

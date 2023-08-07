@@ -43,4 +43,10 @@ if (sql.pragma("user_version")[0].user_version == 7) {
     sql.prepare("ALTER TABLE users ADD COLUMN hsr_next_update INTEGER DEFAULT 0;").run();
     sql.pragma("user_version = 8");
 }
+
+if (sql.pragma("user_version")[0].user_version == 8) {
+    sql.prepare("ALTER TABLE users ADD COLUMN genshin_next_update INTEGER DEFAULT 0;").run();
+    sql.prepare("ALTER TABLE users ADD COLUMN genshin_capped BOOLEAN DEFAULT FALSE;").run();
+}
+sql.pragma("user_version = 9");
 export default sql;

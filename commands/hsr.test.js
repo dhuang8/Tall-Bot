@@ -37,3 +37,11 @@ test('hsr test', async () => {
     let response = await execute(interaction);
     expect(response).toBeDefined();
 });
+
+test('hsr moc', async () => {
+    const interaction = new mockInteraction()
+    interaction.user = {id: "1234567890"}
+    interaction.options.setSubcommand("moc");
+    let response = await execute(interaction);
+    expect(response.embeds.length).toBe(1);
+});

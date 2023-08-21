@@ -29,7 +29,16 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("moc")
         .setDescription("Memory of Chaos")
     )
-    
+    .addSubcommand(subcommand => 
+        subcommand.setName("support-char")
+        .setDescription("support character")
+        .addStringOption(option =>
+            option.setName('uid')
+            .setDescription('UID')
+            .setRequired(false)
+        )
+    )
+    /*
     .addSubcommand(subcommand => 
         subcommand.setName("redeem")
         .setDescription("redeem codes")
@@ -39,6 +48,7 @@ const slash = new SlashCommandBuilder()
             .setRequired(true)
         )
     )
+    */
     .addSubcommand(subcommand => 
         subcommand.setName("help")
         .setDescription("how to get cookie")
@@ -199,23 +209,6 @@ const execute = async (interaction) => {
             const claim = await client.daily.claim()
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
-        } case 'redeem': {
-            const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
-            if (user == null) return {error: "Missing uid and cookie"};
-            const uid = user.hsr_uid;
-            const cookie = user.hsr_cookie2;
-            if (uid == null || cookie == null) return {error: "Missing uid and cookie"};
-            console.log(uid, cookie);
-            const client = new HonkaiStarRail({
-                lang: LanguageEnum.ENGLISH,
-                region: HsrRegion.USA,
-                cookie: cookie,
-                uid: uid
-            })
-            const claim = await client.redeem.claim(interaction.options.getString("code"));
-            console.log(claim);
-            if (claim?.status) return claim.status;
-            throw new Error(JSON.stringify(claim));
         } case 'moc': {
             const hsr = getUidAndCookie(interaction.user.id);
             if (hsr.error) return hsr.error;
@@ -251,8 +244,8 @@ const execute = async (interaction) => {
                 lines.push(':star:'.repeat(stars));
                 lines.push(`**Cycles left**: ${40-cycles}/40`)
                 embed.addFields({name, value: lines.join("\n")});
-                embed.addFields({name: 'Team Setup 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
-                embed.addFields({name: 'Team Setup 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+                embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
+                embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
             })
             embed.setTimestamp();
             embeds.push(embed);
@@ -272,8 +265,78 @@ const execute = async (interaction) => {
             })
             client.record.region = 'prod_official_usa'
             let mocResponse = await client.info();
-        }
+        } case 'support-char': {
+            let uid = interaction.options.getInteger("uid");
+            if (uid == null) {
+                const user = sql.prepare("SELECT hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+                uid = user.hsr_uid;
+            }
+            if (uid == null) return `missing uid`;
+            const defer = interaction.deferReply();
+            const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`)
+            const char = info.characters[0];
+            const embed = new EmbedBuilder()
+            .setTitle('Honkai: Star Rail — Support Character')
+            .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
+            let descLines = [];
+            for (let obj of char.additions) {
+                descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
+            }
+            descLines.push(`**Light cone**: Lv.${char.light_cone.level} S${char.light_cone.rank} ${char.light_cone.name}`)
+            embed.addFields({name: char.name, value: descLines.join("\n")});
+            for (let relic of char.relics) {
+                let descLines = [];
+                descLines.push(`**Lv.${relic.level}**`);
+                descLines.push(`**${relic.main_affix.name}**: ${changeToPercent(relic.main_affix)}`);
+                for (let sub of relic.sub_affix) {
+                    descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
+                }
+                embed.addFields({name: relic.name, value: descLines.join("\n"), inline: true});
+            }
+            await defer;
+            return {embeds: [embed]};
+        } case 'redeem' : {
+            const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+            if (user == null) return "`Missing uid and cookie`";
+            const uid = user.hsr_uid;
+            const cookie = user.hsr_cookie2;
+            if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
+            const hsr = {uid, cookie};
+            const defer = interaction.deferReply();
+            const client = new HonkaiStarRail({
+                lang: "en",
+                region: "prod_official_usa",
+                cookie: hsr.cookie,
+                uid: hsr.uid
+            })
+            client.redeem.region = 'prod_official_usa';
+            client.redeem.game_biz = "hkrpg_global";
+            client.redeem.t = Date.now();
+            console.log(client.redeem);
+            const code = interaction.options.getString("code");
+            const redeem = await client.redeem.claim(code);
+            await defer;
+            console.log(redeem);
+            return JSON.stringify(redeem);
+        } 
     }
+}
+
+function roundToPlaces(value, num = 2) {
+    return Math.round(value * Math.pow(10, num))/Math.pow(10, num);
+}
+
+function changeToPercent(obj) {
+    return obj.percent ? `${roundToPlaces(obj.value*100)}%` : roundToPlaces(obj.value);
+}
+
+function getTotalStat(char, fieldName) {
+    return getFieldValue(char.attributes, fieldName) + getFieldValue(char.additions, fieldName);
+}
+
+function getFieldValue(arr, fieldName) {
+    let obj = arr.find(obj => obj.field == fieldName)
+    return obj ? obj.value : 0;
 }
 
 const buttonClick = async (interaction) => {

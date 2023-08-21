@@ -45,3 +45,20 @@ test('hsr moc', async () => {
     let response = await execute(interaction);
     expect(response.embeds.length).toBe(1);
 });
+
+test('hsr support-char', async () => {
+    const interaction = new mockInteraction()
+    interaction.user = {id: "1234567890"}
+    interaction.options.setSubcommand("support-char");
+    let response = await execute(interaction);
+    expect(response.embeds.length).toBe(1);
+});
+test('hsr redeem', async () => {
+    const interaction = new mockInteraction()
+    interaction.user = {id: "1234567890"}
+    interaction.options.setSubcommand("redeem");
+    interaction.options.setString("code", "GENSHINGIFT");
+    let response = await execute(interaction);
+    console.log(response);
+    //expect(response.embeds.length).toBe(1);
+});

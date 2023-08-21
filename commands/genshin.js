@@ -33,7 +33,8 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("spiral-abyss")
         .setDescription("Spiral Abyss")
     )
-    /*.addSubcommand(subcommand => 
+    /*
+    .addSubcommand(subcommand => 
         subcommand.setName("redeem")
         .setDescription("redeem codes")
         .addStringOption(option =>
@@ -41,7 +42,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('code')
             .setRequired(true)
         )
-    )*/
+    )
+    */
     .addSubcommand(subcommand => 
         subcommand.setName("help")
         .setDescription("how to get cookie")
@@ -219,6 +221,26 @@ const execute = async (interaction) => {
             embeds.push(embed);
             await defer;
             return {embeds};
+        } case 'redeem' : {
+            const user = sql.prepare("SELECT hsr_cookie2, genshin_uid from users WHERE user_id = ?").get(interaction.user.id);
+            if (user == null) return {error: "`Missing uid and cookie`"};
+            const uid = user.genshin_uid;
+            const cookie = user.hsr_cookie2;
+            if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
+            const genshin = {uid, cookie};
+            if (genshin.error) return genshin.error;
+            const defer = interaction.deferReply();
+            const client = new GenshinImpact({
+                lang: LanguageEnum.ENGLISH,
+                region: GenshinRegion.USA,
+                cookie: genshin.cookie,
+                uid: genshin.uid
+            })
+            const code = interaction.options.getString("code");
+            const redeem = await client.redeem.claim(code);
+            await defer;
+            console.log(redeem);
+            return JSON.stringify(redeem);
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type java into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         }

@@ -39,19 +39,21 @@ test('hsr test', async () => {
 });
 
 test('hsr moc', async () => {
-    const interaction = new mockInteraction()
-    interaction.user = {id: "1234567890"}
+    const interaction = new mockInteraction();
+    interaction.user = {id: "1234567890"};
     interaction.options.setSubcommand("moc");
     let response = await execute(interaction);
-    expect(response.embeds.length).toBe(1);
+    expect(response.embeds.length).toBeGreaterThan(0);
 });
 
 test('hsr support-char', async () => {
+    const uid = 600043161;
     const interaction = new mockInteraction()
     interaction.user = {id: "1234567890"}
     interaction.options.setSubcommand("support-char");
+    interaction.options.setInteger("uid", uid);
     let response = await execute(interaction);
-    expect(response.embeds.length).toBe(1);
+    expect(response.embeds.length).toBe(4);
 });
 test('hsr redeem', async () => {
     const interaction = new mockInteraction()

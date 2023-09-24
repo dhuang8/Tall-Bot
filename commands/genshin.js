@@ -83,7 +83,7 @@ async function generateInfo(genshin, userId){
     descLines.push(`**Transformer** ready <t:${milliAfter}:R>`);
 
     const embed = new EmbedBuilder()
-        .setTitle('Genshin Impact info')
+        .setTitle('Genshin Impact — Battle Chronicle')
         .setDescription(descLines.join("\n"))
         .setTimestamp();
     

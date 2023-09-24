@@ -32,7 +32,7 @@ const slash = new SlashCommandBuilder()
     .addSubcommand(subcommand => 
         subcommand.setName("support-char")
         .setDescription("support character")
-        .addStringOption(option =>
+        .addIntegerOption(option =>
             option.setName('uid')
             .setDescription('UID')
             .setRequired(false)
@@ -63,12 +63,13 @@ function getUidAndCookie(userId) {
     return {uid, cookie};
 }
 
+//TODO how to update if char doesn't exist
 let charRequest = request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json");
 let charMap = JSON.parse(await charRequest);
+charMap[8002].name = charMap[8001].name = "Trailblazer (Physical)"
+charMap[8003].name = charMap[8004].name = "Trailblazer (Fire)"
 
 function createListFromAvatarList(avatars) {
-    charMap[8002].name = charMap[8001].name = "Trailblazer (Physical)"
-    charMap[8003].name = charMap[8004].name = "Trailblazer (Fire)"
     return avatars.map(ava => `Lv.${ava.level} ${charMap[ava.id].name}`).join("\n")
 }
 
@@ -113,7 +114,7 @@ async function generateInfo(hsr, userId) {
 
     let descLines = [];
     descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
-
+    descLines.push(`**RTP**: ${staminaResponse.current_reserve_stamina}/2400`)
     const embed = new EmbedBuilder()
         .setTitle('Honkai: Star Rail — Battle Chronicle')
         .setDescription(descLines.join("\n"))
@@ -174,6 +175,30 @@ async function generateInfo(hsr, userId) {
         .addComponents(refreshButton);
 
     return {embeds: [embed], components: [row]};
+}
+
+function createCharEmbed(char) {
+    const embed = new EmbedBuilder()
+        .setTitle(char.name)
+        .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
+    let descLines = [];
+    descLines.push(`**Light cone**: Lv.${char.light_cone.level} S${char.light_cone.rank} ${char.light_cone.name}`)
+    for (let obj of char.additions) {
+        descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
+    }
+    embed.setDescription(descLines.join("\n"));
+    for (let relic of char.relics) {
+        let descLines = [];
+        descLines.push(`**Lv.${relic.level}**`);
+        descLines.push(`**${relic.main_affix.name}**: ${changeToPercent(relic.main_affix)}`);
+        for (let sub of relic.sub_affix) {
+            descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
+        }
+        embed.addFields({name: relic.name, value: descLines.join("\n"), inline: true});
+    }
+    console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
+    embed.addFields({name: "Relic Sets", value: char.relic_sets.map(set => `**${set.name} (${set.num})**: ${set.desc}`).join("\n"), inline: false});
+    return embed;
 }
 
 const execute = async (interaction) => {
@@ -242,7 +267,7 @@ const execute = async (interaction) => {
                 const cycles = floor.round_num;
                 let lines = [];
                 lines.push(':star:'.repeat(stars));
-                lines.push(`**Cycles left**: ${40-cycles}/40`)
+                lines.push(`**Cycles**: ${cycles}`)
                 embed.addFields({name, value: lines.join("\n")});
                 embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
                 embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
@@ -273,28 +298,12 @@ const execute = async (interaction) => {
             }
             if (uid == null) return `missing uid`;
             const defer = interaction.deferReply();
-            const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`)
-            const char = info.characters[0];
-            const embed = new EmbedBuilder()
-            .setTitle('Honkai: Star Rail — Support Character')
-            .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
-            let descLines = [];
-            for (let obj of char.additions) {
-                descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
-            }
-            descLines.push(`**Light cone**: Lv.${char.light_cone.level} S${char.light_cone.rank} ${char.light_cone.name}`)
-            embed.addFields({name: char.name, value: descLines.join("\n")});
-            for (let relic of char.relics) {
-                let descLines = [];
-                descLines.push(`**Lv.${relic.level}**`);
-                descLines.push(`**${relic.main_affix.name}**: ${changeToPercent(relic.main_affix)}`);
-                for (let sub of relic.sub_affix) {
-                    descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
-                }
-                embed.addFields({name: relic.name, value: descLines.join("\n"), inline: true});
-            }
+            const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`);
+            let embeds = [];
+            console.log(info.characters[0]);
+            info.characters.forEach(char => embeds.push(createCharEmbed(char)));
             await defer;
-            return {embeds: [embed]};
+            return {embeds};
         } case 'redeem' : {
             const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
             if (user == null) return "`Missing uid and cookie`";

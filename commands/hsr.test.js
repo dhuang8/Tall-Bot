@@ -53,6 +53,8 @@ test('hsr support-char', async () => {
     interaction.options.setSubcommand("support-char");
     interaction.options.setInteger("uid", uid);
     let response = await execute(interaction);
+    // console.log(response.embeds[1].data.fields);
+    console.log(JSON.stringify(response, null, 4));
     expect(response.embeds.length).toBe(4);
 });
 test('hsr redeem', async () => {

@@ -12,7 +12,7 @@ const slash = new SlashCommandBuilder()
         .setDescription("set cookie and uid")
         .addIntegerOption(option =>
             option.setName('uid')
-            .setDescription('hsr uid')
+            .setDescription('genshin uid')
             .setMinValue(600000000)
         )
         .addStringOption(option =>

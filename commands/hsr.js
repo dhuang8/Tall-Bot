@@ -3,6 +3,15 @@ import sql from '../util/SQLite.js';
 import {crossIfTrue, calcTimestampAfter} from '../util/hoyo.js';
 import {timeOnNext, request} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
+import fs from 'fs';
+
+let hsr_stats;
+try {
+    hsr_stats = JSON.parse(fs.readFileSync("./data/hsr_weights.json", 'utf8'));
+} catch (e) {
+    console.error(e);
+    console.error("hsr_weights not found");
+}
 
 const slash = new SlashCommandBuilder()
     .setName('hsr')
@@ -114,7 +123,7 @@ async function generateInfo(hsr, userId) {
 
     let descLines = [];
     descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
-    descLines.push(`**RTP**: ${staminaResponse.current_reserve_stamina}/2400`)
+    descLines.push(`**Reserve TP**: ${staminaResponse.current_reserve_stamina}/2400`)
     const embed = new EmbedBuilder()
         .setTitle('Honkai: Star Rail — Battle Chronicle')
         .setDescription(descLines.join("\n"))
@@ -177,7 +186,46 @@ async function generateInfo(hsr, userId) {
     return {embeds: [embed], components: [row]};
 }
 
+let relic_mains = [];
+relic_mains[3] = ["AttackAddedRatio", "CriticalChanceBase", "CriticalDamageBase"];
+relic_mains[4] = ["AttackAddedRatio", "SpeedDelta"];
+relic_mains[6] = ["AttackAddedRatio"];
+
+function calcScore(name, relic) {
+    if (!hsr_stats.weights[name]) {
+        name = "DPS";
+    }
+    let weights = Object.entries(hsr_stats.weights[name]).sort((a,b) => {
+        return b[1] - a[1];
+    }).map(sub => {
+        let stats = hsr_stats.subs[sub[0]];
+        sub.push(sub[1]/(stats.base+stats.step*2));
+        return sub;
+    });
+    let top4main = [];
+    let found = false;
+    for (let i = 0; i < weights.length; i++) {
+        let slot = parseInt(relic.id) % 10;
+        if (!found && relic_mains[slot]?.includes(weights[i][0])) {
+            found = true;
+        } else {
+            top4main.push(weights[i]);
+        }
+        if (top4main.length > 3) break;
+    }
+    let max_score = top4main[0][1]*6 + top4main[1][1] + top4main[2][1] + top4main[3][1];
+    let score = 0;
+    for (let sub of relic.sub_affix) {
+        let stats = weights.find(thisSub => {
+            return thisSub[0] === sub.type;
+        })
+        if (stats) score += sub.value * stats[2];
+    }
+    return `**${name} Score**: ${Math.floor(score/max_score*100)}`;
+}
+
 function createCharEmbed(char) {
+    let textLen = 5000;
     const embed = new EmbedBuilder()
         .setTitle(char.name)
         .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
@@ -186,7 +234,7 @@ function createCharEmbed(char) {
     for (let obj of char.additions) {
         descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
     }
-    embed.setDescription(descLines.join("\n"));
+    embed.setDescription(descLines.join("\n").slice(0,textLen));
     for (let relic of char.relics) {
         let descLines = [];
         descLines.push(`**Lv.${relic.level}**`);
@@ -194,10 +242,11 @@ function createCharEmbed(char) {
         for (let sub of relic.sub_affix) {
             descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
         }
-        embed.addFields({name: relic.name, value: descLines.join("\n"), inline: true});
+        descLines.push(calcScore(char.name, relic));
+        embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,textLen), inline: true});
     }
-    console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
-    embed.addFields({name: "Relic Sets", value: char.relic_sets.map(set => `**${set.name} (${set.num})**: ${set.desc}`).join("\n"), inline: false});
+    // console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
+    embed.addFields({name: "Relic Sets", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,textLen), inline: false});
     return embed;
 }
 
@@ -300,7 +349,7 @@ const execute = async (interaction) => {
             const defer = interaction.deferReply();
             const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`);
             let embeds = [];
-            console.log(info.characters[0]);
+            // console.log(info.characters[0]);
             info.characters.forEach(char => embeds.push(createCharEmbed(char)));
             await defer;
             return {embeds};

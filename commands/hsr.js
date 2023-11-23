@@ -272,7 +272,7 @@ function createCharEmbed(char) {
         .setTitle(char.name)
         .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
     let descLines = [];
-    descLines.push(`**Light cone**: Lv.${char.light_cone.level} S${char.light_cone.rank} ${char.light_cone.name}`)
+    descLines.push(`**Light cone**: Lv.${char.light_cone?.level} S${char.light_cone?.rank} ${char.light_cone?.name}`)
     for (let obj of char.additions) {
         descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
     }

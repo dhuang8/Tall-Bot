@@ -3,7 +3,7 @@ import sql from '../util/SQLite.js';
 import config from '../config.json' assert { type: "json" };
 import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
 
-export class GenshinDaily {
+export default class GenshinDaily {
     constructor(client) {
         this.client = client;
         var job = new CronJob('0 2 16 * * *', function() {

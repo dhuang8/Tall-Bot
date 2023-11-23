@@ -6,8 +6,10 @@ import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
 import fs from 'fs';
 
 let hsr_stats;
+let jingliu_test;
 try {
     hsr_stats = JSON.parse(fs.readFileSync("./data/hsr_weights.json", 'utf8'));
+    jingliu_test = JSON.parse(fs.readFileSync("./data/jingliu_test.json", 'utf8'));
 } catch (e) {
     console.error(e);
     console.error("hsr_weights not found");
@@ -189,39 +191,79 @@ async function generateInfo(hsr, userId) {
 let relic_mains = [];
 relic_mains[3] = ["AttackAddedRatio", "CriticalChanceBase", "CriticalDamageBase"];
 relic_mains[4] = ["AttackAddedRatio", "SpeedDelta"];
+relic_mains[5] = [
+    "AttackAddedRatio",
+    "PhysicalAddedRatio",
+    "FireAddedRatio",
+    "IceAddedRatio",
+    "ThunderAddedRatio",
+    "WindAddedRatio",
+    "QuantumAddedRatio",
+    "ImaginaryAddedRatio"
+];
 relic_mains[6] = ["AttackAddedRatio"];
 
 function calcScore(name, relic) {
+    // name = "Jingliu"
+    const include_main_stat = true;
     if (!hsr_stats.weights[name]) {
         name = "DPS";
     }
+    let slot = parseInt(relic.id % 10) - 1;
+    // weights = [["AttackAddedRatio", 4, 2], ...] where 4 is value of a high roll substat and 2 is points per substat
     let weights = Object.entries(hsr_stats.weights[name]).sort((a,b) => {
         return b[1] - a[1];
     }).map(sub => {
         let stats = hsr_stats.subs[sub[0]];
-        sub.push(sub[1]/(stats.base+stats.step*2));
+        let max_sub_value = stats ? stats.base+stats.step*2 : hsr_stats.main[sub[0]]/10;
+        sub.push(sub[1]/max_sub_value);
         return sub;
     });
-    let top4main = [];
-    let found = false;
-    for (let i = 0; i < weights.length; i++) {
-        let slot = parseInt(relic.id) % 10;
-        if (!found && relic_mains[slot]?.includes(weights[i][0])) {
-            found = true;
-        } else {
-            top4main.push(weights[i]);
-        }
-        if (top4main.length > 3) break;
-    }
-    let max_score = top4main[0][1]*6 + top4main[1][1] + top4main[2][1] + top4main[3][1];
+    // console.log(mainstat , top4main[0] , top4main[1] , top4main[2] , top4main[3])
     let score = 0;
+    let scores = [];
+    if (include_main_stat) {
+        let stats = weights.find(thisSub => {
+            return thisSub[0] === relic.main_affix.type;
+        })
+        if (stats) {
+            if (relic.main_affix.type == "SpeedDelta") {
+                score += stats[1] * 25/2.6
+                scores.push(stats[1] * 25/2.6);
+            } else {
+                score += stats[1] * 10
+                scores.push(stats[1] * 10);
+            }
+        } else {
+            scores.push(0);
+        }
+    }
     for (let sub of relic.sub_affix) {
         let stats = weights.find(thisSub => {
             return thisSub[0] === sub.type;
         })
-        if (stats) score += sub.value * stats[2];
+        if (stats) {
+            scores.push(sub.value * stats[2]);
+            score += sub.value * stats[2];
+        } else {
+            scores.push(0);
+        }
     }
-    return `**${name} Score**: ${Math.floor(score/max_score*100)}`;
+    score = Math.round(score);
+    let count_data = jingliu_test[name][slot]
+    let count = count_data[score];
+    if (count == null) {
+        for (let [key,val] of Object.entries(count_data)) {
+            let this_score = parseFloat(key);
+            if (score < this_score) {
+                count = val;
+                break;
+            }
+        }
+        if (count == null) count = 0;
+    }
+    if (count <= 0) return `**This shit is perfect**`;
+    return `**TP upgrade cost**: ${count}`;
 }
 
 function createCharEmbed(char) {
@@ -246,7 +288,8 @@ function createCharEmbed(char) {
         embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,textLen), inline: true});
     }
     // console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
-    embed.addFields({name: "Relic Sets", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,textLen), inline: false});
+    embed.addFields({name: "Set Bonuses", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,textLen), inline: false});
+    embed.setColor(char.element.color)
     return embed;
 }
 
@@ -349,7 +392,7 @@ const execute = async (interaction) => {
             const defer = interaction.deferReply();
             const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`);
             let embeds = [];
-            // console.log(info.characters[0]);
+            // console.log(info.characters);
             info.characters.forEach(char => embeds.push(createCharEmbed(char)));
             await defer;
             return {embeds};

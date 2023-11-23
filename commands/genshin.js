@@ -80,7 +80,10 @@ async function generateInfo(genshin, userId){
     let tTime = staminaResponse.transformer.recovery_time;
     let milliAfter = tTime.Day*24*60*60 + tTime.Hour*60*60 + tTime.Minute*60 + tTime.Second;
     milliAfter = parseInt(new Date().getTime()/1000 + milliAfter);
-    descLines.push(`**Transformer** ready <t:${milliAfter}:R>`);
+    descLines.push(crossIfTrue(
+        milliAfter > 0,
+        `**Transformer** ready <t:${milliAfter}:R>`
+    ));
 
     const embed = new EmbedBuilder()
         .setTitle('Genshin Impact — Battle Chronicle')

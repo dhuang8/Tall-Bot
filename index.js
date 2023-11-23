@@ -10,7 +10,7 @@ import config from './config.json' assert { type: "json" };
 //import { createRequire } from 'node:module';
 //const require = createRequire(import.meta.url);
 //const {token} = require("./config.json");
-
+// process.setMaxListeners(100)
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
@@ -22,55 +22,27 @@ const client = new Client({
 
 client.commands = new Collection();
 
-import(`./commands/hsr.js`).then(command=>{
-    client.commands.set(command.slash.name, command);
-}).catch(e=>{
-    console.log(`could not load hsr ${e}`);
-    throw e;
-});
+let commandsList = ["hsr", "youtube", "genshin"];
 
-import(`./commands/youtube.js`).then(command=>{
-    client.commands.set(command.slash.name, command);
-}).catch(e=>{
-    console.log(`could not load youtube ${e}`);
-    throw e;
-});
+commandsList.forEach(commandName => {
+    import(`./commands/${commandName}.js`).then(command=>{
+        client.commands.set(command.slash.name, command);
+    }).catch(e=>{
+        console.log(`could not load ${commandName} ${e}`);
+        throw e;
+    });
+})
 
-import(`./commands/genshin.js`).then(command=>{
-    client.commands.set(command.slash.name, command);
-}).catch(e=>{
-    console.log(`could not load genshin ${e}`);
-    throw e;
-});
-
-import(`./schedule/hsr_dailies.js`).then(s=>{
-    new s.HsrDaily(client);
-}).catch(e=>{
-    console.log(`could not load hsr_dailies ${e}`);
-    throw e;
-});
-
-import(`./schedule/genshin_dailies.js`).then(s=>{
-    new s.GenshinDaily(client);
-}).catch(e=>{
-    console.log(`could not load genshin_dailies ${e}`);
-    throw e;
-});
-
+let scheduleList = ["hsr_dailies", "genshin_dailies", "hsr_cap", "genshin_cap"];
 if (!config.test) {
-    import(`./schedule/hsr_cap.js`).then(s=>{
-        new s.HsrCap(client);
-    }).catch(e=>{
-        console.log(`could not load hsr_cap ${e}`);
-        throw e;
-    });
-    
-    import(`./schedule/genshin_cap.js`).then(s=>{
-        new s.GenshinCap(client);
-    }).catch(e=>{
-        console.log(`could not load genshin_cap ${e}`);
-        throw e;
-    });
+    scheduleList.forEach(name => {
+        import(`./schedule/${name}.js`).then(sche=>{
+            new sche.default(client);
+        }).catch(e=>{
+            console.log(`could not load ${name} ${e}`);
+            throw e;
+        });
+    })
 }
 
 function logMessage(...lines) {
@@ -141,17 +113,13 @@ client.once("ready", async ()=>{
     //console.log("not loaded", not_loaded)
     //await clearSlashCommands();
     if (config.test) {
-        client.guilds.cache.get(config.guild_id).commands.set([
-            client.commands.get('hsr').slash,
-            client.commands.get('youtube').slash,
-            client.commands.get('genshin').slash
-        ]);
+        client.guilds.cache.get(config.guild_id).commands.set(
+            client.commands.map(command => command.slash)
+        );
     } else {
-        client.application.commands.set([
-            client.commands.get('hsr').slash,
-            client.commands.get('youtube').slash,
-            client.commands.get('genshin').slash
-        ])
+        client.application.commands.set(
+            client.commands.map(command => command.slash)
+        )
     }
     console.log(`\`${process.platform} ready\``)
     logChannel = await client.channels.fetch(config.channel_id);

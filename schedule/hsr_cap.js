@@ -3,7 +3,7 @@ import {calcTimestampAfter} from '../util/hoyo.js';
 import {sleep} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
 
-export class HsrCap {
+export default class HsrCap {
     constructor(client) {
         this.updateStmt = sql.prepare("UPDATE users SET hsr_capped=?, hsr_next_update=? WHERE user_id = ?;")
         this.errorStmt = sql.prepare("UPDATE users SET hsr_next_update=? WHERE user_id = ?;")

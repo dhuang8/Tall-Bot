@@ -3,7 +3,7 @@ import sql from '../util/SQLite.js';
 import config from '../config.json' assert { type: "json" };
 import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
 
-export class HsrDaily {
+export default class HsrDaily {
     constructor(client) {
         this.client = client;
         var job = new CronJob('0 2 16 * * *', function() {

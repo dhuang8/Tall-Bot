@@ -3,7 +3,7 @@ import {calcTimestampAfter} from '../util/hoyo.js';
 import {sleep} from '../util/functions.js';
 import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
 
-export class GenshinCap {
+export default class GenshinCap {
     constructor(client) {
         this.updateStmt = sql.prepare("UPDATE users SET genshin_capped=?, genshin_next_update=? WHERE user_id = ?;")
         this.errorStmt = sql.prepare("UPDATE users SET genshin_next_update=? WHERE user_id = ?;")

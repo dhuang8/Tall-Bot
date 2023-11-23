@@ -7,8 +7,9 @@
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.16.0",
-    "better-sqlite3": "^8.4.0",
-    "cron": "^2.3.1",
+    "better-sqlite3": "^9.0.0",
+    "cron": "^3.1.6",
+    "depcheck": "^1.4.7",
     "discord.js": "^14.11.0",
     "hoyoapi": "^1.2.0",
     "play-dl": "^1.9.6",
@@ -16,7 +17,7 @@
   },
   "scripts": {
     "test": "jest",
-    "start": "node index.js"
+    "start": "node .\\index.js"
   },
   "author": "",
   "license": "ISC",

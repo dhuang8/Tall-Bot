@@ -9,11 +9,10 @@
     "@discordjs/voice": "^0.16.0",
     "better-sqlite3": "^9.0.0",
     "cron": "^3.1.6",
-    "depcheck": "^1.4.7",
     "discord.js": "^14.11.0",
     "hoyoapi": "^1.2.0",
-    "play-dl": "^1.9.6",
-    "sodium": "^3.0.2"
+    "libsodium-wrappers": "^0.7.13",
+    "play-dl": "^1.9.6"
   },
   "scripts": {
     "test": "jest",

@@ -81,7 +81,7 @@ async function generateInfo(genshin, userId){
     let milliAfter = tTime.Day*24*60*60 + tTime.Hour*60*60 + tTime.Minute*60 + tTime.Second;
     milliAfter = parseInt(new Date().getTime()/1000 + milliAfter);
     descLines.push(crossIfTrue(
-        milliAfter > 0,
+        false,
         `**Transformer** ready <t:${milliAfter}:R>`
     ));
 

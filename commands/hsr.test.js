@@ -54,7 +54,7 @@ test('hsr support-char', async () => {
     interaction.options.setInteger("uid", uid);
     let response = await execute(interaction);
     // console.log(response.embeds[1].data.fields);
-    // console.log(JSON.stringify(response, null, 4));
+    // console.log(JSON.stringify(response, null, 4));o
     expect(response.embeds.length).toBe(4);
 }, 10000);
 test('hsr redeem', async () => {

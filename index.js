@@ -10,7 +10,6 @@ import config from './config.json' assert { type: "json" };
 //import { createRequire } from 'node:module';
 //const require = createRequire(import.meta.url);
 //const {token} = require("./config.json");
-// process.setMaxListeners(100)
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
@@ -22,7 +21,7 @@ const client = new Client({
 
 client.commands = new Collection();
 
-let commandsList = ["hsr", "youtube", "genshin"];
+let commandsList = ["hsr", "youtube", "genshin", "birthday"];
 
 commandsList.forEach(commandName => {
     import(`./commands/${commandName}.js`).then(command=>{
@@ -33,17 +32,15 @@ commandsList.forEach(commandName => {
     });
 })
 
-let scheduleList = ["hsr_dailies", "genshin_dailies", "hsr_cap", "genshin_cap"];
-if (!config.test) {
-    scheduleList.forEach(name => {
-        import(`./schedule/${name}.js`).then(sche=>{
-            new sche.default(client);
-        }).catch(e=>{
-            console.log(`could not load ${name} ${e}`);
-            throw e;
-        });
-    })
-}
+let scheduleList = ["hsr_dailies", "genshin_dailies", "hsr_cap", "genshin_cap", "birthday"];
+scheduleList.forEach(name => {
+    import(`./schedule/${name}.js`).then(sche=>{
+        new sche.default(client);
+    }).catch(e=>{
+        console.log(`could not load ${name} ${e}`);
+        throw e;
+    });
+})
 
 function logMessage(...lines) {
     return `${lines.join("\n")}`
@@ -51,7 +48,7 @@ function logMessage(...lines) {
 
 let logChannel = null;
 client.sendToLog = function(...lines) {
-    logChannel?.send(lines.join("\n"));
+    logChannel?.send(lines.join("\n").substring(0, 2000));
 }
 
 client.on(Events.Error, async (e) => {

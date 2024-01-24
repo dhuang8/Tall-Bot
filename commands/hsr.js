@@ -96,13 +96,34 @@ async function generateInfo(hsr, userId) {
     let dailyResponse = client.daily.info()
     let staminaResponse = client.record.note();
     //let mocResponse = client.record.forgottenHall();
-    let mocResponse = await client.record.request.setQueryParams({
+    let mocResponse1 = await client.record.request.setQueryParams({
         server: client.record.region,
         role_id: client.record.uid,
         schedule_type: '1',
         need_all: 'false',
     }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-    mocResponse = mocResponse.response.data;
+    let mocResponse2 = await client.record.request.setQueryParams({
+        server: client.record.region,
+        role_id: client.record.uid,
+        schedule_type: '2',
+        need_all: 'false',
+    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
+    let pfResponse1 = await client.record.request.setQueryParams({
+        server: client.record.region,
+        role_id: client.record.uid,
+        schedule_type: '2',
+        need_all: 'false',
+    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
+    let pfResponse2 = await client.record.request.setQueryParams({
+        server: client.record.region,
+        role_id: client.record.uid,
+        schedule_type: '1',
+        need_all: 'false',
+    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
+    mocResponse1 = mocResponse1.response.data;
+    mocResponse2 = mocResponse2.response.data;
+    pfResponse1 = pfResponse1.response.data;
+    pfResponse2 = pfResponse2.response.data;
     let suResponse = await client.record.request.setQueryParams({
         server: client.record.region,
         role_id: client.record.uid,
@@ -112,9 +133,11 @@ async function generateInfo(hsr, userId) {
     }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/rogue')
     suResponse = suResponse.response.data;
 
+    //TODO probably a better way to do this
     dailyResponse = await dailyResponse;
     staminaResponse = await staminaResponse;
-    mocResponse = await mocResponse;
+    let mocResponses = [await mocResponse1, await mocResponse2];
+    let pfResponses = [await pfResponse1, await pfResponse2];
     suResponse = await suResponse;
 
     let nextUpdate = null;
@@ -165,17 +188,42 @@ async function generateInfo(hsr, userId) {
     ));
     embed.addFields({name: `Weekly reset <t:${timeOnNext(7*24*60*60, 9*60*60+4*24*60*60)}:R>`, value: weeklyLines.join("\n")});
 
-    let mocLines = [];
-    let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
-    mocLines.push(crossIfTrue(
-        mocResponse.max_floor.indexOf("10") > -1,
-        `**Max floor**: ${mocResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
-    ));
-    mocLines.push(crossIfTrue(
-        mocResponse.star_num == 30,
-        `**Stars**: ${mocResponse.star_num}/30`
-    ));
-    embed.addFields({name: `Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
+    for (let i=0; i<2;i++) {
+        let mocResponse = mocResponses[i];
+        if (mocResponse.all_floor_detail.length == 0) continue;
+        let mocLines = [];
+        let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+        mocLines.push(crossIfTrue(
+            mocResponse.max_floor.indexOf("XII") > -1,
+            `**Max floor**: ${mocResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
+        ));
+        mocLines.push(crossIfTrue(
+            mocResponse.star_num >= 36,
+            `**Stars**: ${mocResponse.star_num}/36`
+        ));
+        embed.addFields({name: `This Memory of Chaos ends <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
+    }
+
+    for (let i=0; i<2;i++) {
+        let pfResponse = pfResponses[i];
+        if (pfResponse.all_floor_detail.length == 0) continue;
+        let pfLines = [];
+        let pfDate = new Date(
+            pfResponse.groups[0].end_time.year, 
+            pfResponse.groups[0].end_time.month-1, 
+            pfResponse.groups[0].end_time.day, 
+            pfResponse.groups[0].end_time.hour+5, 
+            pfResponse.groups[0].end_time.minute);
+        pfLines.push(crossIfTrue(
+            pfResponse.max_floor.indexOf("IV") > -1,
+            `**Max floor**: ${pfResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
+        ));
+        pfLines.push(crossIfTrue(
+            pfResponse.star_num >= 12,
+            `**Stars**: ${pfResponse.star_num}/12`
+        ));
+        embed.addFields({name: `This Pure Fiction ends <t:${pfDate.getTime()/1000}:R>`, value: pfLines.join("\n")});
+    }
 
     const refreshButton = new ButtonBuilder()
         .setCustomId(`hsr|${userId}`)
@@ -206,9 +254,6 @@ relic_mains[6] = ["AttackAddedRatio"];
 function calcScore(name, relic) {
     // name = "Jingliu"
     const include_main_stat = true;
-    if (!hsr_stats.weights[name]) {
-        name = "DPS";
-    }
     let slot = parseInt(relic.id % 10) - 1;
     // weights = [["AttackAddedRatio", 4, 2], ...] where 4 is value of a high roll substat and 2 is points per substat
     let weights = Object.entries(hsr_stats.weights[name]).sort((a,b) => {
@@ -272,11 +317,15 @@ function createCharEmbed(char) {
         .setTitle(char.name)
         .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
     let descLines = [];
-    descLines.push(`**Light cone**: Lv.${char.light_cone?.level} S${char.light_cone?.rank} ${char.light_cone?.name}`)
+    if (char.light_cone) descLines.push(`**Light cone**: Lv.${char.light_cone?.level} S${char.light_cone?.rank} ${char.light_cone?.name}`)
     for (let obj of char.additions) {
         descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
     }
     embed.setDescription(descLines.join("\n").slice(0,textLen));
+    let name_for_relic = char.name
+    if (!hsr_stats.weights[char.name]) {
+        name_for_relic = char.path.name;
+    }
     for (let relic of char.relics) {
         let descLines = [];
         descLines.push(`**Lv.${relic.level}**`);
@@ -284,12 +333,13 @@ function createCharEmbed(char) {
         for (let sub of relic.sub_affix) {
             descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
         }
-        descLines.push(calcScore(char.name, relic));
+        descLines.push(calcScore(name_for_relic, relic));
         embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,textLen), inline: true});
     }
     // console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
     embed.addFields({name: "Set Bonuses", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,textLen), inline: false});
     embed.setColor(char.element.color)
+    embed.setFooter({text:`TP cost based on weights for ${name_for_relic}`})
     return embed;
 }
 
@@ -336,36 +386,49 @@ const execute = async (interaction) => {
                 cookie: hsr.cookie,
                 uid: hsr.uid
             })
-            client.record.region = 'prod_official_usa'
-            let mocResponse = await client.record.forgottenHall();
-            
-            let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
-
-            let descLines = [];
-            descLines.push(`Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`);
-            descLines.push(`**Stars**: ${mocResponse.star_num}/30`);
-            let embed = new EmbedBuilder()
-            .setTitle('Honkai: Star Rail — Memory of Chaos')
-            .setDescription(descLines.join("\n"))
+            client.record.region = 'prod_official_usa';
+            let mocResponse1 = await client.record.request.setQueryParams({
+                server: client.record.region,
+                role_id: client.record.uid,
+                schedule_type: '1',
+                need_all: 'true',
+            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
+            let mocResponse2 = await client.record.request.setQueryParams({
+                server: client.record.region,
+                role_id: client.record.uid,
+                schedule_type: '2',
+                need_all: 'true',
+            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
             let embeds = []
-//            embed.addFields({name: `Memory of Chaos reset <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
-            mocResponse.all_floor_detail.forEach((floor, i) => {
-                if (i == 8) {
-                    embeds.push(embed);
-                    embed = new EmbedBuilder();
-                }
-                const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
-                const stars = floor.star_num;
-                const cycles = floor.round_num;
-                let lines = [];
-                lines.push(':star:'.repeat(stars));
-                lines.push(`**Cycles**: ${cycles}`)
-                embed.addFields({name, value: lines.join("\n")});
-                embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
-                embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
-            })
-            embed.setTimestamp();
-            embeds.push(embed);
+            let mocResponses = [mocResponse1.response.data, mocResponse2.response.data]
+            for (let i=0;i<2;i++) {
+                let mocResponse = mocResponses[i]
+                let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+                let descLines = [];
+                descLines.push(`This Memory of Chaos ends <t:${mocDate.getTime()/1000}:R>`);
+                descLines.push(`**Stars**: ${mocResponse.star_num}/36`);
+                let embed = new EmbedBuilder()
+                    .setTitle('Honkai: Star Rail — Memory of Chaos')
+                    .setDescription(descLines.join("\n"))
+                mocResponse.all_floor_detail.forEach(floor => {
+                    if (floor.is_fast) return;
+                    if (embed.addFields.length > 21) {
+                        embeds.push(embed);
+                        embed = new EmbedBuilder();
+                    }
+                    const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
+                    const stars = floor.star_num;
+                    const cycles = floor.round_num;
+                    let lines = [];
+                    lines.push(':star:'.repeat(stars));
+                    lines.push(`**Cycles**: ${cycles}`)
+                    embed.addFields({name, value: lines.join("\n")});
+                    embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
+                    embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+                })
+                embed.setTimestamp();
+                embeds.push(embed);
+            }
             await defer;
             return {embeds};
         } case 'help' : {
@@ -392,7 +455,6 @@ const execute = async (interaction) => {
             const defer = interaction.deferReply();
             const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`);
             let embeds = [];
-            // console.log(info.characters);
             info.characters.forEach(char => embeds.push(createCharEmbed(char)));
             await defer;
             return {embeds};

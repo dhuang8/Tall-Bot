@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import config from '../config.json' assert { type: "json" };
 
 const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/);
 
@@ -47,6 +48,15 @@ if (sql.pragma("user_version")[0].user_version == 7) {
 if (sql.pragma("user_version")[0].user_version == 8) {
     sql.prepare("ALTER TABLE users ADD COLUMN genshin_next_update INTEGER DEFAULT 0;").run();
     sql.prepare("ALTER TABLE users ADD COLUMN genshin_capped BOOLEAN DEFAULT FALSE;").run();
+    sql.pragma("user_version = 9");
 }
-sql.pragma("user_version = 9");
+
+if (sql.pragma("user_version")[0].user_version == 9) {
+    if (config.birthday_id) {
+        sql.prepare("UPDATE users SET birthday_channel = ? WHERE birthday_channel IS NULL and birthday IS not NULL;")
+            .run(config.birthday_id);
+    }
+    sql.pragma("user_version = 10");
+}
+
 export default sql;

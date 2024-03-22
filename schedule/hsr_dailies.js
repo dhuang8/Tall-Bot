@@ -1,6 +1,6 @@
 import {CronJob} from 'cron';
 import sql from '../util/SQLite.js';
-import config from '../config.json' assert { type: "json" };
+import config from '../config.json' with { type: "json" };
 import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
 
 export default class HsrDaily {

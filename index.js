@@ -6,7 +6,7 @@ import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
 //import cron from './util/gw2tracker.js';
 //import birthdayschedule from './schedule/birthday.js';
 //import Util from './util/functions.js';
-import config from './config.json' assert { type: "json" };
+import config from './config.json' with { type: "json" };
 //import { createRequire } from 'node:module';
 //const require = createRequire(import.meta.url);
 //const {token} = require("./config.json");
@@ -46,6 +46,12 @@ function logMessage(...lines) {
     return `${lines.join("\n")}`
 }
 
+async function interactionReply(interaction, response, replied = false) {
+    if (replied) return interaction.followUp(response);
+    if (interaction.deferred) return interaction.editReply(response);
+    return interaction.reply(response);
+}
+
 let logChannel = null;
 client.sendToLog = function(...lines) {
     logChannel?.send(lines.join("\n").substring(0, 2000));
@@ -56,47 +62,58 @@ client.on(Events.Error, async (e) => {
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
-	if (interaction.isChatInputCommand()) {
-        logChannel?.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options)));
-        const command = interaction.client.commands.get(interaction.commandName);
-        if (!command) {
-            console.error(`No command matching ${interaction.commandName} was found.`);
-            return;
-        }
-        try {
-            const response = await command.execute(interaction);
-            if (typeof response == "string") {
-                if (interaction.replied || interaction.deferred) {
-                    interaction.editReply(response).catch(console.error);
+    try {
+        if (interaction.isChatInputCommand()) {
+            logChannel?.send(logMessage(interaction.user.id, interaction.commandName, JSON.stringify(interaction.options))).catch(console.error);
+            const command = interaction.client.commands.get(interaction.commandName);
+            if (!command) {
+                console.error(`No command matching ${interaction.commandName} was found.`);
+                return;
+            }
+            try {
+                const response = await command.execute(interaction);
+                if (typeof response == "string") {
+                    await interactionReply(interaction, response);
+                } else if (typeof response === "object" && response.embeds) {
+                    let embeds = response.embeds;
+                    let response_copy = response;
+                    response_copy.embeds = [];
+                    let text_length = 0;
+                    let replied = false;
+                    for (let count=0; count < embeds.length; count++) {
+                        let embed = embeds[count];
+                        if (embed.length > 6000) throw new Error("embed length > 6000");
+                        if (text_length + embed.length > 6000) {
+                            await interactionReply(interaction, response_copy, replied);
+                            replied = true;
+                            response_copy = {embeds: []}
+                            text_length = 0;
+                        }
+                        response_copy.embeds.push(embed);
+                        text_length += embed.length;
+                    }
+                    await interactionReply(interaction, response_copy, replied);
                 } else {
-                    interaction.reply(response).catch(console.error);
+                    await interactionReply(interaction, response_copy);
                 }
-            } else {
-                if (interaction.replied || interaction.deferred) {
-                    interaction.editReply(response).catch(console.error);
-                }  else {
-                    interaction.reply(response).catch(console.error);
-                }
+            } catch (error) {
+                console.error(error);
+                logChannel?.send(logMessage(interaction.user.id, interaction.commandName, error.stack)).catch(console.error);
+                await interactionReply(interaction, { content: '`Error`', ephemeral: true });
             }
-        } catch (error) {
-            logChannel?.send(logMessage(interaction.user.id, interaction.commandName, error.stack));
-            console.error(error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({ content: '`There was an error while executing this command!`', ephemeral: true });
-            } else {
-                await interaction.reply({ content: '`There was an error while executing this command!`', ephemeral: true });
-            }
+        } else if (interaction.isButton()) {
+            let args = interaction.customId.split("|");
+            logChannel?.send(logMessage(interaction.user.id, interaction.customId)).catch(console.error);
+            const command = interaction.client.commands.get(args[0]);
+            await command.buttonClick(interaction);
+        } else if (interaction.isStringSelectMenu()) {
+            let args = interaction.customId.split("|");
+            logChannel?.send(logMessage(interaction.user.id, interaction.customId)).catch(console.error);
+            const command = interaction.client.commands.get(args[0]);
+            await command.execute(interaction);
         }
-    } else if (interaction.isButton()) {
-        let args = interaction.customId.split("|");
-        logChannel?.send(logMessage(interaction.user.id, interaction.customId));
-        const command = interaction.client.commands.get(args[0]);
-        await command.buttonClick(interaction);
-    } else if (interaction.isStringSelectMenu()) {
-        let args = interaction.customId.split("|");
-        logChannel?.send(logMessage(interaction.user.id, interaction.customId));
-        const command = interaction.client.commands.get(args[0]);
-        await command.execute(interaction);
+    } catch (e) {
+        console.error(e);
     }
 })
 

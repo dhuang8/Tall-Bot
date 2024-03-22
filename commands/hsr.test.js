@@ -46,6 +46,14 @@ test('hsr moc', async () => {
     expect(response.embeds.length).toBeGreaterThan(0);
 });
 
+test('hsr pf', async () => {
+    const interaction = new mockInteraction();
+    interaction.user = {id: "1234567890"};
+    interaction.options.setSubcommand("pure-fiction");
+    let response = await execute(interaction);
+    expect(response.embeds.length).toBeGreaterThan(0);
+});
+
 test('hsr support-char', async () => {
     const uid = 600043161;
     const interaction = new mockInteraction()

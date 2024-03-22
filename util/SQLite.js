@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
-import config from '../config.json' assert { type: "json" };
+// import config from '../config.json';
+import config from '../config.json' with { type: "json" };
 
 const sql = new Database('sqlitedb/discord.sqlite'/*, { verbose: console.log }*/);
 

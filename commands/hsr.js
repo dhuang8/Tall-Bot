@@ -6,10 +6,12 @@ import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
 import fs from 'fs';
 
 let hsr_stats;
-let jingliu_test;
+let relic_count;
 try {
+    // update from char_weights.json
     hsr_stats = JSON.parse(fs.readFileSync("./data/hsr_weights.json", 'utf8'));
-    jingliu_test = JSON.parse(fs.readFileSync("./data/jingliu_test.json", 'utf8'));
+    // update from relic_count.json
+    relic_count = JSON.parse(fs.readFileSync("./data/relic_count.json", 'utf8'));
 } catch (e) {
     console.error(e);
     console.error("hsr_weights not found");
@@ -41,6 +43,10 @@ const slash = new SlashCommandBuilder()
         .setDescription("Memory of Chaos")
     )
     .addSubcommand(subcommand => 
+        subcommand.setName("pure-fiction")
+        .setDescription("Pure Fiction")
+    )
+    .addSubcommand(subcommand => 
         subcommand.setName("support-char")
         .setDescription("support character")
         .addIntegerOption(option =>
@@ -48,8 +54,22 @@ const slash = new SlashCommandBuilder()
             .setDescription('UID')
             .setRequired(false)
         )
+        .addStringOption(option =>
+            option.setName('char-name')
+            .setDescription('character name')
+            .setRequired(false)
+        )
     )
     /*
+    .addSubcommand(subcommand => 
+        subcommand.setName("support-char2")
+        .setDescription("support character")
+        .addIntegerOption(option =>
+            option.setName('uid')
+            .setDescription('UID')
+            .setRequired(false)
+        )
+    )
     .addSubcommand(subcommand => 
         subcommand.setName("redeem")
         .setDescription("redeem codes")
@@ -252,7 +272,6 @@ relic_mains[5] = [
 relic_mains[6] = ["AttackAddedRatio"];
 
 function calcScore(name, relic) {
-    // name = "Jingliu"
     const include_main_stat = true;
     let slot = parseInt(relic.id % 10) - 1;
     // weights = [["AttackAddedRatio", 4, 2], ...] where 4 is value of a high roll substat and 2 is points per substat
@@ -295,7 +314,7 @@ function calcScore(name, relic) {
         }
     }
     score = Math.round(score);
-    let count_data = jingliu_test[name][slot]
+    let count_data = relic_count[name][slot]
     let count = count_data[score];
     if (count == null) {
         for (let [key,val] of Object.entries(count_data)) {
@@ -312,7 +331,6 @@ function calcScore(name, relic) {
 }
 
 function createCharEmbed(char) {
-    let textLen = 5000;
     const embed = new EmbedBuilder()
         .setTitle(char.name)
         .setThumbnail(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/${char.icon}`);
@@ -321,11 +339,13 @@ function createCharEmbed(char) {
     for (let obj of char.additions) {
         descLines.push(`**${obj.name}**: ${changeToPercent({percent: obj.percent, value: getTotalStat(char, obj.field)})}`)
     }
-    embed.setDescription(descLines.join("\n").slice(0,textLen));
+    // embed.setDescription(descLines.join("\n").slice(0,textLen));
+    embed.addFields({name: "Stats", value: descLines.join("\n").slice(0,4095), inline: false});
     let name_for_relic = char.name
     if (!hsr_stats.weights[char.name]) {
         name_for_relic = char.path.name;
     }
+    console.log(char, name_for_relic);
     for (let relic of char.relics) {
         let descLines = [];
         descLines.push(`**Lv.${relic.level}**`);
@@ -334,12 +354,13 @@ function createCharEmbed(char) {
             descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
         }
         descLines.push(calcScore(name_for_relic, relic));
-        embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,textLen), inline: true});
+        embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,1000), inline: true});
     }
     // console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));
-    embed.addFields({name: "Set Bonuses", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,textLen), inline: false});
+    embed.addFields({name: "Set Bonuses", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,2000), inline: false});
     embed.setColor(char.element.color)
     embed.setFooter({text:`TP cost based on weights for ${name_for_relic}`})
+    console.log("size", char.name, embed.length)
     return embed;
 }
 
@@ -431,6 +452,62 @@ const execute = async (interaction) => {
             }
             await defer;
             return {embeds};
+        } case 'pure-fiction': {
+            const hsr = getUidAndCookie(interaction.user.id);
+            if (hsr.error) return hsr.error;
+            const defer = interaction.deferReply();
+            const client = new HonkaiStarRail({
+                lang: LanguageEnum.ENGLISH,
+                region: 'prod_official_usa',
+                cookie: hsr.cookie,
+                uid: hsr.uid
+            })
+            client.record.region = 'prod_official_usa';
+            let mocResponse1 = await client.record.request.setQueryParams({
+                server: client.record.region,
+                role_id: client.record.uid,
+                schedule_type: '1',
+                need_all: 'true',
+            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
+            let mocResponse2 = await client.record.request.setQueryParams({
+                server: client.record.region,
+                role_id: client.record.uid,
+                schedule_type: '2',
+                need_all: 'true',
+            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
+            let embeds = []
+            let mocResponses = [mocResponse1.response.data, mocResponse2.response.data]
+            for (let i=0;i<2;i++) {
+                let mocResponse = mocResponses[i];
+                console.log(mocResponse);
+                let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+                let descLines = [];
+                descLines.push(`This Pure Fiction ends <t:${mocDate.getTime()/1000}:R>`);
+                descLines.push(`**Stars**: ${mocResponse.star_num}/36`);
+                let embed = new EmbedBuilder()
+                    .setTitle('Honkai: Star Rail — Pure Fiction')
+                    .setDescription(descLines.join("\n"))
+                mocResponse.all_floor_detail.forEach(floor => {
+                    if (floor.is_fast) return;
+                    if (embed.addFields.length > 21) {
+                        embeds.push(embed);
+                        embed = new EmbedBuilder();
+                    }
+                    const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
+                    const stars = floor.star_num;
+                    const cycles = floor.round_num;
+                    let lines = [];
+                    lines.push(':star:'.repeat(stars));
+                    lines.push(`**Cycles**: ${cycles}`)
+                    embed.addFields({name, value: lines.join("\n")});
+                    embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
+                    embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+                })
+                embed.setTimestamp();
+                embeds.push(embed);
+            }
+            await defer;
+            return {embeds};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         } case 'test': {
@@ -455,9 +532,15 @@ const execute = async (interaction) => {
             const defer = interaction.deferReply();
             const info = await request(`https://api.mihomo.me/sr_info_parsed/${uid}?lang=en`);
             let embeds = [];
-            info.characters.forEach(char => embeds.push(createCharEmbed(char)));
+            let char_name = interaction.options.getString("char-name");
+            // if (char_name) {
+            //     info.characters.forEach(char => embeds.push(createCharEmbed(char)));
+            // } else {
+                info.characters.filter(char => char_name == null || char.name.toLowerCase().indexOf(char_name.toLowerCase()) > -1).forEach(char => embeds.push(createCharEmbed(char)));
+            // }
             await defer;
-            return {embeds};
+            if (embeds.length > 0) return {embeds};
+            return "`No characters found`";
         } case 'redeem' : {
             const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
             if (user == null) return "`Missing uid and cookie`";

@@ -345,7 +345,7 @@ function createCharEmbed(char) {
     if (!hsr_stats.weights[char.name]) {
         name_for_relic = char.path.name;
     }
-    console.log(char, name_for_relic);
+    // console.log(char, name_for_relic);
     for (let relic of char.relics) {
         let descLines = [];
         descLines.push(`**Lv.${relic.level}**`);
@@ -360,7 +360,7 @@ function createCharEmbed(char) {
     embed.addFields({name: "Set Bonuses", value: char.relic_sets.map(set => `${set.name} (${set.num})`).join("\n").slice(0,2000), inline: false});
     embed.setColor(char.element.color)
     embed.setFooter({text:`TP cost based on weights for ${name_for_relic}`})
-    console.log("size", char.name, embed.length)
+    // console.log("size", char.name, embed.length)
     return embed;
 }
 
@@ -479,7 +479,7 @@ const execute = async (interaction) => {
             let mocResponses = [mocResponse1.response.data, mocResponse2.response.data]
             for (let i=0;i<2;i++) {
                 let mocResponse = mocResponses[i];
-                console.log(mocResponse);
+                // console.log(mocResponse);
                 let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
                 let descLines = [];
                 descLines.push(`This Pure Fiction ends <t:${mocDate.getTime()/1000}:R>`);

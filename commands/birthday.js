@@ -44,9 +44,6 @@ const slash = new SlashCommandBuilder()
             .setRequired(false)
         )
     ).addSubcommand(subcommand => 
-        subcommand.setName("set2")
-        .setDescription("set2 your birthday")
-    ).addSubcommand(subcommand => 
         subcommand.setName("get")
         .setDescription("get birthday")
         .addUserOption(option => 

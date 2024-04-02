@@ -256,21 +256,6 @@ async function generateInfo(hsr, userId) {
     return {embeds: [embed], components: [row]};
 }
 
-let relic_mains = [];
-relic_mains[3] = ["AttackAddedRatio", "CriticalChanceBase", "CriticalDamageBase"];
-relic_mains[4] = ["AttackAddedRatio", "SpeedDelta"];
-relic_mains[5] = [
-    "AttackAddedRatio",
-    "PhysicalAddedRatio",
-    "FireAddedRatio",
-    "IceAddedRatio",
-    "ThunderAddedRatio",
-    "WindAddedRatio",
-    "QuantumAddedRatio",
-    "ImaginaryAddedRatio"
-];
-relic_mains[6] = ["AttackAddedRatio"];
-
 function calcScore(name, relic) {
     const include_main_stat = true;
     let slot = parseInt(relic.id % 10) - 1;
@@ -476,32 +461,33 @@ const execute = async (interaction) => {
                 need_all: 'true',
             }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
             let embeds = []
-            let mocResponses = [mocResponse1.response.data, mocResponse2.response.data]
-            for (let i=0;i<2;i++) {
-                let mocResponse = mocResponses[i];
-                // console.log(mocResponse);
-                let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
+            let i = 0;
+            for (let mocResponse of [mocResponse1.response.data, mocResponse2.response.data]) {
+                let end_time = mocResponse.groups[i++].end_time;
+                let mocDate = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
                 let descLines = [];
                 descLines.push(`This Pure Fiction ends <t:${mocDate.getTime()/1000}:R>`);
-                descLines.push(`**Stars**: ${mocResponse.star_num}/36`);
+                descLines.push(`**Stars**: ${mocResponse.star_num}/12`);
                 let embed = new EmbedBuilder()
                     .setTitle('Honkai: Star Rail — Pure Fiction')
                     .setDescription(descLines.join("\n"))
                 mocResponse.all_floor_detail.forEach(floor => {
                     if (floor.is_fast) return;
-                    if (embed.addFields.length > 21) {
-                        embeds.push(embed);
-                        embed = new EmbedBuilder();
-                    }
                     const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
                     const stars = floor.star_num;
                     const cycles = floor.round_num;
                     let lines = [];
                     lines.push(':star:'.repeat(stars));
-                    lines.push(`**Cycles**: ${cycles}`)
+                    lines.push(`Total Score: ${floor.node_1.score + floor.node_2.score}`);
                     embed.addFields({name, value: lines.join("\n")});
-                    embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
-                    embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+                    for (let tuple of [['Team 1', floor.node_1], ['Team 2', floor.node_2]]) {
+                        const [name, node] = tuple;
+                        const team_lines = [];
+                        team_lines.push(`**Score**: ${node.score}`);
+                        team_lines.push(`**Cacophony**: ${node.buff.name_mi18n}`);
+                        team_lines.push(createListFromAvatarList(node.avatars));
+                        embed.addFields({name, value: team_lines.join('\n'), inline: true})
+                    }
                 })
                 embed.setTimestamp();
                 embeds.push(embed);

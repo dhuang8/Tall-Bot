@@ -21,16 +21,18 @@ const client = new Client({
 
 client.commands = new Collection();
 
-let commandsList = ["hsr", "youtube", "genshin", "birthday"];
+let commandsList = ["hsr", "youtube", "genshin", "birthday", "image"];
 
-commandsList.forEach(commandName => {
-    import(`./commands/${commandName}.js`).then(command=>{
+
+for (const commandName of commandsList) {
+    try {
+        const command = await import(`./commands/${commandName}.js`);
         client.commands.set(command.slash.name, command);
-    }).catch(e=>{
+    } catch (e) {
         console.log(`could not load ${commandName} ${e}`);
         throw e;
-    });
-})
+    }
+}
 
 let scheduleList = ["hsr_dailies", "genshin_dailies", "hsr_cap", "genshin_cap", "birthday"];
 scheduleList.forEach(name => {
@@ -94,7 +96,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     }
                     await interactionReply(interaction, response_copy, replied);
                 } else {
-                    await interactionReply(interaction, response_copy);
+                    await interactionReply(interaction, response);
                 }
             } catch (error) {
                 console.error(error);
@@ -127,7 +129,7 @@ client.once("ready", async ()=>{
     //console.log("not loaded", not_loaded)
     //await clearSlashCommands();
     if (config.test) {
-        client.guilds.cache.get(config.guild_id).commands.set(
+        let response = await client.guilds.cache.get(config.guild_id).commands.set(
             client.commands.map(command => command.slash)
         );
     } else {

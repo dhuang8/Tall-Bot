@@ -41,10 +41,20 @@ const slash = new SlashCommandBuilder()
     .addSubcommand(subcommand => 
         subcommand.setName("moc")
         .setDescription("Memory of Chaos")
+        .addIntegerOption(option =>
+            option.setName('uid')
+            .setDescription('UID')
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand => 
         subcommand.setName("pure-fiction")
         .setDescription("Pure Fiction")
+        .addIntegerOption(option =>
+            option.setName('uid')
+            .setDescription('UID')
+            .setRequired(false)
+        )
     )
     .addSubcommand(subcommand => 
         subcommand.setName("support-char")
@@ -60,26 +70,6 @@ const slash = new SlashCommandBuilder()
             .setRequired(false)
         )
     )
-    /*
-    .addSubcommand(subcommand => 
-        subcommand.setName("support-char2")
-        .setDescription("support character")
-        .addIntegerOption(option =>
-            option.setName('uid')
-            .setDescription('UID')
-            .setRequired(false)
-        )
-    )
-    .addSubcommand(subcommand => 
-        subcommand.setName("redeem")
-        .setDescription("redeem codes")
-        .addStringOption(option =>
-            option.setName('code')
-            .setDescription('code')
-            .setRequired(true)
-        )
-    )
-    */
     .addSubcommand(subcommand => 
         subcommand.setName("help")
         .setDescription("how to get cookie")
@@ -383,6 +373,12 @@ const execute = async (interaction) => {
             if (claim?.status) return claim.status;
             throw new Error(JSON.stringify(claim));
         } case 'moc': {
+            let uid = interaction.options.getInteger("uid");
+            if (uid == null) {
+                const user = sql.prepare("SELECT hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+                uid = user.hsr_uid;
+            }
+            if (uid == null) return `missing uid`;
             const hsr = getUidAndCookie(interaction.user.id);
             if (hsr.error) return hsr.error;
             const defer = interaction.deferReply();
@@ -395,13 +391,13 @@ const execute = async (interaction) => {
             client.record.region = 'prod_official_usa';
             let mocResponse1 = await client.record.request.setQueryParams({
                 server: client.record.region,
-                role_id: client.record.uid,
+                role_id: uid,
                 schedule_type: '1',
                 need_all: 'true',
             }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
             let mocResponse2 = await client.record.request.setQueryParams({
                 server: client.record.region,
-                role_id: client.record.uid,
+                role_id: uid,
                 schedule_type: '2',
                 need_all: 'true',
             }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
@@ -438,6 +434,12 @@ const execute = async (interaction) => {
             await defer;
             return {embeds};
         } case 'pure-fiction': {
+            let uid = interaction.options.getInteger("uid");
+            if (uid == null) {
+                const user = sql.prepare("SELECT hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
+                uid = user.hsr_uid;
+            }
+            if (uid == null) return `missing uid`;
             const hsr = getUidAndCookie(interaction.user.id);
             if (hsr.error) return hsr.error;
             const defer = interaction.deferReply();
@@ -450,13 +452,13 @@ const execute = async (interaction) => {
             client.record.region = 'prod_official_usa';
             let mocResponse1 = await client.record.request.setQueryParams({
                 server: client.record.region,
-                role_id: client.record.uid,
+                role_id: uid,
                 schedule_type: '1',
                 need_all: 'true',
             }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
             let mocResponse2 = await client.record.request.setQueryParams({
                 server: client.record.region,
-                role_id: client.record.uid,
+                role_id: uid,
                 schedule_type: '2',
                 need_all: 'true',
             }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')

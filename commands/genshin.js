@@ -98,7 +98,8 @@ async function generateInfo(genshin, userId){
             expeditionLines.push(`**Expedition ${i+1}** <t:${calcTimestampAfter(expedition.remained_time)}:R>`)
         }
     })
-    embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
+    if (expeditionLines.length > 0) embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
+    else embed.addFields({name: "Expeditions", value: "None"});
     
     embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
 

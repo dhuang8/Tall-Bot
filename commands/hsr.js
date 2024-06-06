@@ -480,7 +480,7 @@ const execute = async (interaction) => {
                     const cycles = floor.round_num;
                     let lines = [];
                     lines.push(':star:'.repeat(stars));
-                    lines.push(`Total Score: ${floor.node_1.score + floor.node_2.score}`);
+                    lines.push(`Total Score: ${parseInt(floor.node_1.score) + parseInt(floor.node_2.score)}`);
                     embed.addFields({name, value: lines.join("\n")});
                     for (let tuple of [['Team 1', floor.node_1], ['Team 2', floor.node_2]]) {
                         const [name, node] = tuple;
@@ -529,29 +529,6 @@ const execute = async (interaction) => {
             await defer;
             if (embeds.length > 0) return {embeds};
             return "`No characters found`";
-        } case 'redeem' : {
-            const user = sql.prepare("SELECT hsr_cookie2, hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
-            if (user == null) return "`Missing uid and cookie`";
-            const uid = user.hsr_uid;
-            const cookie = user.hsr_cookie2;
-            if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
-            const hsr = {uid, cookie};
-            const defer = interaction.deferReply();
-            const client = new HonkaiStarRail({
-                lang: "en",
-                region: "prod_official_usa",
-                cookie: hsr.cookie,
-                uid: hsr.uid
-            })
-            client.redeem.region = 'prod_official_usa';
-            client.redeem.game_biz = "hkrpg_global";
-            client.redeem.t = Date.now();
-            console.log(client.redeem);
-            const code = interaction.options.getString("code");
-            const redeem = await client.redeem.claim(code);
-            await defer;
-            console.log(redeem);
-            return JSON.stringify(redeem);
         } 
     }
 }

@@ -1,5 +1,6 @@
 "use strict";
 import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
+import {AlarmManager} from './util/alarm_manager.js';
 //import fs from 'fs';
 //import {token} from ('./config.json');
 //import MessageResponse from './util/MessageResponse.js';
@@ -10,6 +11,7 @@ import config from './config.json' with { type: "json" };
 //import { createRequire } from 'node:module';
 //const require = createRequire(import.meta.url);
 //const {token} = require("./config.json");
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
@@ -20,26 +22,47 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+client.alarm_manager = new AlarmManager(client);
 
-let commandsList = ["hsr", "youtube", "genshin", "birthday", "image"];
+let logChannel = null;
+client.sendToLog = function(...lines) {
+    logChannel?.send(lines.join("\n").substring(0, 2000));
+}
 
+client.sendEmbedToLog = function(embed) {
+    logChannel?.send({embeds: [embed]});
+}
+
+let alarms = ["genshin_daily", "genshin_weekly", "genshin_spiral_abyss", "genshin_realm", "genshin_resin", "genshin_transformer"];
+
+for (const alarm_name of alarms) {
+    try {
+        const alarm = (await import(`./alarms/${alarm_name}.js`)).default(client);
+        client.alarm_manager.addAlarm(alarm);
+    } catch (e) {
+        console.log(`could not load alarm ${alarm_name} ${e}`);
+        throw e;
+    }
+}
+
+let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm", "alarm_all"];
 
 for (const commandName of commandsList) {
     try {
         const command = await import(`./commands/${commandName}.js`);
         client.commands.set(command.slash.name, command);
     } catch (e) {
-        console.log(`could not load ${commandName} ${e}`);
+        console.log(`could not load command ${commandName} ${e}`);
         throw e;
     }
 }
 
-let scheduleList = ["hsr_dailies", "genshin_dailies", "hsr_cap", "genshin_cap", "birthday"];
+let scheduleList = ["hsr_dailies", "genshin_login", "hsr_cap", "genshin_cap", "birthday", "hi3_dailies"];
 scheduleList.forEach(name => {
     import(`./schedule/${name}.js`).then(sche=>{
         new sche.default(client);
     }).catch(e=>{
-        console.log(`could not load ${name} ${e}`);
+        console.log(`could not load schedule ${name} ${e}`);
         throw e;
     });
 })
@@ -52,11 +75,6 @@ async function interactionReply(interaction, response, replied = false) {
     if (replied) return interaction.followUp(response);
     if (interaction.deferred) return interaction.editReply(response);
     return interaction.reply(response);
-}
-
-let logChannel = null;
-client.sendToLog = function(...lines) {
-    logChannel?.send(lines.join("\n").substring(0, 2000));
 }
 
 client.on(Events.Error, async (e) => {
@@ -73,7 +91,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 return;
             }
             try {
-                const response = await command.execute(interaction);
+                const response = await command.execute(interaction, client);
                 if (typeof response == "string") {
                     await interactionReply(interaction, response);
                 } else if (typeof response === "object" && response.embeds) {
@@ -128,17 +146,25 @@ async function clearSlashCommands() {
 client.once("ready", async ()=>{
     //console.log("not loaded", not_loaded)
     //await clearSlashCommands();
-    if (config.test) {
-        let response = await client.guilds.cache.get(config.guild_id).commands.set(
-            client.commands.map(command => command.slash)
-        );
-    } else {
-        client.application.commands.set(
-            client.commands.map(command => command.slash)
-        )
+    try {
+        if (config.test) {
+            let response = await client.guilds.cache.get(config.guild_id).commands.set(
+                client.commands.map(command => command.slash)
+            );
+        } else {
+            await client.application.commands.set(
+                client.commands.filter(command => !command.personal).map(command => command.slash)
+            )
+            await client.guilds.cache.get(config.guild_id).commands.set(
+                client.commands.filter(command => command.personal).map(command => command.slash)
+            )
+        }
+        console.log(`\`${process.platform} ready\``)
+        logChannel = await client.channels.fetch(config.channel_id);
+        client.alarm_manager.loop();
+    } catch (e) {
+        console.error(e);
     }
-    console.log(`\`${process.platform} ready\``)
-    logChannel = await client.channels.fetch(config.channel_id);
     //client.channels.resolve(config.channel_id)?.send(`\`${process.platform} ready\``);
     //createSlashCommands();
     //new cron(client);

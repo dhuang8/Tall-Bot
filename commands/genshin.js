@@ -33,6 +33,42 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("spiral-abyss")
         .setDescription("Spiral Abyss")
     )
+    .addSubcommand(subcommand => 
+        subcommand.setName("set-alarm")
+        .setDescription("set alarms for various things")
+        .addStringOption(option =>
+            option.setName('alarm')
+            .setDescription('toggle alarm')
+            .setRequired(true)
+            .addChoices(
+                {name: 'Genshin Daily Commissions', value: 'Genshin Daily Commissions'},
+                {name: 'Genshin Weekly Trounce', value: 'Genshin Weekly Trounce'},
+                {name: 'Genshin Transformer', value: 'Genshin Transformer'},
+                {name: 'Genshin Realm Currency', value: 'Genshin Realm Currency'},
+                {name: 'Genshin Spiral Abyss', value: 'Genshin Spiral Abyss'},
+                {name: 'Genshin Resin', value: 'Genshin Resin'}
+            )
+        )
+        .addIntegerOption(option =>
+            option.setName('minutes')
+            .setDescription('minutes before it happens')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(24*60)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("delete-alarm")
+        .setDescription("delete alarms")
+        .addStringOption(option =>
+            option.setName('alarm')
+            .setDescription('alarm')
+            .setRequired(true)
+            .addChoices(
+                {name: 'Genshin Daily Commissions', value: 'Genshin Daily Commissions'}
+            )
+        )
+    )
     /*
     .addSubcommand(subcommand => 
         subcommand.setName("redeem")
@@ -101,7 +137,7 @@ async function generateInfo(genshin, userId){
     if (expeditionLines.length > 0) embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
     else embed.addFields({name: "Expeditions", value: "None"});
     
-    embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
+    embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Check-in`)});
 
     let dailyLines = [];
     dailyLines.push(crossIfTrue(
@@ -152,7 +188,7 @@ function createListFromAvatarList(avatars) {
     return avatars.map(ava => `Lv.${ava.level} ${getNameFromId(ava.id)}`).join("\n")
 }
 
-const execute = async (interaction) => {
+const execute = async (interaction, discord_client) => {
     switch (interaction.options.getSubcommand()) {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
@@ -225,26 +261,26 @@ const execute = async (interaction) => {
             embeds.push(embed);
             await defer;
             return {embeds};
-        } case 'redeem' : {
-            const user = sql.prepare("SELECT hsr_cookie2, genshin_uid from users WHERE user_id = ?").get(interaction.user.id);
-            if (user == null) return {error: "`Missing uid and cookie`"};
-            const uid = user.genshin_uid;
-            const cookie = user.hsr_cookie2;
-            if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
-            const genshin = {uid, cookie};
-            if (genshin.error) return genshin.error;
-            const defer = interaction.deferReply();
-            const client = new GenshinImpact({
-                lang: LanguageEnum.ENGLISH,
-                region: GenshinRegion.USA,
-                cookie: genshin.cookie,
-                uid: genshin.uid
-            })
-            const code = interaction.options.getString("code");
-            const redeem = await client.redeem.claim(code);
-            await defer;
-            console.log(redeem);
-            return JSON.stringify(redeem);
+        } case 'set-alarm': {
+            const user_id = interaction.user.id;
+            // console.log("alarm name", interaction.options.getString("alarm"));
+            const alarm = discord_client.alarm_manager.getAlarmFromName(interaction.options.getString("alarm"));
+            // console.log("alarm obj", alarm);
+            const minutes_before = interaction.options.getInteger('minutes')
+            // sql.prepare("INSERT INTO user_alarms(user_id, alarm_id, time_before, triggered) VALUES (?, ?, ?, false) ON CONFLICT(user_id, alarm_id) DO UPDATE SET time_before=excluded.time_before;")
+            //     .run(user_id, alarm_id, minutes_before*60);
+            alarm.addUserAlarm(user_id, minutes_before*60, null, 0, 1);
+
+            const embed = discord_client.alarm_manager.createUserAlarmEmbed(user_id);
+            return {embeds: [embed], ephemeral: true};
+        } case 'delete-alarm': {
+            const user_id = interaction.user.id;
+            const alarm = discord_client.alarm_manager.getAlarmFromName(interaction.options.getString("alarm"));
+            const alarm_id = interaction.options.getInteger("alarm");
+            sql.prepare("DELETE FROM user_alarms WHERE user_id = ? AND alarm_id = ?;").run(user_id, alarm.id);
+
+            const embed = discord_client.alarm_manager.createUserAlarmEmbed(user_id);
+            return {embeds: [embed], ephemeral: true};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type java into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         }

@@ -1,8 +1,8 @@
-import {MessageEmbed} from 'discord.js';
-import f from "./functions.js";
+import {EmbedBuilder} from 'discord.js';
+import {request, validateEmbed, nextMultiple} from "./functions.js";
 
 test('fetch', async () => {
-    const response = await f.request({
+    const response = await request({
         url: 'https://api.github.com/users/dhuang8/repos',
         json: true
     });
@@ -10,34 +10,14 @@ test('fetch', async () => {
 });
 
 test('validate embed', () => {
-    let embed = new MessageEmbed()
+    let embed = new EmbedBuilder()
         .setTitle("title")
         .setDescription("w".repeat(5000))
-    f.validateEmbed(embed);
+    validateEmbed(embed);
     expect(embed.description).toBe("w".repeat(4093) + "...");
 });
 
-test('create interactionOptions', () => {
-    let options = f.createInteractionOptions(["key", "set", "54BA92FB-DE02-9543-B592-A7ABC054A4ABF9182324-CDEC-47C6-A052-55D7B059EE4C"],
-        "113060802252054528");
-    let obj = {
-        options: {
-            data: [{
-                name: "key",
-                value: "key",
-                options: [{
-                    name: "set",
-                    value: "set",
-                    options: [{
-                        name: "54BA92FB-DE02-9543-B592-A7ABC054A4ABF9182324-CDEC-47C6-A052-55D7B059EE4C",
-                        value: "54BA92FB-DE02-9543-B592-A7ABC054A4ABF9182324-CDEC-47C6-A052-55D7B059EE4C"
-                    }]
-                }]
-            }]
-        },
-        user: {
-            id: "113060802252054528"
-        }
-    }
-    expect(options).toEqual(obj);
-});
+test('next multiple', () => {
+    let i = nextMultiple(Date.now()/1000, 10*60*60, 24*60*60);
+    expect(i % (24*60*60)).toBe(10*60*60);
+})

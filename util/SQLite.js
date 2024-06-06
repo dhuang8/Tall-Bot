@@ -60,4 +60,15 @@ if (sql.pragma("user_version")[0].user_version == 9) {
     sql.pragma("user_version = 10");
 }
 
+if (sql.pragma("user_version")[0].user_version == 10) {
+    sql.prepare("ALTER TABLE users ADD COLUMN hi3_uid INTEGER;").run();
+    sql.pragma("user_version = 11");
+}
+
+if (sql.pragma("user_version")[0].user_version == 11) {
+    sql.prepare("CREATE TABLE alarms (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, next_time INTEGER);").run();
+    sql.prepare("CREATE TABLE user_alarms (user_id TEXT, alarm_id INTEGER, time_before INTEGER NOT NULL, next_time INTEGER, triggered BOOLEAN NOT NULL DEFAULT FALSE, active BOOLEAN NOT NULL DEFAULT TRUE, PRIMARY KEY(user_id, alarm_id)) WITHOUT ROWID;").run();
+    sql.pragma("user_version = 12");
+}
+
 export default sql;

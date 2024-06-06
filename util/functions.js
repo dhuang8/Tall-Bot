@@ -78,3 +78,14 @@ export function validateEmbed(embed) {
 export async function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
+
+/**
+ * Returns the next multiple after
+ * @param {number} after the number it has to be after
+ * @param {number} offset offset
+ * @param {number} multiple multiple
+ * @return {number} the next multiple after
+ */
+export function nextMultiple(after, offset = 0, multiple) {
+    return Math.floor((after - offset) / multiple) * multiple + offset;
+}

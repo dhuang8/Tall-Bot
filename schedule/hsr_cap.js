@@ -1,5 +1,5 @@
 import sql from '../util/SQLite.js';
-import {calcTimestampAfter} from '../util/hoyo.js';
+import {calcTimestampAfter} from '../util/hoyo';
 import {sleep} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
 

@@ -1,5 +1,5 @@
 import sql from '../util/SQLite.js';
-import {GenshinClient, } from '../util/hoyo.js';
+import {GenshinClient, } from '../util/hoyo';
 import {timeOnNext} from '../util/functions.js';
 import {Alarm} from '../util/alarm.js';
 

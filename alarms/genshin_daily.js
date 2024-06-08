@@ -1,5 +1,5 @@
 import sql from '../util/SQLite.js';
-import {GenshinClient, } from '../util/hoyo.js';
+import {GenshinClient, } from '../util/hoyo';
 import {timeOnNext} from '../util/functions.js';
 import {Alarm} from '../util/alarm.js';
 
@@ -29,7 +29,7 @@ class GenshinDaily extends Alarm {
         try {
             const genshin = new GenshinClient(user_id);
             const bc = await genshin.battleChronicle();
-            if (bc.daily.commission_count != bc.daily.commission_max || bc.daily.commission_reward) {
+            if (!bc.daily.commission_reward) {
                 this.client.users.fetch(user_id).then(user => {
                     user.send(`Daily commissions expire <t:${timeOnNext(24*60*60, 9*60*60)}:R>.`)
                 }).catch(e => {

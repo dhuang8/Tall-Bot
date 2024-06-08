@@ -1,12 +1,15 @@
 import sql from '../util/SQLite.js';
 import { EmbedBuilder } from 'discord.js';
-import {sleep} from '../util/functions.js';
 
-export class AlarmManager {
+class AlarmManagerClass {
     constructor(client) {
-        this.client = client;
+        // this.client = client;
         this.alarms = new Map();
         this.timeout = null;
+    }
+
+    attachClient(client) {
+        this.client = client;
     }
 
     getAlarmFromName(name) {
@@ -94,3 +97,6 @@ export class AlarmManager {
             .setDescription(desc);
     }
 }
+
+const alarmManager = new AlarmManagerClass();
+export default alarmManager;

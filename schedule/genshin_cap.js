@@ -1,6 +1,6 @@
 import sql from '../util/SQLite.js';
-import {calcTimestampAfter} from '../util/hoyo.js';
-import {sleep} from '../util/functions.js';
+import {calcTimestampAfter} from '../util/hoyo';
+import {sleep} from '../util/functions';
 import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
 
 export default class GenshinCap {

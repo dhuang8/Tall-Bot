@@ -1,7 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
+import AlarmManager from '../util/alarm_manager.js';
 import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
-import {crossIfTrue, calcTimestampAfter} from '../util/hoyo.js';
+import {crossIfTrue, calcTimestampAfter} from '../util/hoyo';
 import {timeOnNext, request} from '../util/functions.js';
 
 const slash = new SlashCommandBuilder()
@@ -34,23 +35,23 @@ const slash = new SlashCommandBuilder()
         .setDescription("Spiral Abyss")
     )
     .addSubcommand(subcommand => 
-        subcommand.setName("set-alarm")
-        .setDescription("set alarms for various things")
+        subcommand.setName("set-alert")
+        .setDescription("set alerts for various things")
         .addStringOption(option =>
-            option.setName('alarm')
-            .setDescription('toggle alarm')
+            option.setName('alert')
+            .setDescription('toggle alert')
             .setRequired(true)
             .addChoices(
-                {name: 'Genshin Daily Commissions', value: 'Genshin Daily Commissions'},
-                {name: 'Genshin Weekly Trounce', value: 'Genshin Weekly Trounce'},
-                {name: 'Genshin Transformer', value: 'Genshin Transformer'},
-                {name: 'Genshin Realm Currency', value: 'Genshin Realm Currency'},
-                {name: 'Genshin Spiral Abyss', value: 'Genshin Spiral Abyss'},
-                {name: 'Genshin Resin', value: 'Genshin Resin'}
+                {name: 'Daily Commissions', value: 'Genshin Daily Commissions'},
+                {name: 'Weekly Trounce', value: 'Genshin Weekly Trounce'},
+                {name: 'Transformer', value: 'Genshin Transformer'},
+                {name: 'Realm Currency', value: 'Genshin Realm Currency'},
+                {name: 'Spiral Abyss', value: 'Genshin Spiral Abyss'},
+                {name: 'Resin', value: 'Genshin Resin'}
             )
         )
         .addIntegerOption(option =>
-            option.setName('minutes')
+            option.setName('minutes-before')
             .setDescription('minutes before it happens')
             .setRequired(true)
             .setMinValue(0)
@@ -58,14 +59,19 @@ const slash = new SlashCommandBuilder()
         )
     )
     .addSubcommand(subcommand => 
-        subcommand.setName("delete-alarm")
-        .setDescription("delete alarms")
+        subcommand.setName("delete-alert")
+        .setDescription("delete alert")
         .addStringOption(option =>
-            option.setName('alarm')
-            .setDescription('alarm')
+            option.setName('alert')
+            .setDescription('alert')
             .setRequired(true)
             .addChoices(
-                {name: 'Genshin Daily Commissions', value: 'Genshin Daily Commissions'}
+                {name: 'Daily Commissions', value: 'Genshin Daily Commissions'},
+                {name: 'Weekly Trounce', value: 'Genshin Weekly Trounce'},
+                {name: 'Transformer', value: 'Genshin Transformer'},
+                {name: 'Realm Currency', value: 'Genshin Realm Currency'},
+                {name: 'Spiral Abyss', value: 'Genshin Spiral Abyss'},
+                {name: 'Resin', value: 'Genshin Resin'}
             )
         )
     )
@@ -261,25 +267,19 @@ const execute = async (interaction, discord_client) => {
             embeds.push(embed);
             await defer;
             return {embeds};
-        } case 'set-alarm': {
+        } case 'set-alert': {
             const user_id = interaction.user.id;
-            // console.log("alarm name", interaction.options.getString("alarm"));
-            const alarm = discord_client.alarm_manager.getAlarmFromName(interaction.options.getString("alarm"));
-            // console.log("alarm obj", alarm);
-            const minutes_before = interaction.options.getInteger('minutes')
-            // sql.prepare("INSERT INTO user_alarms(user_id, alarm_id, time_before, triggered) VALUES (?, ?, ?, false) ON CONFLICT(user_id, alarm_id) DO UPDATE SET time_before=excluded.time_before;")
-            //     .run(user_id, alarm_id, minutes_before*60);
+            const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
+            const minutes_before = interaction.options.getInteger('minutes-before')
             alarm.addUserAlarm(user_id, minutes_before*60, null, 0, 1);
-
-            const embed = discord_client.alarm_manager.createUserAlarmEmbed(user_id);
+            const embed = AlarmManager.createUserAlarmEmbed(user_id);
             return {embeds: [embed], ephemeral: true};
         } case 'delete-alarm': {
             const user_id = interaction.user.id;
-            const alarm = discord_client.alarm_manager.getAlarmFromName(interaction.options.getString("alarm"));
-            const alarm_id = interaction.options.getInteger("alarm");
+            const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
             sql.prepare("DELETE FROM user_alarms WHERE user_id = ? AND alarm_id = ?;").run(user_id, alarm.id);
 
-            const embed = discord_client.alarm_manager.createUserAlarmEmbed(user_id);
+            const embed = AlarmManager.createUserAlarmEmbed(user_id);
             return {embeds: [embed], ephemeral: true};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type java into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;

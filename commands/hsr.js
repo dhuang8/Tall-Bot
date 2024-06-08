@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
-import {crossIfTrue, calcTimestampAfter} from '../util/hoyo.js';
+import {crossIfTrue, calcTimestampAfter} from '../util/hoyo';
 import {timeOnNext, request} from '../util/functions.js';
 import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
 import fs from 'fs';

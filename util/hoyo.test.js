@@ -1,4 +1,4 @@
-import {GenshinClient, HsrClient} from "./hoyo.js";
+import {GenshinClient, HsrClient} from "./hoyo";
 
 test('genshin', async () => {
     const client = new GenshinClient("1234567890");
@@ -9,7 +9,7 @@ test('genshin', async () => {
 test('hsr', async () => {
     const client = new HsrClient("1234567890");
     console.log(await client.info());
-    console.log(await client.note());
+    console.log(await client.battleChronicle());
     console.log(await client.challenge());
     console.log(await client.challengeStory());
 });

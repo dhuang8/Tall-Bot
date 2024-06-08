@@ -1,16 +1,7 @@
 "use strict";
 import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
-import {AlarmManager} from './util/alarm_manager.js';
-//import fs from 'fs';
-//import {token} from ('./config.json');
-//import MessageResponse from './util/MessageResponse.js';
-//import cron from './util/gw2tracker.js';
-//import birthdayschedule from './schedule/birthday.js';
-//import Util from './util/functions.js';
+import AlarmManager from './util/alarm_manager.js';
 import config from './config.json' with { type: "json" };
-//import { createRequire } from 'node:module';
-//const require = createRequire(import.meta.url);
-//const {token} = require("./config.json");
 
 const client = new Client({
     intents: [
@@ -22,7 +13,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-client.alarm_manager = new AlarmManager(client);
+AlarmManager.attachClient(client);
 
 let logChannel = null;
 client.sendToLog = function(...lines) {
@@ -38,7 +29,7 @@ let alarms = ["genshin_daily", "genshin_weekly", "genshin_spiral_abyss", "genshi
 for (const alarm_name of alarms) {
     try {
         const alarm = (await import(`./alarms/${alarm_name}.js`)).default(client);
-        client.alarm_manager.addAlarm(alarm);
+        AlarmManager.addAlarm(alarm);
     } catch (e) {
         console.log(`could not load alarm ${alarm_name} ${e}`);
         throw e;
@@ -161,7 +152,7 @@ client.once("ready", async ()=>{
         }
         console.log(`\`${process.platform} ready\``)
         logChannel = await client.channels.fetch(config.channel_id);
-        client.alarm_manager.loop();
+        AlarmManager.loop();
     } catch (e) {
         console.error(e);
     }

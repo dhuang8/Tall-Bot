@@ -1,4 +1,4 @@
-import sql from '../util/SQLite.js';
+import sql from './SQLite.js';
 import { EmbedBuilder } from 'discord.js';
 
 class AlarmManagerClass {
@@ -69,7 +69,7 @@ class AlarmManagerClass {
     }
 
     getFirstNAlarms(n) {
-        let rows = sql.prepare("SELECT user_id, alarm_id, name as alarm_name, time_before, COALESCE(user_alarms.next_time, alarms.next_time - time_before, 0) AS next_time, triggered FROM user_alarms LEFT JOIN alarms ON user_alarms.alarm_id = alarms.id WHERE active = TRUE AND alarm_id IN (SELECT value FROM json_each(?)) ORDER BY next_time LIMIT ?")
+        let rows = sql.prepare("SELECT user_id, alarm_id, name as alarm_name, time_before, MAX(strftime('%s', 'now')-1, COALESCE(user_alarms.next_time - time_before * NOT triggered, alarms.next_time - time_before, 0)) AS next_time, triggered FROM user_alarms LEFT JOIN alarms ON user_alarms.alarm_id = alarms.id WHERE active = TRUE AND alarm_id IN (SELECT value FROM json_each(?)) ORDER BY next_time ASC, triggered DESC LIMIT ?")
            .all(JSON.stringify(Array.from(this.alarms.keys())), n);
         return rows;
     }
@@ -91,12 +91,12 @@ class AlarmManagerClass {
         let desc = user_alarms.map((user_alarm, i) => {
             return `${i+1}. ${user_alarm.alarm_name} - ${user_alarm.time_before/60} minutes before`;
         }).join("\n");
-        if (desc == "") desc = "No alarms active";
+        if (desc == "") desc = "No alerts active";
         return new EmbedBuilder()
-            .setTitle('Alarms')
+            .setTitle('Alerts')
             .setDescription(desc);
     }
 }
 
-const alarmManager = new AlarmManagerClass();
-export default alarmManager;
+const AlarmManager = new AlarmManagerClass();
+export default AlarmManager;

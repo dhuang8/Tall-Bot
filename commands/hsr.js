@@ -1,8 +1,9 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
-import {crossIfTrue, calcTimestampAfter} from '../util/hoyo';
+import {crossIfTrue, calcTimestampAfter, HsrClient} from '../util/hoyo';
 import {timeOnNext, request} from '../util/functions.js';
-import { HonkaiStarRail, LanguageEnum, HsrRegion } from 'hoyoapi'
+import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
+import AlarmManager from '../util/alarm-manager.js';
 import fs from 'fs';
 
 let hsr_stats;
@@ -68,6 +69,46 @@ const slash = new SlashCommandBuilder()
             option.setName('char-name')
             .setDescription('character name')
             .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("set-alert")
+        .setDescription("set alerts for various things")
+        .addStringOption(option =>
+            option.setName('alert')
+            .setDescription('toggle alert')
+            .setRequired(true)
+            .addChoices(
+                {name: 'Daily Training', value: 'HSR Daily Training'},
+                {name: 'Echo of War', value: 'HSR Echo of War'},
+                {name: 'Trailblaze Power', value: 'HSR Trailblaze Power'},
+                {name: 'Pure Fiction/Memory of Chaos', value: 'HSR Pure Fiction/Memory of Chaos'},
+                {name: 'Simulated Universe', value: 'HSR Simulated Universe'},
+                {name: 'Assignments', value: 'HSR Assignments'}
+            )
+        )
+        .addIntegerOption(option =>
+            option.setName('minutes-before')
+            .setDescription('minutes before it happens')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(7*24*60)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("delete-alert")
+        .setDescription("delete alert")
+        .addStringOption(option =>
+            option.setName('alert')
+            .setDescription('alert')
+            .setRequired(true)
+            .addChoices(
+                {name: 'Daily Training', value: 'HSR Daily Training'},
+                {name: 'Echo of War', value: 'HSR Echo of War'},
+                {name: 'Trailblaze Power', value: 'HSR Trailblaze Power'},
+                {name: 'Pure Fiction/Memory of Chaos', value: 'HSR Pure Fiction/Memory of Chaos'},
+                {name: 'Simulated Universe', value: 'HSR Simulated Universe'}
+            )
         )
     )
     .addSubcommand(subcommand => 
@@ -354,10 +395,9 @@ const execute = async (interaction) => {
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'info': {
-            const hsr = getUidAndCookie(interaction.user.id);
-            if (hsr.error) return hsr.error;
             const defer = interaction.deferReply();
-            let info = await generateInfo(hsr, interaction.user.id);
+            const hsr = new HsrClient(interaction.user.id);
+            const info = await hsr.buildUserEmbed();
             await defer;
             return info;
         } case 'daily': {
@@ -510,6 +550,19 @@ const execute = async (interaction) => {
             })
             client.record.region = 'prod_official_usa'
             let mocResponse = await client.info();
+        } case 'set-alert': {
+            const user_id = interaction.user.id;
+            const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
+            const minutes_before = interaction.options.getInteger('minutes-before')
+            alarm.addUserAlarm(user_id, minutes_before*60, null, 0, 1);
+            const embed = AlarmManager.createUserAlarmEmbed(user_id);
+            return {embeds: [embed], ephemeral: true};
+        } case 'delete-alert': {
+            const user_id = interaction.user.id;
+            const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
+            sql.prepare("DELETE FROM user_alarms WHERE user_id = ? AND alarm_id = ?;").run(user_id, alarm.id);
+            const embed = AlarmManager.createUserAlarmEmbed(user_id);
+            return {embeds: [embed], ephemeral: true};
         } case 'support-char': {
             let uid = interaction.options.getInteger("uid");
             if (uid == null) {
@@ -553,12 +606,16 @@ function getFieldValue(arr, fieldName) {
 const buttonClick = async (interaction) => {
     let args = interaction.customId.split("|");
     if (interaction.user.id != args[1]) return interaction.reply({content: "`only the user can refresh`", ephemeral: true});
-    const hsr = getUidAndCookie(args[1]);
-    if (hsr.error) return interaction.reply({content: hsr.error, ephemeral: true});
     const defer = interaction.deferUpdate();
-    let info = await generateInfo(hsr, args[1]);
-    await defer;
-    interaction.editReply(info);
+    try {
+        const hsr = new HsrClient(interaction.user.id);
+        const info = await hsr.buildUserEmbed();
+        await defer;
+        interaction.editReply(info);
+    } catch(e) {
+        await defer;
+        return interaction.followUp({content: "`Error`", ephemeral: true});
+    }
 }
 
 export {

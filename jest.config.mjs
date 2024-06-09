@@ -4,6 +4,12 @@
  */
 
 export default {
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { useESM: true }]
+  },
+  extensionsToTreatAsEsm: ['.ts'],
+  preset: 'ts-jest',
+  // testEnvironment: 'node',
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
@@ -81,7 +87,7 @@ export default {
      "mjs",
   //   "cjs",
   //   "jsx",
-  //   "ts",
+    "ts",
   //   "tsx", 
   //   "json",
   //   "node"

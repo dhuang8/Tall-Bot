@@ -1,7 +1,9 @@
 "use strict";
 import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
-import AlarmManager from './util/alarm_manager.js';
+import AlarmManager from './util/alarm-manager.js';
+import DiscordHelperClass from './util/discord-helper.js';
 import config from './config.json' with { type: "json" };
+import { readdirSync } from 'fs';
 
 const client = new Client({
     intents: [
@@ -24,17 +26,15 @@ client.sendEmbedToLog = function(embed) {
     logChannel?.send({embeds: [embed]});
 }
 
-let alarms = ["genshin_daily", "genshin_weekly", "genshin_spiral_abyss", "genshin_realm", "genshin_resin", "genshin_transformer"];
-
-for (const alarm_name of alarms) {
+for (const alarm_name of readdirSync('./alarms').filter(file => file.endsWith('.ts')).filter(file => file.indexOf("test") < 0)) {
     try {
-        const alarm = (await import(`./alarms/${alarm_name}.js`)).default(client);
+        const alarm = (await import(`./alarms/${alarm_name}`)).default();
         AlarmManager.addAlarm(alarm);
     } catch (e) {
         console.log(`could not load alarm ${alarm_name} ${e}`);
         throw e;
     }
-}
+};
 
 let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm", "alarm_all"];
 
@@ -137,6 +137,7 @@ async function clearSlashCommands() {
 client.once("ready", async ()=>{
     //console.log("not loaded", not_loaded)
     //await clearSlashCommands();
+    DiscordHelperClass.attachClient(client);
     try {
         if (config.test) {
             let response = await client.guilds.cache.get(config.guild_id).commands.set(

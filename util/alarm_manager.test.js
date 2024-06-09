@@ -1,4 +1,4 @@
-import AlarmManager from "./alarm_manager.js";
+import AlarmManager from "./alarm-manager.js";
 import sql from './SQLite.js';
 
 test('export alarm', async () => {

@@ -1,9 +1,9 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import sql from '../util/SQLite.js';
-import AlarmManager from '../util/alarm_manager.js';
+import AlarmManager from '../util/alarm-manager.js';
 import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
-import {crossIfTrue, calcTimestampAfter} from '../util/hoyo';
-import {timeOnNext, request} from '../util/functions.js';
+import { GenshinClient} from '../util/hoyo';
+import { request} from '../util/functions.js';
 
 const slash = new SlashCommandBuilder()
     .setName('genshin')
@@ -15,10 +15,12 @@ const slash = new SlashCommandBuilder()
             option.setName('uid')
             .setDescription('genshin uid')
             .setMinValue(600000000)
+            .setRequired(false)
         )
         .addStringOption(option =>
             option.setName('cookie')
             .setDescription('cookie from website')
+            .setRequired(false)
         )
     )
     .addSubcommand(subcommand => 
@@ -47,7 +49,8 @@ const slash = new SlashCommandBuilder()
                 {name: 'Transformer', value: 'Genshin Transformer'},
                 {name: 'Realm Currency', value: 'Genshin Realm Currency'},
                 {name: 'Spiral Abyss', value: 'Genshin Spiral Abyss'},
-                {name: 'Resin', value: 'Genshin Resin'}
+                {name: 'Resin', value: 'Genshin Resin'},
+                {name: 'Expeditions', value: 'Genshin Expeditions'}
             )
         )
         .addIntegerOption(option =>
@@ -55,7 +58,7 @@ const slash = new SlashCommandBuilder()
             .setDescription('minutes before it happens')
             .setRequired(true)
             .setMinValue(0)
-            .setMaxValue(24*60)
+            .setMaxValue(7*24*60)
         )
     )
     .addSubcommand(subcommand => 
@@ -71,7 +74,8 @@ const slash = new SlashCommandBuilder()
                 {name: 'Transformer', value: 'Genshin Transformer'},
                 {name: 'Realm Currency', value: 'Genshin Realm Currency'},
                 {name: 'Spiral Abyss', value: 'Genshin Spiral Abyss'},
-                {name: 'Resin', value: 'Genshin Resin'}
+                {name: 'Resin', value: 'Genshin Resin'},
+                {name: 'Expeditions', value: 'Genshin Expeditions'}
             )
         )
     )
@@ -100,90 +104,6 @@ function getUidAndCookie(userId) {
     return {uid, cookie};
 }
 
-async function generateInfo(genshin, userId){
-    const client = new GenshinImpact({
-        lang: LanguageEnum.ENGLISH,
-        region: GenshinRegion.USA,
-        cookie: genshin.cookie,
-        uid: genshin.uid
-    })
-
-    let dailyResponse = client.daily.info()
-    let staminaResponse = client.record.dailyNote();
-    let spiralResponse = client.record.spiralAbyss();
-    dailyResponse = await dailyResponse;
-    staminaResponse = await staminaResponse;
-    spiralResponse = await spiralResponse;
-
-    let descLines = [];
-    descLines.push(`**Resin**: ${staminaResponse.current_resin}/${staminaResponse.max_resin}, capped <t:${calcTimestampAfter(staminaResponse.resin_recovery_time)}:R>`)
-    descLines.push(`**Realm Currency**: ${staminaResponse.current_home_coin}/${staminaResponse.max_home_coin}, capped <t:${calcTimestampAfter(staminaResponse.home_coin_recovery_time)}:R>`)
-    
-    let tTime = staminaResponse.transformer.recovery_time;
-    let milliAfter = tTime.Day*24*60*60 + tTime.Hour*60*60 + tTime.Minute*60 + tTime.Second;
-    milliAfter = parseInt(new Date().getTime()/1000 + milliAfter);
-    descLines.push(crossIfTrue(
-        false,
-        `**Transformer** ready <t:${milliAfter}:R>`
-    ));
-
-    const embed = new EmbedBuilder()
-        .setTitle('Genshin Impact — Battle Chronicle')
-        .setDescription(descLines.join("\n"))
-        .setTimestamp();
-    
-    let expeditionLines = [];
-    staminaResponse.expeditions.forEach((expedition, i) => {
-        if (expedition.status === "Finished") {
-            expeditionLines.push(`**Expedition ${i+1}** finished`)
-        } else {
-            expeditionLines.push(`**Expedition ${i+1}** <t:${calcTimestampAfter(expedition.remained_time)}:R>`)
-        }
-    })
-    if (expeditionLines.length > 0) embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
-    else embed.addFields({name: "Expeditions", value: "None"});
-    
-    embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Check-in`)});
-
-    let dailyLines = [];
-    dailyLines.push(crossIfTrue(
-        staminaResponse.finished_task_num == staminaResponse.total_task_num,
-        `**Daily Commissions**: ${staminaResponse.finished_task_num}/${staminaResponse.total_task_num}`
-    ))
-    dailyLines.push(crossIfTrue(
-        staminaResponse.is_extra_task_reward_received,
-        `Daily Commission Reward`
-    ))
-    embed.addFields({name: `Daily reset <t:${timeOnNext(24*60*60, 9*60*60)}:R>`, value: dailyLines.join("\n")});
-
-    let weeklyLines = [];
-    weeklyLines.push(crossIfTrue(
-        staminaResponse.remain_resin_discount_num == 0,
-        `**Trounce**: ${staminaResponse.resin_discount_num_limit-staminaResponse.remain_resin_discount_num}/${staminaResponse.resin_discount_num_limit}`
-    ));
-    embed.addFields({name: `Weekly reset <t:${timeOnNext(7*24*60*60, 9*60*60+4*24*60*60)}:R>`, value: weeklyLines.join("\n")});
-
-    let spiralLines = [];
-    spiralLines.push(crossIfTrue(
-        spiralResponse.max_floor == "12-3",
-        `**Max floor**: ${spiralResponse.max_floor}`
-    ));
-    spiralLines.push(crossIfTrue(
-        spiralResponse.total_star == 36,
-        `**Stars**: ${spiralResponse.total_star}/36`
-    ));
-    embed.addFields({name: `Spiral Abyss reset <t:${new Date(parseInt(spiralResponse.end_time)).getTime()}:R>`, value: spiralLines.join("\n")});
-
-    const refreshButton = new ButtonBuilder()
-        .setCustomId(`genshin|${userId}`)
-        .setLabel('Refresh')
-        .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder()
-        .addComponents(refreshButton);
-    return {embeds: [embed], components: [row]};
-}
-
 let charMap;
 let charRequest = request("https://api.uigf.org/dict/genshin/en.json").then(res => charMap = res);
 
@@ -199,7 +119,7 @@ const execute = async (interaction, discord_client) => {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
             const cookie = interaction.options.getString("cookie");
-            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, genshin_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=excluded.hsr_cookie, genshin_uid=excluded.genshin_uid RETURNING hsr_cookie, genshin_uid;")
+            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, genshin_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=COALESCE(excluded.hsr_cookie, hsr_cookie), genshin_uid=COALESCE(excluded.genshin_uid, genshin_uid) RETURNING hsr_cookie, genshin_uid;")
                 .get(interaction.user.id, cookie, uid);
             const embed = new EmbedBuilder()
                 .setTitle('Genshin Impact info')
@@ -209,10 +129,9 @@ const execute = async (interaction, discord_client) => {
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'info': {
-            const genshin = getUidAndCookie(interaction.user.id);
-            if (genshin.error) return genshin.error;
             const defer = interaction.deferReply();
-            const info = await generateInfo(genshin, interaction.user.id);
+            const genshin = new GenshinClient(interaction.user.id);
+            const info = await genshin.buildUserEmbed();
             await defer;
             return info;
         } case 'char' : {
@@ -274,7 +193,7 @@ const execute = async (interaction, discord_client) => {
             alarm.addUserAlarm(user_id, minutes_before*60, null, 0, 1);
             const embed = AlarmManager.createUserAlarmEmbed(user_id);
             return {embeds: [embed], ephemeral: true};
-        } case 'delete-alarm': {
+        } case 'delete-alert': {
             const user_id = interaction.user.id;
             const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
             sql.prepare("DELETE FROM user_alarms WHERE user_id = ? AND alarm_id = ?;").run(user_id, alarm.id);
@@ -290,12 +209,16 @@ const execute = async (interaction, discord_client) => {
 const buttonClick = async (interaction) => {
     let args = interaction.customId.split("|");
     if (interaction.user.id != args[1]) return interaction.reply({content: "`only the user can refresh`", ephemeral: true});
-    const genshin = getUidAndCookie(args[1]);
-    if (genshin.error) return interaction.reply({content: genshin.error, ephemeral: true});
     const defer = interaction.deferUpdate();
-    let info = await generateInfo(genshin, args[1]);
-    await defer;
-    interaction.editReply(info);
+    try {
+        const genshin = new GenshinClient(interaction.user.id);
+        const info = await genshin.buildUserEmbed();
+        await defer;
+        interaction.editReply(info);
+    } catch(e) {
+        await defer;
+        return interaction.followUp({content: "`Error`", ephemeral: true});
+    }
 }
 export {
     slash, execute, buttonClick

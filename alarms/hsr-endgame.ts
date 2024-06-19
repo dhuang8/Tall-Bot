@@ -28,6 +28,4 @@ class HsrEndgame extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new HsrEndgame();
-}
+export default new HsrEndgame();

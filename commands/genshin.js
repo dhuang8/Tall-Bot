@@ -1,7 +1,6 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
 import AlarmManager from '../util/alarm-manager.js';
-import { GenshinImpact, LanguageEnum, GenshinRegion } from 'hoyoapi'
 import { GenshinClient} from '../util/hoyo';
 import { request} from '../util/functions.js';
 
@@ -124,8 +123,8 @@ const execute = async (interaction, discord_client) => {
             const embed = new EmbedBuilder()
                 .setTitle('Genshin Impact info')
                 .addFields(
-                    { name: 'uid', value: user.genshin_uid.toString() },
-                    { name: 'cookie', value: user.hsr_cookie }
+                    { name: 'uid', value: user.genshin_uid?.toString() ?? `not set` },
+                    { name: 'cookie', value: user.hsr_cookie ?? `not set` }
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'info': {
@@ -134,55 +133,46 @@ const execute = async (interaction, discord_client) => {
             const info = await genshin.buildUserEmbed();
             await defer;
             return info;
-        } case 'char' : {
-            const genshin = getUidAndCookie(interaction.user.id);
-            if (genshin.error) return genshin.error;
-            const defer = interaction.deferReply();
-            const client = new GenshinImpact({
-                lang: LanguageEnum.ENGLISH,
-                region: GenshinRegion.USA,
-                cookie: genshin.cookie,
-                uid: genshin.uid
-            })
-            let charResponse = await client.record.characters();
-            await defer;
-            console.log(JSON.stringify(charResponse.avatars[0]))
-            return JSON.stringify(charResponse.avatars[0]);
+        // } case 'char' : {
+        //     const genshin = getUidAndCookie(interaction.user.id);
+        //     if (genshin.error) return genshin.error;
+        //     const defer = interaction.deferReply();
+        //     const client = new GenshinImpact({
+        //         lang: LanguageEnum.ENGLISH,
+        //         region: GenshinRegion.USA,
+        //         cookie: genshin.cookie,
+        //         uid: genshin.uid
+        //     })
+        //     let charResponse = await client.record.characters();
+        //     await defer;
+        //     console.log(JSON.stringify(charResponse.avatars[0]))
+        //     return JSON.stringify(charResponse.avatars[0]);
         } case 'spiral-abyss': {
-            await charRequest;
-            const genshin = getUidAndCookie(interaction.user.id);
-            if (genshin.error) return genshin.error;
             const defer = interaction.deferReply();
-            const client = new GenshinImpact({
-                lang: LanguageEnum.ENGLISH,
-                region: GenshinRegion.USA,
-                cookie: genshin.cookie,
-                uid: genshin.uid
-            })
-            let spiralResponse = await client.record.spiralAbyss();
-            
+            const genshin = new GenshinClient(interaction.user.id);
+            const sa = await genshin.spiralAbyss();
             let descLines = [];
-            descLines.push(`Spiral Abyss reset <t:${new Date(parseInt(spiralResponse.end_time)).getTime()}:R>`);
-            descLines.push(`**Stars**: ${spiralResponse.total_star}/36`);
+            descLines.push(`Spiral Abyss reset <t:${sa.recovery_time}:R>`);
+            descLines.push(`**Stars**: ${sa.stars}/${sa.max_stars}`);
             let embeds = [];
             let embed = new EmbedBuilder()
-            .setTitle('Genshin Impact — Spiral Abyss')
-            .setDescription(descLines.join("\n"))
-            .setFooter({text: "Only the last 8 are shown"});
-            spiralResponse.floors.reverse().forEach((floor, i) => {
+                .setTitle('Genshin Impact — Spiral Abyss')
+                .setDescription(descLines.join("\n"))
+            sa.floors.reverse().forEach((floor, i) => {
                 if (i > 0 && i % 2 == 0) {
                     embeds.push(embed);
                     embed = new EmbedBuilder();
                 }
-                embed.addFields({name: `Floor ${floor.index}`, value: `**Stars**: ${floor.star}/${floor.max_star}`});
-                floor.levels.forEach(level => {
-                    embed.addFields({name: `Floor ${floor.index} Chamber ${level.index}`, value: `${":star:".repeat(level.star)}/${level.max_star}`});
-                    level.battles.forEach(battle => {
-                        embed.addFields({name: `${floor.index}-${level.index}-${battle.index}`, value: createListFromAvatarList(battle.avatars), inline: true});
+                embed.addFields({name: `Floor ${floor.num}`, value: `**Stars**: ${floor.stars}/${floor.max_stars}`});
+                floor.chambers.forEach(chamber => {
+                    embed.addFields({name: `Chamber ${chamber.num}`, value: ":star:".repeat(chamber.stars)});
+                    chamber.sides.forEach(side => {
+                        const desc = side.team.map(char => `Lv${char.level} ${char.name}`).join("\n");
+                        embed.addFields({name: `${floor.num}-${chamber.num}-${side.num}`, value: desc, inline: true});
                     })
                 })
             })
-            embed.setTimestamp();
+            embed.setFooter({text: "Only the last 8 are shown"});
             embeds.push(embed);
             await defer;
             return {embeds};

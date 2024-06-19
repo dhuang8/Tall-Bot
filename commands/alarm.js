@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
+import AlarmManager from '../util/alarm-manager.js';
 
 const slash = new SlashCommandBuilder()
     .setName('alarm')
@@ -23,7 +24,7 @@ const slash = new SlashCommandBuilder()
 const execute = async (interaction, client) => {
     switch (interaction.options.data[0].name) {
         case "list": {
-            return {embeds: [client.alarm_manager.createUserAlarmEmbed(interaction.user.id)]};
+            return {embeds: [AlarmManager.createUserAlarmEmbed(interaction.user.id)]};
         }
     }
 }

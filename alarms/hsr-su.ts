@@ -26,6 +26,4 @@ class HsrSu extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new HsrSu();
-}
+export default new HsrSu();

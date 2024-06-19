@@ -26,6 +26,4 @@ class GenshinDaily extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new GenshinDaily();
-}
+export default new GenshinDaily();

@@ -28,7 +28,7 @@ client.sendEmbedToLog = function(embed) {
 
 for (const alarm_name of readdirSync('./alarms').filter(file => file.endsWith('.ts')).filter(file => file.indexOf("test") < 0)) {
     try {
-        const alarm = (await import(`./alarms/${alarm_name}`)).default();
+        const alarm = (await import(`./alarms/${alarm_name}`)).default;
         AlarmManager.addAlarm(alarm);
     } catch (e) {
         console.log(`could not load alarm ${alarm_name} ${e}`);
@@ -48,7 +48,7 @@ for (const commandName of commandsList) {
     }
 }
 
-let scheduleList = ["hsr_dailies", "genshin_login", "hsr_cap", "genshin_cap", "birthday", "hi3_dailies"];
+let scheduleList = ["hsr_dailies", "genshin_login", "birthday", "hi3_dailies"];
 scheduleList.forEach(name => {
     import(`./schedule/${name}.js`).then(sche=>{
         new sche.default(client);

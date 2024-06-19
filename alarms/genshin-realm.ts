@@ -28,6 +28,4 @@ class GenshinRealm extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new GenshinRealm();
-}
+export default new GenshinRealm();

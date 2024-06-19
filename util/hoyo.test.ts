@@ -1,4 +1,4 @@
-import {GenshinClient, hoyoRequest, HsrClient} from "./hoyo.ts";
+import {GenshinClient, HsrClient} from "./hoyo.ts";
 
 test('genshin battleChronicle', async () => {
     const client = new GenshinClient("1234567890");
@@ -7,7 +7,7 @@ test('genshin battleChronicle', async () => {
 
 test('genshin spiralAbyss', async () => {
     const client = new GenshinClient("1234567890");
-    console.log(await client.spiralAbyss());
+    console.log(JSON.stringify(await client.spiralAbyss()));
 });
 
 test('genshin codes', async () => {
@@ -27,12 +27,26 @@ test('hsr battleChronicle', async () => {
 
 test('hsr memoryOfChaos', async () => {
     const client = new HsrClient("1234567890");
-    console.log(await client.memoryOfChaos());
+    console.log(JSON.stringify(await client.memoryOfChaos()));
+});
+
+test('hsr memoryOfChaos without userid', async () => {
+    const client = new HsrClient({uid: 601621324});
+    try {
+        console.log(await client.memoryOfChaos(1));
+    } catch(e) {
+        console.log(e);
+    }
 });
 
 test('hsr pureFiction', async () => {
     const client = new HsrClient("1234567890");
     console.log(await client.pureFiction());
+});
+
+test('hsr apoc', async () => {
+    const client = new HsrClient("1234567890");
+    console.log(JSON.stringify(await client.apocalypticShadow()));
 });
 
 test('hsr su', async () => {
@@ -49,11 +63,3 @@ test('hsr codes', async () => {
     const client = new HsrClient("1234567890");
     console.log((await client.codes())[0]);
 });
-
-// test('hsr', async () => {
-//     const client = new HsrClient("1234567890");
-//     console.log(await client.info());
-//     console.log(await client.battleChronicle());
-//     console.log(await client.challenge());
-//     console.log(await client.challengeStory());
-// });

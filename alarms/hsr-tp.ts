@@ -28,6 +28,4 @@ class HsrTp extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new HsrTp();
-}
+export default new HsrTp();

@@ -1,7 +1,7 @@
 import sql from './SQLite.js';
 import { EmbedBuilder } from 'discord.js';
 
-class AlarmManagerClass {
+class AlarmManager {
     constructor(client) {
         // this.client = client;
         this.alarms = new Map();
@@ -98,5 +98,4 @@ class AlarmManagerClass {
     }
 }
 
-const AlarmManager = new AlarmManagerClass();
-export default AlarmManager;
+export default new AlarmManager();

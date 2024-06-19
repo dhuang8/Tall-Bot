@@ -28,6 +28,4 @@ class GenshinSpiralAbyss extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new GenshinSpiralAbyss();
-}
+export default new GenshinSpiralAbyss();

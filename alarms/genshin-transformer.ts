@@ -28,6 +28,4 @@ class GenshinTransformer extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new GenshinTransformer();
-}
+export default new GenshinTransformer();

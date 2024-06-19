@@ -43,6 +43,7 @@ test('hsr moc', async () => {
     interaction.user = {id: "1234567890"};
     interaction.options.setSubcommand("moc");
     let response = await execute(interaction);
+    console.log(response);
     expect(response.embeds.length).toBeGreaterThan(0);
 });
 

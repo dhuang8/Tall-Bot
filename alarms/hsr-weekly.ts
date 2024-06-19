@@ -26,6 +26,4 @@ class HsrWeekly extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new HsrWeekly();
-}
+export default new HsrWeekly();

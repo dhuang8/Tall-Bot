@@ -26,6 +26,4 @@ class HsrDaily extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new HsrDaily();
-}
+export default new HsrDaily();

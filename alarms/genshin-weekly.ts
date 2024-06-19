@@ -26,6 +26,4 @@ class GenshinWeekly extends StaticAlarm {
     }
 }
 
-export default function() {
-    return new GenshinWeekly();
-}
+export default new GenshinWeekly();

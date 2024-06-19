@@ -2,11 +2,26 @@ import sql from './SQLite.js';
 import crypto from "crypto";
 import { request, timeOnNext } from './functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
+import config from '../config.json' with { type: "json" };
 
-const ROOT_URL = `https://bbs-api-os.hoyolab.com/game_record/`
+const ROOT_URL = `https://bbs-api-os.hoyolab.com/game_record/`;
 
-export function hoyoRequest(url: string, cookie: string) {
-    return request({
+let hsrCharRequest = request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json");
+let hsrCharMap = JSON.parse(await hsrCharRequest);
+hsrCharMap[8001].name = hsrCharMap[8002].name = "Trailblazer (Physical)"
+hsrCharMap[8003].name = hsrCharMap[8004].name = "Trailblazer (Fire)"
+hsrCharMap[8005].name = hsrCharMap[8006].name = "Trailblazer (Imaginary)"
+
+let genshinCharMap: {[key: number]: string} = [];
+request("https://api.uigf.org/dict/genshin/en.json").then(res => {
+    let chars: {[key: string]: number} = res;
+    Object.entries(chars).forEach(entry => {
+        genshinCharMap[entry[1]] = entry[0];
+    })
+});
+
+async function hoyoRequest(url: string, cookie: string) {
+    const r = await request({
         url,
         headers: {
             Accept: "application/json, text/plain, */*",
@@ -25,7 +40,9 @@ export function hoyoRequest(url: string, cookie: string) {
             "ds": generateDS(),
             cookie
         }
-    }).then(r => r.data)
+    })
+    if (r.data != null) return r.data;
+    else throw new Error(`${r.retcode} ${r.message}`);
 }
 
 function generateDS() {
@@ -45,7 +62,8 @@ function generateDS() {
 
 interface User {
     hsr_cookie?: string;
-    genshin_uid?: string;
+    genshin_uid?: number;
+    hsr_uid?: number;
 };
 
 interface GenshinBattleChronicle {
@@ -82,10 +100,26 @@ interface GenshinBattleChronicle {
 };
 
 interface GenshinSpiralAbyss {
-    max_floor: number,
-    current: number,
-    max: number,
-    recovery_time: number
+    stars: number;
+    max_stars: number;
+    recovery_time: number;
+    floors: {
+        num: number;
+        max_stars: number;
+        stars: number;
+        chambers: {
+            num: number;
+            max_stars: number;
+            stars: number;
+            sides: {
+                num: number;
+                team: {
+                    level: number;
+                    name: string;
+                }[]
+            }[];
+        }[];
+    }[]
 };
 
 export class GenshinClient {
@@ -101,7 +135,7 @@ export class GenshinClient {
         if (user.genshin_uid == null) throw new Error("`Missing uid`");
         if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
         this.user_id = user_id;
-        this.uid = parseInt(user.genshin_uid);
+        this.uid = user.genshin_uid;
         this.cookie = user.hsr_cookie;
     }
 
@@ -149,12 +183,60 @@ export class GenshinClient {
     }
 
     async spiralAbyss(): Promise<GenshinSpiralAbyss> {
-        const response = await hoyoRequest(ROOT_URL + `genshin/api/spiralAbyss?server=os_usa&role_id=${this.uid}&schedule_type=1`, this.cookie);
+        const response: {
+            total_star: number;
+            end_time: string;
+            floors: {
+                index: number;
+                max_star: number;
+                star: number;
+                levels: {
+                    index: number;
+                    star: number;
+                    max_star: number;
+                    battles: {
+                        index: number;
+                        avatars: {
+                            level: number;
+                            id: number;
+                        }[];
+                    }[];
+                }[];
+            }[];
+        } = await hoyoRequest(ROOT_URL + `genshin/api/spiralAbyss?server=os_usa&role_id=${this.uid}&schedule_type=2`, this.cookie);
+        const floors = response.floors.map(floor => {
+            const chambers = floor.levels.map(chamber => {
+                const sides = chamber.battles.map(side => {
+                    const team = side.avatars.map(char => {
+                        return {
+                            level: char.level,
+                            name: genshinCharMap[char.id]
+                        }
+                    })
+                    return {
+                        num: side.index,
+                        team
+                    }
+                })
+                return {
+                    num: chamber.index,
+                    stars: chamber.star,
+                    max_stars: chamber.max_star,
+                    sides
+                }
+            })
+            return {
+                num: floor.index,
+                max_stars: floor.max_star,
+                stars: floor.star,
+                chambers
+            }
+        })
         this.sa = {
-            max_floor: response.max_floor,
-            current: response.total_star,
-            max: 36,
-            recovery_time: parseInt(response.end_time)
+            stars: response.total_star,
+            max_stars: 36,
+            recovery_time: parseInt(response.end_time),
+            floors
         }
         return this.sa;
     }
@@ -209,12 +291,8 @@ export class GenshinClient {
     
         let spiralLines = [];
         spiralLines.push(crossIfTrue(
-            this.sa.current >= this.sa.max,
-            `**Max floor**: ${this.sa.max_floor}`
-        ));
-        spiralLines.push(crossIfTrue(
-            this.sa.current >= this.sa.max,
-            `**Stars**: ${this.sa.current}/${this.sa.max}`
+            this.sa.stars >= this.sa.max_stars,
+            `**Stars**: ${this.sa.stars}/${this.sa.max_stars}`
         ));
         embed.addFields({name: `Spiral Abyss reset <t:${this.sa.recovery_time}:R>`, value: spiralLines.join("\n")});
     
@@ -260,7 +338,21 @@ interface HsrEndgame {
     name: string,
     current_stars: number,
     max_stars: number,
-    recovery_time: number
+    recovery_time: number,
+    floors?: {
+        name: string,
+        cycles: number,
+        stars: number,
+        teams: {
+            buff?: string;
+            score?: number;
+            chars: {
+                level: number;
+                name: string;
+                eidolon: number;
+            }[]
+        }[]
+    }[]
 };
 
 interface HsrSimulatedUniverse {
@@ -269,22 +361,32 @@ interface HsrSimulatedUniverse {
     recovery_time: number
 };
 
+const hsrStmt = sql.prepare<string, User>("SELECT hsr_cookie, hsr_uid from users WHERE user_id = ?")
+
 export class HsrClient {
-    user_id: string;
-    uid: number;
+    user_id?: string;
+    uid?: number;
     cookie: string;
     bc?: HsrBattleChronicle;
     eg?: HsrEndgame[]
     su?: HsrSimulatedUniverse;
 
-    constructor(user_id: string) {
-        const user = sql.prepare<string, User>("SELECT hsr_cookie, hsr_uid from users WHERE user_id = ?").get(user_id);
-        if (user == null) throw new Error("`Missing user`");
-        if (user.hsr_uid == null) throw new Error("`Missing uid`");
-        if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
-        this.user_id = user_id;
-        this.uid = parseInt(user.hsr_uid);
-        this.cookie = user.hsr_cookie;
+    constructor(user_id: string | {uid: number}) {
+        if (typeof user_id == 'string') {
+            const user = hsrStmt.get(user_id);
+            if (user == null) throw new Error("`Missing user`");
+            if (user.hsr_uid == null) throw new Error("`Missing uid`");
+            if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
+            this.user_id = user_id;
+            this.uid = user.hsr_uid;
+            this.cookie = user.hsr_cookie;
+        } else {
+            const user = hsrStmt.get(config.user_id);
+            if (user == null) throw new Error("`Missing user`");
+            if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
+            this.cookie = user.hsr_cookie;
+            this.uid = user_id.uid;
+        }
     }
 
     async info() {
@@ -295,7 +397,6 @@ export class HsrClient {
     async battleChronicle(): Promise<HsrBattleChronicle> {
         let cur = Math.floor(Date.now()/1000);
         const response = await hoyoRequest(ROOT_URL + `hkrpg/api/note?server=prod_official_usa&role_id=${this.uid}`, this.cookie);
-        console.log(response);
         this.bc = {
             trailblaze_power: {
                 reserve: response.current_reserve_stamina,
@@ -330,27 +431,217 @@ export class HsrClient {
         return this.eg;
     }
 
-    async memoryOfChaos(type: number = 1): Promise<HsrEndgame> {
-        const response = await hoyoRequest(ROOT_URL + `hkrpg/api/challenge?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=false`, this.cookie);
+    async memoryOfChaos(type: number = 1, need_all: boolean = false): Promise<HsrEndgame> {
+        const response: {
+            star_num: number;
+            has_data: boolean;
+            end_time: {
+                day: number;
+                hour: number;
+                minute: number;
+                month: number;
+                year: number;
+            }
+            all_floor_detail: {
+                is_fast: boolean;
+                name: string;
+                star_num: number;
+                round_num: number;
+                node_1: {
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                },
+                node_2: {
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                }
+            }[]
+        } = await hoyoRequest(ROOT_URL + `hkrpg/api/challenge?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
+        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
+            const teams = [floor.node_1, floor.node_2].map(node => {
+                return {
+                    chars: node.avatars.map(char => {
+                        return {
+                            level: char.level,
+                            name: hsrCharMap[char.id].name,
+                            eidolon: char.rank
+                        }
+                    })
+                }
+            });
+            return {
+                name: floor.name,
+                cycles: floor.round_num,
+                stars: floor.star_num,
+                teams
+            }
+        })
         const end_time = response.end_time;
         let end_date = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
         return {
             name: `Memory of Chaos ${type}`,
             current_stars: response.star_num,
             max_stars: 36,
-            recovery_time: end_date.getTime()/1000
+            recovery_time: end_date.getTime()/1000,
+            floors: floors
         }
     }
 
-    async pureFiction(type: number = 1): Promise<HsrEndgame> {
-        const response = await hoyoRequest(ROOT_URL + `hkrpg/api/challenge_story?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=false`, this.cookie);
+    async pureFiction(type: number = 1, need_all: boolean = false): Promise<HsrEndgame> {
+        const response: {
+            star_num: number;
+            has_data: boolean;
+            groups: {
+                end_time: {
+                    day: number;
+                    hour: number;
+                    minute: number;
+                    month: number;
+                    year: number;
+                };
+                name_mi18n: string;
+            }[];
+            all_floor_detail: {
+                is_fast: boolean;
+                name: string;
+                star_num: number;
+                round_num: number;
+                node_1: {
+                    buff: {
+                        name_mi18n: string;
+                    };
+                    score: number;
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                },
+                node_2: {
+                    buff: {
+                        name_mi18n: string;
+                    };
+                    score: number;
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                }
+            }[]
+        } = await hoyoRequest(ROOT_URL + `hkrpg/api/challenge_story?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
+        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
+            const teams = [floor.node_1, floor.node_2].map(node => {
+                const chars = node.avatars.map(char => {
+                    return {
+                        level: char.level,
+                        name: hsrCharMap[char.id].name,
+                        eidolon: char.rank
+                    }
+                })
+                return {
+                    buff: node.buff.name_mi18n,
+                    score: node.score,
+                    chars
+                }
+            });
+            return {
+                name: floor.name,
+                cycles: floor.round_num,
+                stars: floor.star_num,
+                teams
+            }
+        })
         const end_time = response.groups[type-1].end_time;
         let end_date = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
         return {
             name: `Pure Fiction ${type}`,
             current_stars: response.star_num,
             max_stars: 12,
-            recovery_time: end_date.getTime()/1000
+            recovery_time: end_date.getTime()/1000,
+            floors: floors
+        }
+    }
+
+    async apocalypticShadow(type: number = 1, need_all: boolean = false): Promise<HsrEndgame> {
+        const response: {
+            star_num: number;
+            has_data: boolean;
+            groups: {
+                end_time: {
+                    day: number;
+                    hour: number;
+                    minute: number;
+                    month: number;
+                    year: number;
+                };
+                name_mi18n: string;
+            }[];
+            all_floor_detail: {
+                is_fast: boolean;
+                name: string;
+                star_num: number;
+                round_num: number;
+                node_1: {
+                    buff: {
+                        name_mi18n: string;
+                    };
+                    score: number;
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                },
+                node_2: {
+                    buff: {
+                        name_mi18n: string;
+                    };
+                    score: number;
+                    avatars: {
+                        level: number;
+                        id: number;
+                        rank: number;
+                    }[]
+                }
+            }[]
+        } = await hoyoRequest(ROOT_URL + `hkrpg/api/challenge_boss?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
+        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
+            const teams = [floor.node_1, floor.node_2].map(node => {
+                const chars = node.avatars.map(char => {
+                    return {
+                        level: char.level,
+                        name: hsrCharMap[char.id].name,
+                        eidolon: char.rank
+                    }
+                })
+                return {
+                    buff: node.buff.name_mi18n,
+                    score: node.score,
+                    chars
+                }
+            });
+            return {
+                name: floor.name,
+                cycles: floor.round_num,
+                stars: floor.star_num,
+                teams
+            }
+        })
+        const end_time = response.groups[type-1].end_time;
+        let end_date = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
+        return {
+            name: `Apocalyptic Shadow`,
+            current_stars: response.star_num,
+            max_stars: 12,
+            recovery_time: end_date.getTime()/1000,
+            floors: floors
         }
     }
 
@@ -365,6 +656,9 @@ export class HsrClient {
     }
 
     async buildUserEmbed(): Promise<MessageCreateOptions> {
+        if (!this.user_id) {
+            throw new Error("missing user");
+        }
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.eg) prom.push(this.endgameContent());
@@ -409,7 +703,7 @@ export class HsrClient {
         let egLines = this.eg.map(e => {
             return crossIfTrue(
                 e.current_stars >= e.max_stars,
-                `**${e.name}**: ${e.current_stars}/${e.max_stars}`
+                `**${e.name}**: ${e.current_stars}/${e.max_stars} ends <t:${e.recovery_time}:R>`
             )
         })
         if (egLines.length > 0) embed.addFields({name: `MoC/PF`, value: egLines.join("\n")});

@@ -29,6 +29,4 @@ class HsrAssignment extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new HsrAssignment();
-}
+export default new HsrAssignment();

@@ -29,6 +29,4 @@ class GenshinExpedition extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new GenshinExpedition();
-}
+export default new GenshinExpedition();

@@ -1,8 +1,7 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
-import {crossIfTrue, calcTimestampAfter, HsrClient} from '../util/hoyo';
-import {timeOnNext, request} from '../util/functions.js';
-import { HonkaiStarRail, LanguageEnum } from 'hoyoapi'
+import {HsrClient} from '../util/hoyo';
+import {request} from '../util/functions.js';
 import AlarmManager from '../util/alarm-manager.js';
 import fs from 'fs';
 
@@ -28,11 +27,11 @@ const slash = new SlashCommandBuilder()
             option.setName('uid')
             .setDescription('hsr uid')
             .setMinValue(600000000)
-            .setRequired(true)
+            .setRequired(false)
         ).addStringOption(option =>
             option.setName('cookie')
             .setDescription('cookie from website')
-            .setRequired(true)
+            .setRequired(false)
         )
     )
     .addSubcommand(subcommand => 
@@ -43,6 +42,15 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("moc")
         .setDescription("Memory of Chaos")
         .addIntegerOption(option =>
+            option.setName('phase')
+            .setDescription('which phase')
+            .setRequired(true)
+            .addChoices(
+                {name: 'previous', value: 2},
+                {name: 'recent', value: 1}
+            )
+        )
+        .addIntegerOption(option =>
             option.setName('uid')
             .setDescription('UID')
             .setRequired(false)
@@ -51,6 +59,33 @@ const slash = new SlashCommandBuilder()
     .addSubcommand(subcommand => 
         subcommand.setName("pure-fiction")
         .setDescription("Pure Fiction")
+        .addIntegerOption(option =>
+            option.setName('phase')
+            .setDescription('which phase')
+            .setRequired(true)
+            .addChoices(
+                {name: 'previous', value: 2},
+                {name: 'recent', value: 1}
+            )
+        )
+        .addIntegerOption(option =>
+            option.setName('uid')
+            .setDescription('UID')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("apoc-shadow")
+        .setDescription("Apocalyptic Shadow")
+        .addIntegerOption(option =>
+            option.setName('phase')
+            .setDescription('which phase')
+            .setRequired(true)
+            .addChoices(
+                {name: 'previous', value: 2},
+                {name: 'recent', value: 1}
+            )
+        )
         .addIntegerOption(option =>
             option.setName('uid')
             .setDescription('UID')
@@ -128,163 +163,12 @@ function getUidAndCookie(userId) {
 //TODO how to update if char doesn't exist
 let charRequest = request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json");
 let charMap = JSON.parse(await charRequest);
-charMap[8002].name = charMap[8001].name = "Trailblazer (Physical)"
+charMap[8001].name = charMap[8002].name = "Trailblazer (Physical)"
 charMap[8003].name = charMap[8004].name = "Trailblazer (Fire)"
+charMap[8005].name = charMap[8006].name = "Trailblazer (Imaginary)"
 
 function createListFromAvatarList(avatars) {
     return avatars.map(ava => `Lv.${ava.level} ${charMap[ava.id].name}`).join("\n")
-}
-
-async function generateInfo(hsr, userId) {
-    const client = new HonkaiStarRail({
-        lang: LanguageEnum.ENGLISH,
-        region: 'prod_official_usa',
-        cookie: hsr.cookie,
-        uid: hsr.uid
-    })
-    client.record.region = 'prod_official_usa'
-
-    let dailyResponse = client.daily.info()
-    let staminaResponse = client.record.note();
-    //let mocResponse = client.record.forgottenHall();
-    let mocResponse1 = await client.record.request.setQueryParams({
-        server: client.record.region,
-        role_id: client.record.uid,
-        schedule_type: '1',
-        need_all: 'false',
-    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-    let mocResponse2 = await client.record.request.setQueryParams({
-        server: client.record.region,
-        role_id: client.record.uid,
-        schedule_type: '2',
-        need_all: 'false',
-    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-    let pfResponse1 = await client.record.request.setQueryParams({
-        server: client.record.region,
-        role_id: client.record.uid,
-        schedule_type: '2',
-        need_all: 'false',
-    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
-    let pfResponse2 = await client.record.request.setQueryParams({
-        server: client.record.region,
-        role_id: client.record.uid,
-        schedule_type: '1',
-        need_all: 'false',
-    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
-    mocResponse1 = mocResponse1.response.data;
-    mocResponse2 = mocResponse2.response.data;
-    pfResponse1 = pfResponse1.response.data;
-    pfResponse2 = pfResponse2.response.data;
-    let suResponse = await client.record.request.setQueryParams({
-        server: client.record.region,
-        role_id: client.record.uid,
-        schedule_type: '3',
-        lang: client.record.lang,
-        need_all: 'false',
-    }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/rogue')
-    suResponse = suResponse.response.data;
-
-    //TODO probably a better way to do this
-    dailyResponse = await dailyResponse;
-    staminaResponse = await staminaResponse;
-    let mocResponses = [await mocResponse1, await mocResponse2];
-    let pfResponses = [await pfResponse1, await pfResponse2];
-    suResponse = await suResponse;
-
-    let nextUpdate = null;
-    const newCapped = staminaResponse.current_stamina >= staminaResponse.max_stamina-1 ? 1 : 0;
-    if (newCapped) nextUpdate = calcTimestampAfter(60*60*12)
-    else nextUpdate = calcTimestampAfter(staminaResponse.stamina_recover_time)
-    sql.prepare("UPDATE users SET hsr_capped=?, hsr_next_update=? WHERE user_id = ?;").run(newCapped, nextUpdate, userId);
-
-    let descLines = [];
-    descLines.push(`**TP**: ${staminaResponse.current_stamina}/${staminaResponse.max_stamina}, capped <t:${calcTimestampAfter(staminaResponse.stamina_recover_time)}:R>`)
-    descLines.push(`**Reserve TP**: ${staminaResponse.current_reserve_stamina}/2400`)
-    const embed = new EmbedBuilder()
-        .setTitle('Honkai: Star Rail — Battle Chronicle')
-        .setDescription(descLines.join("\n"))
-        .setTimestamp();
-    
-    let assignmentLines = [];
-    staminaResponse.expeditions.forEach((expedition, i) => {
-        if (expedition.status === "Finished") {
-            assignmentLines.push(`**Assignment ${i+1}** complete`)
-        } else {
-            assignmentLines.push(`**Assignment ${i+1}** <t:${calcTimestampAfter(expedition.remaining_time)}:R>`)
-        }
-    })
-    embed.addFields({name: "Assignments", value: assignmentLines.join("\n")});
-    
-    embed.addFields({name: `Check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Daily check-in`)});
-
-    let dailyLines = [];
-    dailyLines.push(crossIfTrue(
-        staminaResponse.current_train_score == staminaResponse.max_train_score,
-        `**Daily Training**: ${staminaResponse.current_train_score}/${staminaResponse.max_train_score}`
-    ))
-    embed.addFields({name: `Daily reset <t:${timeOnNext(24*60*60, 9*60*60)}:R>`, value: dailyLines.join("\n")});
-
-    let weeklyLines = [];
-    weeklyLines.push(crossIfTrue(
-        staminaResponse.weekly_cocoon_cnt == 0,
-        `**Echo of War**: ${staminaResponse.weekly_cocoon_limit-staminaResponse.weekly_cocoon_cnt}/${staminaResponse.weekly_cocoon_limit}`
-    ));
-    weeklyLines.push(crossIfTrue(
-        staminaResponse.current_rogue_score == staminaResponse.max_rogue_score,
-        `**SU score**: ${staminaResponse.current_rogue_score}/${staminaResponse.max_rogue_score}`
-    ));
-    weeklyLines.push(crossIfTrue(
-        suResponse.current_record.basic.finish_cnt > 33,
-        `**SU runs**: ${suResponse.current_record.basic.finish_cnt}/34 (100 elites)` 
-    ));
-    embed.addFields({name: `Weekly reset <t:${timeOnNext(7*24*60*60, 9*60*60+4*24*60*60)}:R>`, value: weeklyLines.join("\n")});
-
-    for (let i=0; i<2;i++) {
-        let mocResponse = mocResponses[i];
-        if (mocResponse.all_floor_detail.length == 0) continue;
-        let mocLines = [];
-        let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
-        mocLines.push(crossIfTrue(
-            mocResponse.max_floor.indexOf("XII") > -1,
-            `**Max floor**: ${mocResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
-        ));
-        mocLines.push(crossIfTrue(
-            mocResponse.star_num >= 36,
-            `**Stars**: ${mocResponse.star_num}/36`
-        ));
-        embed.addFields({name: `This Memory of Chaos ends <t:${mocDate.getTime()/1000}:R>`, value: mocLines.join("\n")});
-    }
-
-    for (let i=0; i<2;i++) {
-        let pfResponse = pfResponses[i];
-        if (pfResponse.all_floor_detail.length == 0) continue;
-        let pfLines = [];
-        let pfDate = new Date(
-            pfResponse.groups[0].end_time.year, 
-            pfResponse.groups[0].end_time.month-1, 
-            pfResponse.groups[0].end_time.day, 
-            pfResponse.groups[0].end_time.hour+5, 
-            pfResponse.groups[0].end_time.minute);
-        pfLines.push(crossIfTrue(
-            pfResponse.max_floor.indexOf("IV") > -1,
-            `**Max floor**: ${pfResponse.max_floor.replace("<unbreak>", "").replace("</unbreak>", "")}`
-        ));
-        pfLines.push(crossIfTrue(
-            pfResponse.star_num >= 12,
-            `**Stars**: ${pfResponse.star_num}/12`
-        ));
-        embed.addFields({name: `This Pure Fiction ends <t:${pfDate.getTime()/1000}:R>`, value: pfLines.join("\n")});
-    }
-
-    const refreshButton = new ButtonBuilder()
-        .setCustomId(`hsr|${userId}`)
-        .setLabel('Refresh')
-        .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder()
-        .addComponents(refreshButton);
-
-    return {embeds: [embed], components: [row]};
 }
 
 function calcScore(name, relic) {
@@ -385,13 +269,13 @@ const execute = async (interaction) => {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
             const cookie = interaction.options.getString("cookie");
-            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, hsr_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=excluded.hsr_cookie, hsr_uid=excluded.hsr_uid RETURNING hsr_cookie, hsr_uid;")
+            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, hsr_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=COALESCE(excluded.hsr_cookie, hsr_cookie), hsr_uid=COALESCE(excluded.hsr_uid, hsr_uid) RETURNING hsr_cookie, hsr_uid;")
                 .get(interaction.user.id, cookie, uid);
             const embed = new EmbedBuilder()
                 .setTitle('Honkai Star Rail info')
                 .addFields(
-                    { name: 'uid', value: user.hsr_uid.toString() },
-                    { name: 'cookie', value: user.hsr_cookie }
+                    { name: 'uid', value: user.hsr_uid?.toString() ?? `not set` },
+                    { name: 'cookie', value: user.hsr_cookie ?? `not set` }
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'info': {
@@ -400,156 +284,120 @@ const execute = async (interaction) => {
             const info = await hsr.buildUserEmbed();
             await defer;
             return info;
-        } case 'daily': {
-            const hsr = getUidAndCookie(interaction.user.id);
-            if (hsr.error) return hsr.error;
-            const client = new HonkaiStarRail({
-                lang: LanguageEnum.ENGLISH,
-                region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
-            })
-            const claim = await client.daily.claim()
-            if (claim?.status) return claim.status;
-            throw new Error(JSON.stringify(claim));
+        // } case 'daily': {
+        //     const hsr = getUidAndCookie(interaction.user.id);
+        //     if (hsr.error) return hsr.error;
+        //     const client = new HonkaiStarRail({
+        //         lang: LanguageEnum.ENGLISH,
+        //         region: 'prod_official_usa',
+        //         cookie: hsr.cookie,
+        //         uid: hsr.uid
+        //     })
+        //     const claim = await client.daily.claim()
+        //     if (claim?.status) return claim.status;
+        //     throw new Error(JSON.stringify(claim));
         } case 'moc': {
-            let uid = interaction.options.getInteger("uid");
-            if (uid == null) {
-                const user = sql.prepare("SELECT hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
-                uid = user.hsr_uid;
-            }
-            if (uid == null) return `missing uid`;
-            const hsr = getUidAndCookie(interaction.user.id);
-            if (hsr.error) return hsr.error;
+            const uid = interaction.options.getInteger("uid");
+            const phase = interaction.options.getInteger("phase");
             const defer = interaction.deferReply();
-            const client = new HonkaiStarRail({
-                lang: LanguageEnum.ENGLISH,
-                region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
-            })
-            client.record.region = 'prod_official_usa';
-            let mocResponse1 = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: uid,
-                schedule_type: '1',
-                need_all: 'true',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-            let mocResponse2 = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: uid,
-                schedule_type: '2',
-                need_all: 'true',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge')
-            let embeds = []
-            let mocResponses = [mocResponse1.response.data, mocResponse2.response.data]
-            for (let i=0;i<2;i++) {
-                let mocResponse = mocResponses[i]
-                let mocDate = new Date(mocResponse.end_time.year, mocResponse.end_time.month-1, mocResponse.end_time.day, mocResponse.end_time.hour+5, mocResponse.end_time.minute);
-                let descLines = [];
-                descLines.push(`This Memory of Chaos ends <t:${mocDate.getTime()/1000}:R>`);
-                descLines.push(`**Stars**: ${mocResponse.star_num}/36`);
-                let embed = new EmbedBuilder()
-                    .setTitle('Honkai: Star Rail — Memory of Chaos')
-                    .setDescription(descLines.join("\n"))
-                mocResponse.all_floor_detail.forEach(floor => {
-                    if (floor.is_fast) return;
-                    if (embed.addFields.length > 21) {
-                        embeds.push(embed);
-                        embed = new EmbedBuilder();
-                    }
-                    const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
-                    const stars = floor.star_num;
-                    const cycles = floor.round_num;
-                    let lines = [];
-                    lines.push(':star:'.repeat(stars));
-                    lines.push(`**Cycles**: ${cycles}`)
-                    embed.addFields({name, value: lines.join("\n")});
-                    embed.addFields({name: 'Team 1', value: createListFromAvatarList(floor.node_1.avatars), inline: true});
-                    embed.addFields({name: 'Team 2', value: createListFromAvatarList(floor.node_2.avatars), inline: true});
+            let hsr;
+            if (uid) hsr = new HsrClient({uid});
+            else hsr = new HsrClient(interaction.user.id);
+            const moc = await hsr.memoryOfChaos(phase, true);
+            let descLines = [];
+            descLines.push(`This Memory of Chaos ends <t:${moc.recovery_time}:R>`);
+            descLines.push(`**Stars**: ${moc.current_stars}/${moc.max_stars}`);
+            let embed = new EmbedBuilder()
+                .setTitle('Honkai: Star Rail — Memory of Chaos')
+                .setDescription(descLines.join("\n"))
+            moc.floors.forEach(floor => {
+                let lines = [];
+                lines.push(':star:'.repeat(floor.stars));
+                lines.push(`**Cycles**: ${floor.cycles}`)
+                embed.addFields({name: floor.name, value: lines.join("\n")});
+                floor.teams.forEach((team, i) => {
+                    let desc = team.chars.map(char => {
+                        return `Lv.${char.level} E${char.eidolon} ${char.name}`;
+                    }).join("\n")
+                    embed.addFields({name: `Team ${i+1}`, value: desc, inline: true});
                 })
-                embed.setTimestamp();
-                embeds.push(embed);
-            }
+            })
             await defer;
-            return {embeds};
+            return {embeds: [embed]};
         } case 'pure-fiction': {
-            let uid = interaction.options.getInteger("uid");
-            if (uid == null) {
-                const user = sql.prepare("SELECT hsr_uid from users WHERE user_id = ?").get(interaction.user.id);
-                uid = user.hsr_uid;
-            }
-            if (uid == null) return `missing uid`;
-            const hsr = getUidAndCookie(interaction.user.id);
-            if (hsr.error) return hsr.error;
+            const uid = interaction.options.getInteger("uid");
+            const phase = interaction.options.getInteger("phase");
             const defer = interaction.deferReply();
-            const client = new HonkaiStarRail({
-                lang: LanguageEnum.ENGLISH,
-                region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
-            })
-            client.record.region = 'prod_official_usa';
-            let mocResponse1 = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: uid,
-                schedule_type: '1',
-                need_all: 'true',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
-            let mocResponse2 = await client.record.request.setQueryParams({
-                server: client.record.region,
-                role_id: uid,
-                schedule_type: '2',
-                need_all: 'true',
-            }).setDs().send('https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/challenge_story')
-            let embeds = []
-            let i = 0;
-            for (let mocResponse of [mocResponse1.response.data, mocResponse2.response.data]) {
-                let end_time = mocResponse.groups[i++].end_time;
-                let mocDate = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
-                let descLines = [];
-                descLines.push(`This Pure Fiction ends <t:${mocDate.getTime()/1000}:R>`);
-                descLines.push(`**Stars**: ${mocResponse.star_num}/12`);
-                let embed = new EmbedBuilder()
-                    .setTitle('Honkai: Star Rail — Pure Fiction')
-                    .setDescription(descLines.join("\n"))
-                mocResponse.all_floor_detail.forEach(floor => {
-                    if (floor.is_fast) return;
-                    const name = floor.name.replace("<unbreak>", "").replace("</unbreak>", "");
-                    const stars = floor.star_num;
-                    const cycles = floor.round_num;
-                    let lines = [];
-                    lines.push(':star:'.repeat(stars));
-                    lines.push(`Total Score: ${parseInt(floor.node_1.score) + parseInt(floor.node_2.score)}`);
-                    embed.addFields({name, value: lines.join("\n")});
-                    for (let tuple of [['Team 1', floor.node_1], ['Team 2', floor.node_2]]) {
-                        const [name, node] = tuple;
-                        const team_lines = [];
-                        team_lines.push(`**Score**: ${node.score}`);
-                        team_lines.push(`**Cacophony**: ${node.buff.name_mi18n}`);
-                        team_lines.push(createListFromAvatarList(node.avatars));
-                        embed.addFields({name, value: team_lines.join('\n'), inline: true})
-                    }
+            let hsr;
+            if (uid) hsr = new HsrClient({uid});
+            else hsr = new HsrClient(interaction.user.id);
+            const pf = await hsr.pureFiction(phase, true);
+            let descLines = [];
+            descLines.push(`This Pure Fiction ends <t:${pf.recovery_time}:R>`);
+            descLines.push(`**Stars**: ${pf.current_stars}/${pf.max_stars}`);
+            let embed = new EmbedBuilder()
+                .setTitle('Honkai: Star Rail — Pure Fiction')
+                .setDescription(descLines.join("\n"))
+            pf.floors.forEach(floor => {
+                let lines = [];
+                lines.push(':star:'.repeat(floor.stars));
+                embed.addFields({name: floor.name, value: lines.join("\n")});
+                floor.teams.forEach((team, i) => {
+                    let teamLines = [];
+                    teamLines.push(`**Score**: ${team.score}`);
+                    teamLines.push(`**Cacophony**: ${team.buff}`);
+                    team.chars.forEach(char => {
+                        teamLines.push(`Lv.${char.level} E${char.eidolon} ${char.name}`);
+                    });
+                    embed.addFields({name: `Team ${i+1}`, value: teamLines.join("\n"), inline: true});
                 })
-                embed.setTimestamp();
-                embeds.push(embed);
-            }
+            })
             await defer;
-            return {embeds};
+            return {embeds: [embed]};
+        } case 'apoc-shadow': {
+            const uid = interaction.options.getInteger("uid");
+            const phase = interaction.options.getInteger("phase");
+            const defer = interaction.deferReply();
+            let hsr;
+            if (uid) hsr = new HsrClient({uid});
+            else hsr = new HsrClient(interaction.user.id);
+            const as = await hsr.apocalypticShadow(phase, true);
+            let descLines = [];
+            descLines.push(`This Apocalyptic Shadow ends <t:${as.recovery_time}:R>`);
+            descLines.push(`**Stars**: ${as.current_stars}/${as.max_stars}`);
+            let embed = new EmbedBuilder()
+                .setTitle('Honkai: Star Rail — Apocalyptic Shadow')
+                .setDescription(descLines.join("\n"))
+            as.floors.forEach(floor => {
+                let lines = [];
+                lines.push(':star:'.repeat(floor.stars));
+                embed.addFields({name: floor.name, value: lines.join("\n")});
+                floor.teams.forEach((team, i) => {
+                    let teamLines = [];
+                    teamLines.push(`**Score**: ${team.score}`);
+                    teamLines.push(`**Finality's Axiom**: ${team.buff}`);
+                    team.chars.forEach(char => {
+                        teamLines.push(`Lv.${char.level} E${char.eidolon} ${char.name}`);
+                    });
+                    embed.addFields({name: `Team ${i+1}`, value: teamLines.join("\n"), inline: true});
+                })
+            })
+            await defer;
+            return {embeds: [embed]};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
-        } case 'test': {
-            const hsr = getUidAndCookie(interaction.user.id);
-            if (hsr.error) return hsr.error;
-            const defer = interaction.deferReply();
-            const client = new HonkaiStarRail({
-                lang: LanguageEnum.ENGLISH,
-                region: 'prod_official_usa',
-                cookie: hsr.cookie,
-                uid: hsr.uid
-            })
-            client.record.region = 'prod_official_usa'
-            let mocResponse = await client.info();
+        // } case 'test': {
+        //     const hsr = getUidAndCookie(interaction.user.id);
+        //     if (hsr.error) return hsr.error;
+        //     const defer = interaction.deferReply();
+        //     const client = new HonkaiStarRail({
+        //         lang: LanguageEnum.ENGLISH,
+        //         region: 'prod_official_usa',
+        //         cookie: hsr.cookie,
+        //         uid: hsr.uid
+        //     })
+        //     client.record.region = 'prod_official_usa'
+        //     let mocResponse = await client.info();
         } case 'set-alert': {
             const user_id = interaction.user.id;
             const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
@@ -577,7 +425,9 @@ const execute = async (interaction) => {
             // if (char_name) {
             //     info.characters.forEach(char => embeds.push(createCharEmbed(char)));
             // } else {
-                info.characters.filter(char => char_name == null || char.name.toLowerCase().indexOf(char_name.toLowerCase()) > -1).forEach(char => embeds.push(createCharEmbed(char)));
+                info.characters.filter(char => char_name == null || char.name.toLowerCase()
+                    .indexOf(char_name.toLowerCase()) > -1)
+                    .forEach(char => embeds.push(createCharEmbed(char)));
             // }
             await defer;
             if (embeds.length > 0) return {embeds};

@@ -28,6 +28,4 @@ class GenshinResin extends PersonalAlarm {
     }
 }
 
-export default function() {
-    return new GenshinResin();
-}
+export default new GenshinResin();

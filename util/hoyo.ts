@@ -208,7 +208,8 @@ export class ZzzClient {
     }
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/extra_award?act_id=e202406031448091&lang=en-us`, this.cookie);
+        const response = await hoyoPost(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign?act_id=e202406031448091&lang=en-us`, this.cookie);
+        // const response = await hoyoPost(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/extra_award?act_id=e202406031448091&lang=en-us`, this.cookie);
         return response;
     }
 

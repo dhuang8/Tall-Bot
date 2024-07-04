@@ -81,5 +81,6 @@ test('hsr banners', async () => {
 
 test('zzz signin', async () => {
     const client = new ZzzClient("1234567890");
+    console.log(await client.dailySignIn());
     console.log(await client.dailyInfo());
 });

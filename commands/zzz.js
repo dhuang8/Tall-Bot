@@ -81,7 +81,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('toggle alert')
             .setRequired(true)
             .addChoices(
-                // {name: 'Battery Charge', value: 'ZZZ Battery Charge'}
+                {name: 'Battery Charge', value: 'ZZZ Battery Charge'},
+                {name: 'Dailies', value: 'ZZZ Dailies'}
             )
         )
         .addIntegerOption(option =>
@@ -100,7 +101,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('alert')
             .setRequired(true)
             .addChoices(
-                // {name: 'Battery Charge', value: 'ZZZ Battery Charge'}
+                {name: 'Battery Charge', value: 'ZZZ Battery Charge'},
+                {name: 'Dailies', value: 'ZZZ Dailies'}
             )
         )
     )

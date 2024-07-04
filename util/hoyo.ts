@@ -5,6 +5,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCrea
 import config from '../config.json' with { type: "json" };
 
 const ROOT_URL = `https://bbs-api-os.hoyolab.com/game_record/`;
+const ZZZ_ROOT_URL = `https://sg-act-nap-api.hoyolab.com/event/game_record_zzz/api/zzz/`;
 
 let hsrCharRequest = request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json");
 let hsrCharMap = JSON.parse(await hsrCharRequest);
@@ -132,6 +133,17 @@ interface ZzzBattleChronicle {
         max: number,
         recovery_time: number,
     }
+    daily: {
+        engagement: {
+            current: number,
+            max: number
+        },
+        scratch_card: {
+            current: number,
+            max: number
+        },
+        recovery_time: number
+    }
 };
 
 interface GenshinSpiralAbyss {
@@ -207,24 +219,41 @@ export class ZzzClient {
     }
 
     async battleChronicle(): Promise<ZzzBattleChronicle> {
+        let cur = Math.floor(Date.now()/1000);
+        const response: {
+            energy: {
+                progress: {
+                    max: number,
+                    current: number
+                },
+                restore: number
+            };
+            vitality: {
+                max: number,
+                current: number
+            },
+            vhs_sale: string,
+            card_sign: string
+        } = await hoyoRequest(ZZZ_ROOT_URL + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
             battery_charge: {
-                current: 0,
-                max: 240,
-                recovery_time: 0,
+                current: response.energy.progress.current,
+                max: response.energy.progress.max,
+                recovery_time: cur + response.energy.restore,
+            },
+            daily: {
+                engagement: {
+                    current: response.vitality.current,
+                    max: response.vitality.max,
+                },
+                scratch_card: {
+                    current: response.card_sign === "CardSignDone" ? 1 : 0,
+                    max: 1
+                },
+                recovery_time: timeOnNext(24*60*60, 9*60*60)
             }
         }
         return this.bc;
-        let cur = Math.floor(Date.now()/1000);
-        const response = await hoyoRequest(ROOT_URL + `zzz/api/dailyNote?server=os_usa&role_id=${this.uid}`, this.cookie);
-        this.bc = {
-            battery_charge: {
-                current: response.current_resin,
-                max: response.max_resin,
-                recovery_time: cur + parseInt(response.resin_recovery_time),
-            }
-        }
-        // return this.bc;
     }
 
     async buildUserEmbed(): Promise<MessageCreateOptions> {
@@ -251,11 +280,16 @@ export class ZzzClient {
         
         embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(this.signIn.checked, `Check-in`)});
     
-        // let dailyLines = [];
-        // dailyLines.push(crossIfTrue(
-        //     this.bc.daily.commission_count >= this.bc.daily.commission_max,
-        //     `**Daily Commissions**: ${this.bc.daily.commission_count}/${this.bc.daily.commission_max}`
-        // ))
+        let dailyLines = [];
+        dailyLines.push(crossIfTrue(
+            this.bc.daily.scratch_card.current >= this.bc.daily.scratch_card.max,
+            `Scratch Card Mania`
+        ))
+        dailyLines.push(crossIfTrue(
+            this.bc.daily.engagement.current >= this.bc.daily.engagement.max,
+            `**Engagement**: ${this.bc.daily.engagement.current}/${this.bc.daily.engagement.max}`
+        ))
+        embed.addFields({name: `Daily reset <t:${this.bc.daily.recovery_time}:R>`, value: dailyLines.join("\n")});
         // dailyLines.push(crossIfTrue(
         //     this.bc.daily.commission_reward,
         //     `Daily Commission Reward`

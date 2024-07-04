@@ -11,7 +11,7 @@ export default class GenshinLogin {
             users.forEach(async user=>{
                 try {
                     const genshin = new GenshinClient(user.user_id);
-                    const response = genshin.dailySignIn();
+                    const response = await genshin.dailySignIn();
                     DiscordHelper.sendToLog(`good`, user.user_id, JSON.stringify(response));
                 } catch (e) {
                     DiscordHelper.sendToLog(`error`, user.user_id, e.toString());

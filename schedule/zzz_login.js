@@ -6,12 +6,12 @@ import DiscordHelper from '../util/discord-helper.ts';
 export default class ZzzLogin {
     constructor(client) {
         this.client = client;
-        var job = new CronJob('0 20 17 * * *', function() {
+        var job = new CronJob('0 30 17 * * *', function() {
             const users = sql.prepare("SELECT user_id, hsr_cookie, zzz_uid from users WHERE hsr_cookie IS NOT NULL AND zzz_uid IS NOT NULL").all();
             users.forEach(async user=> {
                 try {
                     const zzz = new ZzzClient(user.user_id);
-                    const response = zzz.dailySignIn();
+                    const response = await zzz.dailySignIn();
                     DiscordHelper.sendToLog(`good`, user.user_id, JSON.stringify(response));
                 } catch (e) {
                     DiscordHelper.sendToLog(`error`, user.user_id, e.toString());

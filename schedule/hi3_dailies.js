@@ -11,7 +11,7 @@ export default class Hi3Daily {
             users.forEach(async user=>{
                 try {
                     const hi3 = new Hi3Client(user.user_id);
-                    const response = hi3.dailySignIn();
+                    const response = await hi3.dailySignIn();
                     DiscordHelper.sendToLog(`good`, user.user_id, JSON.stringify(response));
                 } catch (e) {
                     DiscordHelper.sendToLog(`error`, user.user_id, e.toString());

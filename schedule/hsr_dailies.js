@@ -11,7 +11,7 @@ export default class HsrDaily {
             users.forEach(async user=>{
                 try {
                     const hsr = new HsrClient(user.user_id);
-                    const response = hsr.dailySignIn();
+                    const response = await hsr.dailySignIn();
                     DiscordHelper.sendToLog(`good`, user.user_id, JSON.stringify(response));
                 } catch (e) {
                     DiscordHelper.sendToLog(`error`, user.user_id, e.toString());

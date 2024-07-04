@@ -36,7 +36,7 @@ for (const alarm_name of readdirSync('./alarms').filter(file => file.endsWith('.
     }
 };
 
-let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm", "alarm_all"];
+let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm_all", "hi3", "zzz"];
 
 for (const commandName of commandsList) {
     try {

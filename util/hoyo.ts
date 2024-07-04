@@ -45,6 +45,31 @@ async function hoyoRequest(url: string, cookie: string) {
     else throw new Error(`${r.retcode} ${r.message}`);
 }
 
+async function hoyoPost(url: string, cookie: string) {
+    const r = await request({
+        url,
+        headers: {
+            Accept: "application/json, text/plain, */*",
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip, deflate, br",
+            "sec-ch-ua": '"Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46",
+            "x-rpc-app_version": "1.5.0",
+            "x-rpc-client_type": "5",
+            "x-rpc-language": "en-us",
+            cookie
+        },
+        method: 'POST'
+    })
+    if (r.data != null) return r.data;
+    else throw new Error(`${r.retcode} ${r.message}`);
+}
+
 function generateDS() {
     const salt = "6s25p5ox5y14umn1p61aqyyvbvvl3lrt";
     const date = new Date();
@@ -64,6 +89,8 @@ interface User {
     hsr_cookie?: string;
     genshin_uid?: number;
     hsr_uid?: number;
+    hi3_uid?: number;
+    zzz_uid?: number;
 };
 
 interface GenshinBattleChronicle {
@@ -99,6 +126,14 @@ interface GenshinBattleChronicle {
     }[]
 };
 
+interface ZzzBattleChronicle {
+    battery_charge: {
+        current: number,
+        max: number,
+        recovery_time: number,
+    }
+};
+
 interface GenshinSpiralAbyss {
     stars: number;
     max_stars: number;
@@ -122,6 +157,126 @@ interface GenshinSpiralAbyss {
     }[]
 };
 
+export class Hi3Client {
+    user_id: string;
+    uid: number;
+    cookie: string;
+
+    constructor(user_id: string) {
+        const user = sql.prepare<string, User>("SELECT hsr_cookie, hi3_uid from users WHERE user_id = ?").get(user_id);
+        if (user == null) throw new Error("`Missing user`");
+        if (user.hi3_uid == null) throw new Error("`Missing uid`");
+        if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
+        this.user_id = user_id;
+        this.uid = user.hi3_uid;
+        this.cookie = user.hsr_cookie;
+    }
+
+    async dailySignIn() {
+        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/mani/sign?lang=en-us&act_id=e202110291205111`, this.cookie);
+        return response;
+    }
+}
+
+export class ZzzClient {
+    user_id: string;
+    uid: number;
+    cookie: string;
+    bc?: ZzzBattleChronicle;
+
+    constructor(user_id: string) {
+        const user = sql.prepare<string, User>("SELECT hsr_cookie, zzz_uid from users WHERE user_id = ?").get(user_id);
+        if (user == null) throw new Error("`Missing user`");
+        if (user.zzz_uid == null) throw new Error("`Missing uid`");
+        if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
+        this.user_id = user_id;
+        this.uid = user.zzz_uid;
+        this.cookie = user.hsr_cookie;
+    }
+
+    async dailySignIn() {
+        const response = await hoyoPost(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/extra_award?act_id=e202406031448091&lang=en-us`, this.cookie);
+        return response;
+    }
+
+    async battleChronicle(): Promise<ZzzBattleChronicle> {
+        return {
+            battery_charge: {
+                current: 0,
+                max: 0,
+                recovery_time: 0
+            }
+        };
+        let cur = Math.floor(Date.now()/1000);
+        const response = await hoyoRequest(ROOT_URL + `zzz/api/dailyNote?server=os_usa&role_id=${this.uid}`, this.cookie);
+        this.bc = {
+            battery_charge: {
+                current: response.current_resin,
+                max: response.max_resin,
+                recovery_time: cur + parseInt(response.resin_recovery_time),
+            }
+        }
+        // return this.bc;
+    }
+
+    async buildUserEmbed(): Promise<MessageCreateOptions> {
+        const prom = [];
+        if (!this.bc) prom.push(this.battleChronicle());
+        await Promise.all(prom);
+
+        if (!this.bc) throw new Error('bc is undefined');
+    
+        let descLines = [];
+        descLines.push(`**Battery Power**: ${this.bc.battery_charge.current}/${this.bc.battery_charge.max}, capped <t:${this.bc.battery_charge.recovery_time}:R>`);
+    
+        const embed = new EmbedBuilder()
+            .setTitle('Zenless Zone Zero — Battle Chronicle')
+            .setDescription(descLines.join("\n"))
+            .setTimestamp();
+        
+        // let expeditionLines: string[] = this.bc.expeditions.map((expedition, i) => {
+        //     return expedition.finished ? `**Expedition ${i+1}** complete` : `**Expedition ${i+1}** <t:${expedition.recovery_time}:R>`;
+        // })
+        // if (expeditionLines.length > 0) embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
+        
+        // embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Check-in`)});
+    
+        // let dailyLines = [];
+        // dailyLines.push(crossIfTrue(
+        //     this.bc.daily.commission_count >= this.bc.daily.commission_max,
+        //     `**Daily Commissions**: ${this.bc.daily.commission_count}/${this.bc.daily.commission_max}`
+        // ))
+        // dailyLines.push(crossIfTrue(
+        //     this.bc.daily.commission_reward,
+        //     `Daily Commission Reward`
+        // ))
+        // embed.addFields({name: `Daily reset <t:${this.bc.daily.recovery_time}:R>`, value: dailyLines.join("\n")});
+    
+        // let weeklyLines = [];
+        // weeklyLines.push(crossIfTrue(
+        //     this.bc.weekly.half_cost_count >= this.bc.weekly.half_cost_max,
+        //     `**Trounce**: ${this.bc.weekly.half_cost_count}/${this.bc.weekly.half_cost_max}`
+        // ));
+        // embed.addFields({name: `Weekly reset <t:${this.bc.weekly.recovery_time}:R>`, value: weeklyLines.join("\n")});
+    
+        // let spiralLines = [];
+        // spiralLines.push(crossIfTrue(
+        //     this.sa.stars >= this.sa.max_stars,
+        //     `**Stars**: ${this.sa.stars}/${this.sa.max_stars}`
+        // ));
+        // embed.addFields({name: `Spiral Abyss reset <t:${this.sa.recovery_time}:R>`, value: spiralLines.join("\n")});
+    
+        const refreshButton = new ButtonBuilder()
+            .setCustomId(`zzz|${this.user_id}`)
+            .setLabel('Refresh')
+            .setStyle(ButtonStyle.Primary);
+    
+        const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(refreshButton);
+        return {embeds: [embed], components: [row]};
+    }
+}
+
 export class GenshinClient {
     user_id: string;
     uid: number;
@@ -137,6 +292,11 @@ export class GenshinClient {
         this.user_id = user_id;
         this.uid = user.genshin_uid;
         this.cookie = user.hsr_cookie;
+    }
+
+    async dailySignIn() {
+        const response = await hoyoPost(`https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us&act_id=e202102251931481`, this.cookie);
+        return response;
     }
 
     async battleChronicle(): Promise<GenshinBattleChronicle> {
@@ -425,8 +585,13 @@ export class HsrClient {
         return this.bc;
     }
 
+    async dailySignIn() {
+        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/luna/os/sign?lang=en-us&act_id=e202303301540311`, this.cookie);
+        return response;
+    }
+
     async endgameContent() {
-        const endgame: HsrEndgame[] = await Promise.all([this.memoryOfChaos(1), this.memoryOfChaos(2), this.pureFiction(1), this.pureFiction(2)]);
+        const endgame: HsrEndgame[] = await Promise.all([this.memoryOfChaos(1), this.apocalypticShadow(1), this.pureFiction(1)]);
         this.eg = endgame.filter(a => a.recovery_time > Date.now()/1000).sort((a, b) => a.recovery_time - b.recovery_time);
         return this.eg;
     }
@@ -719,13 +884,22 @@ export class HsrClient {
     }
 
     async codes(): Promise<any> {
-        return codes(6, this.cookie);
+        return codes(8, this.cookie);
+    }
+
+    async banners(): Promise<any> {
+        return codes(8, this.cookie);
     }
 }
 
 async function codes(id: number, cookie: string): Promise<any> {
     const response = await hoyoRequest(`https://bbs-api-os.hoyolab.com/community/painter/wapi/circle/channel/guide/material?game_id=${id}`, cookie);
     return response.modules;
+}
+
+async function banners(id: number, cookie: string): Promise<any> {
+    const response = await hoyoRequest(`https://bbs-api-os.hoyolab.com/community/painter/wapi/banner/list?gids=${id}`, cookie);
+    return response;
 }
 
 export function crossIfTrue(test: boolean, string: string) {

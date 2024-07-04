@@ -79,4 +79,9 @@ if (sql.pragma("user_version")[0].user_version == 12) {
     sql.pragma("user_version = 13");
 }
 
+if (sql.pragma("user_version")[0].user_version == 13) {
+    sql.prepare("ALTER TABLE users ADD COLUMN zzz_uid INTEGER;").run();
+    sql.pragma("user_version = 14");
+}
+
 export default sql;

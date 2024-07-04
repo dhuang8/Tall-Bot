@@ -46,8 +46,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('which phase')
             .setRequired(true)
             .addChoices(
-                {name: 'previous', value: 2},
-                {name: 'recent', value: 1}
+                {name: 'recent', value: 1},
+                {name: 'previous', value: 2}
             )
         )
         .addIntegerOption(option =>
@@ -64,8 +64,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('which phase')
             .setRequired(true)
             .addChoices(
-                {name: 'previous', value: 2},
-                {name: 'recent', value: 1}
+                {name: 'recent', value: 1},
+                {name: 'previous', value: 2}
             )
         )
         .addIntegerOption(option =>
@@ -82,8 +82,8 @@ const slash = new SlashCommandBuilder()
             .setDescription('which phase')
             .setRequired(true)
             .addChoices(
-                {name: 'previous', value: 2},
-                {name: 'recent', value: 1}
+                {name: 'recent', value: 1},
+                {name: 'previous', value: 2}
             )
         )
         .addIntegerOption(option =>
@@ -142,7 +142,8 @@ const slash = new SlashCommandBuilder()
                 {name: 'Echo of War', value: 'HSR Echo of War'},
                 {name: 'Trailblaze Power', value: 'HSR Trailblaze Power'},
                 {name: 'Pure Fiction/Memory of Chaos', value: 'HSR Pure Fiction/Memory of Chaos'},
-                {name: 'Simulated Universe', value: 'HSR Simulated Universe'}
+                {name: 'Simulated Universe', value: 'HSR Simulated Universe'},
+                {name: 'Assignments', value: 'HSR Assignments'}
             )
         )
     )

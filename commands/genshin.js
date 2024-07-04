@@ -94,26 +94,7 @@ const slash = new SlashCommandBuilder()
         .setDescription("how to get cookie")
     )
 
-function getUidAndCookie(userId) {
-    const user = sql.prepare("SELECT hsr_cookie, genshin_uid from users WHERE user_id = ?").get(userId);
-    if (user == null) return {error: "`Missing uid and cookie`"};
-    const uid = user.genshin_uid;
-    const cookie = user.hsr_cookie;
-    if (uid == null || cookie == null) return {error: "`Missing uid and cookie`"};
-    return {uid, cookie};
-}
-
-let charMap;
-let charRequest = request("https://api.uigf.org/dict/genshin/en.json").then(res => charMap = res);
-
-function getNameFromId(id) {
-    return Object.keys(charMap).find(key => charMap[key] === id);
-}
-function createListFromAvatarList(avatars) {
-    return avatars.map(ava => `Lv.${ava.level} ${getNameFromId(ava.id)}`).join("\n")
-}
-
-const execute = async (interaction, discord_client) => {
+    const execute = async (interaction, discord_client) => {
     switch (interaction.options.getSubcommand()) {
         case 'set': {
             const uid = interaction.options.getInteger("uid");

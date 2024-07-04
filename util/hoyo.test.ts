@@ -15,6 +15,16 @@ test('genshin codes', async () => {
     console.log((await client.codes())[0]);
 });
 
+test('genshin daily', async () => {
+    const client = new GenshinClient("1234567890");
+    console.log(await client.dailySignIn());
+});
+
+test('hsr daily', async () => {
+    const client = new HsrClient("1234567890");
+    console.log(await client.dailySignIn());
+});
+
 test('hsr info', async () => {
     const client = new HsrClient("1234567890");
     console.log(await client.info());
@@ -62,4 +72,9 @@ test('hsr endgame', async () => {
 test('hsr codes', async () => {
     const client = new HsrClient("1234567890");
     console.log((await client.codes())[0]);
+});
+
+test('hsr banners', async () => {
+    const client = new HsrClient("1234567890");
+    console.log((await client.banners())[0]);
 });

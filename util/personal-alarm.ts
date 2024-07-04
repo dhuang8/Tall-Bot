@@ -22,7 +22,7 @@ export abstract class PersonalAlarm extends Alarm {
 
     async execute(userAlarm: UserAlarm) {
         try {
-            this.executeUser(userAlarm);
+            await this.executeUser(userAlarm);
         } catch (e) {
             if (typeof e === "string") {
                 DiscordHelper.sendToLog("timer error", e);

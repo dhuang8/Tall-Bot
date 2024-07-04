@@ -1,4 +1,4 @@
-import {GenshinClient, HsrClient} from "./hoyo.ts";
+import {GenshinClient, HsrClient, ZzzClient} from "./hoyo.ts";
 
 test('genshin battleChronicle', async () => {
     const client = new GenshinClient("1234567890");
@@ -77,4 +77,9 @@ test('hsr codes', async () => {
 test('hsr banners', async () => {
     const client = new HsrClient("1234567890");
     console.log((await client.banners())[0]);
+});
+
+test('zzz signin', async () => {
+    const client = new ZzzClient("1234567890");
+    console.log(await client.dailyInfo());
 });

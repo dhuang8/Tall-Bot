@@ -183,6 +183,7 @@ export class ZzzClient {
     uid: number;
     cookie: string;
     bc?: ZzzBattleChronicle;
+    signIn?: {checked: boolean};
 
     constructor(user_id: string) {
         const user = sql.prepare<string, User>("SELECT hsr_cookie, zzz_uid from users WHERE user_id = ?").get(user_id);
@@ -199,14 +200,21 @@ export class ZzzClient {
         return response;
     }
 
+    async dailyInfo() {
+        const response = await hoyoRequest(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091`, this.cookie);
+        this.signIn = {checked: response.is_sign};
+        return this.signIn;
+    }
+
     async battleChronicle(): Promise<ZzzBattleChronicle> {
-        return {
+        this.bc = {
             battery_charge: {
                 current: 0,
-                max: 0,
-                recovery_time: 0
+                max: 240,
+                recovery_time: 0,
             }
-        };
+        }
+        return this.bc;
         let cur = Math.floor(Date.now()/1000);
         const response = await hoyoRequest(ROOT_URL + `zzz/api/dailyNote?server=os_usa&role_id=${this.uid}`, this.cookie);
         this.bc = {
@@ -222,9 +230,11 @@ export class ZzzClient {
     async buildUserEmbed(): Promise<MessageCreateOptions> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
+        if (!this.signIn) prom.push(this.dailyInfo());
         await Promise.all(prom);
 
         if (!this.bc) throw new Error('bc is undefined');
+        if (!this.signIn) throw new Error('signIn is undefined');
     
         let descLines = [];
         descLines.push(`**Battery Power**: ${this.bc.battery_charge.current}/${this.bc.battery_charge.max}, capped <t:${this.bc.battery_charge.recovery_time}:R>`);
@@ -239,7 +249,7 @@ export class ZzzClient {
         // })
         // if (expeditionLines.length > 0) embed.addFields({name: "Expeditions", value: expeditionLines.join("\n")});
         
-        // embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(dailyResponse?.is_sign, `Check-in`)});
+        embed.addFields({name: `Web check-in reset <t:${timeOnNext(24*60*60, 16*60*60)}:R>`, value: crossIfTrue(this.signIn.checked, `Check-in`)});
     
         // let dailyLines = [];
         // dailyLines.push(crossIfTrue(

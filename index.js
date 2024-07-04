@@ -48,7 +48,7 @@ for (const commandName of commandsList) {
     }
 }
 
-let scheduleList = ["hsr_dailies", "genshin_login", "birthday", "hi3_dailies"];
+let scheduleList = ["hsr_dailies", "genshin_login", "birthday", "hi3_dailies", "zzz_login"];
 scheduleList.forEach(name => {
     import(`./schedule/${name}.js`).then(sche=>{
         new sche.default(client);

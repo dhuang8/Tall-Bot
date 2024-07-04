@@ -6,7 +6,7 @@ import DiscordHelper from '../util/discord-helper.ts';
 export default class ZzzLogin {
     constructor(client) {
         this.client = client;
-        var job = new CronJob('0 2 16 * * *', function() {
+        var job = new CronJob('0 20 17 * * *', function() {
             const users = sql.prepare("SELECT user_id, hsr_cookie, zzz_uid from users WHERE hsr_cookie IS NOT NULL AND zzz_uid IS NOT NULL").all();
             users.forEach(async user=> {
                 try {

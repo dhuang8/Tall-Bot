@@ -270,7 +270,7 @@ export class ZzzClient {
         descLines.push(`**Battery Power**: ${this.bc.battery_charge.current}/${this.bc.battery_charge.max}, capped <t:${this.bc.battery_charge.recovery_time}:R>`);
     
         const embed = new EmbedBuilder()
-            .setTitle('Zenless Zone Zero — Battle Chronicle')
+            .setTitle(`Zenless Zone Zero — ${this.uid}`)
             .setDescription(descLines.join("\n"))
             .setTimestamp();
         
@@ -465,7 +465,7 @@ export class GenshinClient {
         }
     
         const embed = new EmbedBuilder()
-            .setTitle('Genshin Impact — Battle Chronicle')
+            .setTitle(`Genshin Impact — ${this.uid}`)
             .setDescription(descLines.join("\n"))
             .setTimestamp();
         
@@ -512,6 +512,7 @@ export class GenshinClient {
     }
 
     async codes(): Promise<any> {
+        //response.modules[0].exchange_group.bonuses[0].exchange_code
         return codes(2, this.cookie);
     }
 }
@@ -695,7 +696,7 @@ export class HsrClient {
         const end_time = response.end_time;
         let end_date = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
         return {
-            name: `Memory of Chaos ${type}`,
+            name: `Memory of Chaos`,
             current_stars: response.star_num,
             max_stars: 36,
             recovery_time: end_date.getTime()/1000,
@@ -771,7 +772,7 @@ export class HsrClient {
         const end_time = response.groups[type-1].end_time;
         let end_date = new Date(end_time.year, end_time.month-1, end_time.day, end_time.hour+5, end_time.minute);
         return {
-            name: `Pure Fiction ${type}`,
+            name: `Pure Fiction`,
             current_stars: response.star_num,
             max_stars: 12,
             recovery_time: end_date.getTime()/1000,
@@ -881,7 +882,7 @@ export class HsrClient {
         descLines.push(`**TP**: ${this.bc.trailblaze_power.current}/${this.bc.trailblaze_power.max}, capped <t:${this.bc.trailblaze_power.recovery_time}:R>`)
         descLines.push(`**Reserve TP**: ${this.bc.trailblaze_power.reserve}/2400`)
         const embed = new EmbedBuilder()
-            .setTitle('Honkai: Star Rail — Battle Chronicle')
+            .setTitle(`Honkai: Star Rail — ${this.uid}`)
             .setDescription(descLines.join("\n"))
             .setTimestamp();
 
@@ -916,7 +917,7 @@ export class HsrClient {
                 `**${e.name}**: ${e.current_stars}/${e.max_stars} ends <t:${e.recovery_time}:R>`
             )
         })
-        if (egLines.length > 0) embed.addFields({name: `MoC/PF`, value: egLines.join("\n")});
+        if (egLines.length > 0) embed.addFields({name: `MoC/PF/AS`, value: egLines.join("\n")});
     
         const refreshButton = new ButtonBuilder()
             .setCustomId(`hsr|${this.user_id}`)

@@ -1,5 +1,6 @@
 import sql from './SQLite.js';
 import { Alarm, UserAlarm } from './alarm.ts';
+import config from '../config.json';
 import DiscordHelper from './discord-helper.ts';
 
 export abstract class StaticAlarm extends Alarm {
@@ -34,10 +35,11 @@ export abstract class StaticAlarm extends Alarm {
         try {
             this.executeUser(userAlarm);
         } catch (e) {
+            // TODO better way to handle error
             if (typeof e === "string") {
-                DiscordHelper.sendToLog("timer error", e);
+                DiscordHelper.sendToLog(`<@${config.user_id}>`,"timer error auto trigger", e);
             } else if (e instanceof Error) {
-                DiscordHelper.sendToLog("timer error", e.toString());
+                DiscordHelper.sendToLog(`<@${config.user_id}>`,"timer error auto trigger", e.toString());
             }
         }
     }

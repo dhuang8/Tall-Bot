@@ -41,6 +41,7 @@ class AlarmManager {
     }
 
     async loop() {
+        //TODO "multithread" alarms
         let user_alarm = this.getFirstAlarm();
         this.client.sendToLog("user alarm", JSON.stringify(user_alarm));
         let cur_epoch = Date.now()/1000;

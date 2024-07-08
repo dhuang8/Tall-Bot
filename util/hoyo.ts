@@ -26,20 +26,25 @@ async function hoyoRequest(url: string, cookie: string) {
         url,
         headers: {
             Accept: "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+            "Cache-Control": "no-cache",
+            cookie,
             "Content-Type": "application/json",
-            "Accept-Encoding": "gzip, deflate, br",
-            "sec-ch-ua": '"Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46",
-            "x-rpc-app_version": "1.5.0",
-            "x-rpc-client_type": "5",
-            "x-rpc-language": "en-us",
-            "ds": generateDS(),
-            cookie
+            "Ds": generateDS(),
+            "Origin": "https://act.hoyolab.com",
+            "Referer": "https://act.hoyolab.com",
+            "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "X-Rpc-App_version": "1.5.0",
+            "X-Rpc-Client_type": "5",
+            "X-Rpc-Language": "en-us",
+            "X-Rpc-Platform": "4"
         }
     })
     if (r.data != null) return r.data;

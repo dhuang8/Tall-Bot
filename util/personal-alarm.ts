@@ -32,7 +32,7 @@ export abstract class PersonalAlarm extends Alarm {
             }
             const cur = Math.floor(Date.now() / 1000);
             // wait 5 min if error
-            this.waitNext(userAlarm, cur + 5*60);
+            this.waitNext(userAlarm, cur + 5*60 + userAlarm.time_before);
         }
     }
 }

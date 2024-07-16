@@ -413,7 +413,7 @@ export class GenshinClient {
                     }[];
                 }[];
             }[];
-        } = await hoyoRequest(ROOT_URL + `genshin/api/spiralAbyss?server=os_usa&role_id=${this.uid}&schedule_type=2`, this.cookie);
+        } = await hoyoRequest(ROOT_URL + `genshin/api/spiralAbyss?server=os_usa&role_id=${this.uid}&schedule_type=1`, this.cookie);
         const floors = response.floors.map(floor => {
             const chambers = floor.levels.map(chamber => {
                 const sides = chamber.battles.map(side => {

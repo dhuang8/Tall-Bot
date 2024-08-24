@@ -1,4 +1,6 @@
-import {GenshinClient, HsrClient, ZzzClient} from "./hoyo.ts";
+import { HsrClient } from './HsrClient.ts';
+import { ZzzClient } from './ZzzClient.ts';
+import { GenshinClient } from './GenshinClient.ts';
 
 test('genshin battleChronicle', async () => {
     const client = new GenshinClient("1234567890");
@@ -41,7 +43,7 @@ test('hsr memoryOfChaos', async () => {
 });
 
 test('hsr memoryOfChaos without userid', async () => {
-    const client = new HsrClient({uid: 601621324});
+    const client = new HsrClient("601621324");
     try {
         console.log(await client.memoryOfChaos(1));
     } catch(e) {
@@ -83,4 +85,17 @@ test('zzz signin', async () => {
     const client = new ZzzClient("1234567890");
     console.log(await client.dailySignIn());
     console.log(await client.dailyInfo());
+});
+
+test('hsr news', async () => {
+    console.log(await HsrClient.news());
+});
+
+test('zzz news', async () => {
+    console.log(await ZzzClient.news());
+});
+
+test('zzz endgame', async () => {
+    const client = new ZzzClient("1234567890");
+    console.log(await client.criticalNode());
 });

@@ -1,8 +1,8 @@
-import {ZzzClient} from '../util/hoyo.ts';
-import {timeOnNext} from '../util/functions.js';
-import {UserAlarm} from '../util/alarm.ts';
-import { StaticAlarm } from '../util/static-alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
+import { ZzzClient } from '../../util/hoyo/ZzzClient.ts';
+import {timeOnNext} from '../../util/functions.js';
+import {UserAlarm} from '../../util/alarm.ts';
+import { StaticAlarm } from '../../util/static-alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
 
 class ZzzDaily extends StaticAlarm {
     constructor() {

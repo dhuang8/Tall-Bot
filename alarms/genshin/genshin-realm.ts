@@ -1,7 +1,7 @@
-import { UserAlarm } from '../util/alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
-import {GenshinClient, } from '../util/hoyo.js';
-import { PersonalAlarm } from '../util/personal-alarm.ts';
+import { UserAlarm } from '../../util/alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
+import { GenshinClient } from '../../util/hoyo/GenshinClient.ts';
+import { PersonalAlarm } from '../../util/personal-alarm.ts';
 
 class GenshinRealm extends PersonalAlarm {
     constructor() {

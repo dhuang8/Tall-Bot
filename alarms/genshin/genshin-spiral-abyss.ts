@@ -1,8 +1,8 @@
-import {GenshinClient, } from '../util/hoyo.ts';
-import {UserAlarm} from '../util/alarm.ts';
-import { StaticAlarm } from '../util/static-alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
-import config from '../config.json' with { type: "json" };
+import { GenshinClient } from '../../util/hoyo/GenshinClient.ts';
+import {UserAlarm} from '../../util/alarm.ts';
+import { StaticAlarm } from '../../util/static-alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
+import config from '../../config.json' with { type: "json" };
 
 class GenshinSpiralAbyss extends StaticAlarm {
     constructor() {
@@ -18,7 +18,7 @@ class GenshinSpiralAbyss extends StaticAlarm {
     async executeUser(userAlarm: UserAlarm): Promise<void> {
         const genshin = new GenshinClient(userAlarm.user_id);
         const sa = await genshin.spiralAbyss();
-        if (sa.current < sa.max) {
+        if (sa.stars < sa.max_stars) {
             const message = await genshin.buildUserEmbed();
             message.content = `Spiral Abyss ends <t:${sa.recovery_time}:R>.`;
             DiscordHelper.whisper(userAlarm.user_id, message);

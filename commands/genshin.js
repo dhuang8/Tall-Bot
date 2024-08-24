@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
 import AlarmManager from '../util/alarm-manager.js';
-import { GenshinClient} from '../util/hoyo';
-import { request} from '../util/functions.js';
+import { GenshinClient} from '../util/hoyo/GenshinClient.js';
+import { escapeMarkdown } from '@discordjs/formatters';
 
 const slash = new SlashCommandBuilder()
     .setName('genshin')
@@ -26,11 +26,19 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("info")
         .setDescription("battle records")
     )
-    /*
     .addSubcommand(subcommand => 
-        subcommand.setName("char")
-        .setDescription("characters")
-    )*/
+        subcommand.setName("news")
+        .setDescription("recent posts")
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("auto-news")
+        .setDescription("auto post news")
+        .addBooleanOption(option =>
+            option.setName('toggle')
+            .setDescription('on or off')
+            .setRequired(true)
+        )
+    )
     .addSubcommand(subcommand => 
         subcommand.setName("spiral-abyss")
         .setDescription("Spiral Abyss")
@@ -94,7 +102,7 @@ const slash = new SlashCommandBuilder()
         .setDescription("how to get cookie")
     )
 
-    const execute = async (interaction, discord_client) => {
+    const execute = async (interaction) => {
     switch (interaction.options.getSubcommand()) {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
@@ -157,6 +165,22 @@ const slash = new SlashCommandBuilder()
             embeds.push(embed);
             await defer;
             return {embeds};
+        } case 'news': {
+            const defer = interaction.deferReply();
+            let posts = await GenshinClient.news();
+            let desc = posts.map(post => {
+                return `[${escapeMarkdown(post.title)}](${post.url}) - <t:${post.created}>`
+            }).join("\n");
+            const embed = new EmbedBuilder()
+                .setTitle(`Genshin Impact — news`)
+                .setDescription(desc)
+                .setTimestamp();
+            await defer;
+            return {embeds: [embed]};
+        } case 'auto-news': {
+            const toggle = interaction.options.getBoolean('toggle')
+            sql.prepare("UPDATE channels SET genshin_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel.id);
+            return `\`Genshin news will ${toggle ? '' : 'no longer '}be automatically posted here\``;
         } case 'set-alert': {
             const user_id = interaction.user.id;
             const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));

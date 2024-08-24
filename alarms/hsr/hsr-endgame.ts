@@ -1,8 +1,8 @@
-import {HsrClient} from '../util/hoyo.ts';
-import {UserAlarm} from '../util/alarm.ts';
-import { StaticAlarm } from '../util/static-alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
-import config from '../config.json' with { type: "json" };
+import { HsrClient } from '../../util/hoyo/HsrClient.ts';
+import {UserAlarm} from '../../util/alarm.ts';
+import { StaticAlarm } from '../../util/static-alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
+import config from '../../config.json' with { type: "json" };
 
 class HsrEndgame extends StaticAlarm {
     constructor() {

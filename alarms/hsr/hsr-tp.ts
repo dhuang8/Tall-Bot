@@ -1,7 +1,7 @@
-import { UserAlarm } from '../util/alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
-import {HsrClient} from '../util/hoyo.ts';
-import { PersonalAlarm } from '../util/personal-alarm.ts';
+import { UserAlarm } from '../../util/alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
+import { HsrClient } from '../../util/hoyo/HsrClient.ts';
+import { PersonalAlarm } from '../../util/personal-alarm.ts';
 
 class HsrTp extends PersonalAlarm {
     constructor() {

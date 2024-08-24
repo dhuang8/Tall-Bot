@@ -1,6 +1,6 @@
 import {CronJob} from 'cron';
 import sql from '../util/SQLite.js';
-import { Hi3Client } from '../util/hoyo.ts';
+import { Hi3Client } from '../util/hoyo/Hi3Client.ts';
 import DiscordHelper from '../util/discord-helper.ts';
 
 export default class Hi3Daily {

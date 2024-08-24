@@ -1,4 +1,4 @@
-import { Client, TextChannel, Embed, User, MessageCreateOptions } from 'discord.js';
+import { Client, TextChannel, Embed, User, MessageCreateOptions, EmbedBuilder } from 'discord.js';
 import config from '../config.json' with { type: "json" };
 
 class DiscordHelperClass {
@@ -23,6 +23,36 @@ class DiscordHelperClass {
             user.send(text);
         }).catch(e => {
             this.sendToLog("Could not DM", `user: ${userId}`, e);
+        })
+    }
+
+    async send(channelId: string, message: string | MessageCreateOptions) {
+        this.client?.channels.fetch(channelId).then(async channel => {
+            if (channel instanceof TextChannel) {
+                if (typeof message === "object" && message.embeds) {
+                    let embeds = message.embeds;
+                    let response_copy = message;
+                    response_copy.embeds = [];
+                    let text_length = 0;
+                    for (let count=0; count < embeds.length; count++) {
+                        let embed = EmbedBuilder.from(embeds[count]);
+                        if (embed.length > 6000) throw new Error("embed length > 6000");
+                        if ((text_length + embed.length) > 6000 || (response_copy.embeds && response_copy.embeds.length > 9)) {
+                            await channel.send(response_copy);
+                            response_copy = {embeds: []}
+                            text_length = 0;
+                        }
+                        response_copy.embeds?.push(embed);
+                        text_length += embed.length;
+                    }
+                    await channel.send(response_copy);
+                } else {
+                    channel.send(message);
+                }
+            }
+            this.sendToLog("not a text channel", `channel: ${channelId}`);
+        }).catch(e => {
+            this.sendToLog("Could not send to channel", `channel: ${channelId}`, e);
         })
     }
 }

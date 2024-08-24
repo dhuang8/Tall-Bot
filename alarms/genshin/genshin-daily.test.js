@@ -1,4 +1,4 @@
-import config from '../config.json';
+import config from '../../config.json';
 
 test('import', async () => {
     const alarm = (await import(`./genshin-daily.ts`)).default;

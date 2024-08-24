@@ -1,8 +1,8 @@
-import {GenshinClient, } from '../util/hoyo.ts';
-import {timeOnNext} from '../util/functions.js';
-import {UserAlarm} from '../util/alarm.ts';
-import { StaticAlarm } from '../util/static-alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
+import { GenshinClient } from '../../util/hoyo/GenshinClient.ts';
+import {timeOnNext} from '../../util/functions.js';
+import {UserAlarm} from '../../util/alarm.ts';
+import { StaticAlarm } from '../../util/static-alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
 
 class GenshinWeekly extends StaticAlarm {
     constructor() {

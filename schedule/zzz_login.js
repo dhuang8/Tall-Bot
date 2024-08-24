@@ -1,6 +1,6 @@
 import {CronJob} from 'cron';
 import sql from '../util/SQLite.js';
-import { ZzzClient } from '../util/hoyo.ts';
+import { ZzzClient } from '../util/hoyo/ZzzClient.ts';
 import DiscordHelper from '../util/discord-helper.ts';
 
 export default class ZzzLogin {

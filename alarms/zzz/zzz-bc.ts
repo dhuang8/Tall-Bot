@@ -1,7 +1,7 @@
-import { UserAlarm } from '../util/alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
-import {ZzzClient} from '../util/hoyo.ts';
-import { PersonalAlarm } from '../util/personal-alarm.ts';
+import { UserAlarm } from '../../util/alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
+import { ZzzClient } from '../../util/hoyo/ZzzClient.ts';
+import { PersonalAlarm } from '../../util/personal-alarm.ts';
 
 class ZzzBc extends PersonalAlarm {
     constructor() {

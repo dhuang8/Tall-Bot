@@ -84,4 +84,21 @@ if (sql.pragma("user_version")[0].user_version == 13) {
     sql.pragma("user_version = 14");
 }
 
+if (sql.pragma("user_version")[0].user_version == 14) {
+    sql.prepare("ALTER TABLE channels ADD COLUMN hsr_news BOOLEAN DEFAULT 0").run();
+    sql.pragma("user_version = 15");
+}
+
+if (sql.pragma("user_version")[0].user_version == 15) {
+    sql.prepare("ALTER TABLE channels ADD COLUMN genshin_news BOOLEAN DEFAULT 0").run();
+    sql.prepare("ALTER TABLE channels ADD COLUMN hi3_news BOOLEAN DEFAULT 0").run();
+    sql.prepare("ALTER TABLE channels ADD COLUMN zzz_news BOOLEAN DEFAULT 0").run();
+    sql.pragma("user_version = 16");
+}
+
+if (sql.pragma("user_version")[0].user_version == 16) {
+    sql.prepare("ALTER TABLE alarms ADD COLUMN extra_data STRING").run();
+    sql.pragma("user_version = 17");
+}
+
 export default sql;

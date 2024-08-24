@@ -1,20 +1,9 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
-import {ZzzClient} from '../util/hoyo';
+import { ZzzClient } from '../util/hoyo/ZzzClient.ts';
 import AlarmManager from '../util/alarm-manager.js';
+import { escapeMarkdown } from '@discordjs/formatters';
 import fs from 'fs';
-
-let hsr_stats;
-let relic_count;
-try {
-    // update from char_weights.json
-    hsr_stats = JSON.parse(fs.readFileSync("./data/hsr_weights.json", 'utf8'));
-    // update from relic_count.json
-    relic_count = JSON.parse(fs.readFileSync("./data/relic_count.json", 'utf8'));
-} catch (e) {
-    console.error(e);
-    console.error("hsr_weights not found");
-}
 
 const slash = new SlashCommandBuilder()
     .setName('zzz')
@@ -41,38 +30,32 @@ const slash = new SlashCommandBuilder()
         subcommand.setName("sign-in")
         .setDescription("Manual sign in. Not needed after the first day of inputting zzz uid and cookie")
     )
-    // .addSubcommand(subcommand => 
-    //     subcommand.setName("moc")
-    //     .setDescription("Memory of Chaos")
-    //     .addIntegerOption(option =>
-    //         option.setName('phase')
-    //         .setDescription('which phase')
-    //         .setRequired(true)
-    //         .addChoices(
-    //             {name: 'recent', value: 1},
-    //             {name: 'previous', value: 2}
-    //         )
-    //     )
-    //     .addIntegerOption(option =>
-    //         option.setName('uid')
-    //         .setDescription('UID')
-    //         .setRequired(false)
-    //     )
-    // )
-    // .addSubcommand(subcommand => 
-    //     subcommand.setName("support-char")
-    //     .setDescription("support character")
-    //     .addIntegerOption(option =>
-    //         option.setName('uid')
-    //         .setDescription('UID')
-    //         .setRequired(false)
-    //     )
-    //     .addStringOption(option =>
-    //         option.setName('char-name')
-    //         .setDescription('character name')
-    //         .setRequired(false)
-    //     )
-    // )
+    .addSubcommand(subcommand => 
+        subcommand.setName("news")
+        .setDescription("recent posts")
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("auto-news")
+        .setDescription("auto post news")
+        .addBooleanOption(option =>
+            option.setName('toggle')
+            .setDescription('on or off')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("critical-node")
+        .setDescription("Shiyu Defense - Critical Node")
+        .addIntegerOption(option =>
+            option.setName('phase')
+            .setDescription('which phase')
+            .setRequired(true)
+            .addChoices(
+                {name: 'recent', value: 1},
+                {name: 'previous', value: 2}
+            )
+        )
+    )
     .addSubcommand(subcommand => 
         subcommand.setName("set-alert")
         .setDescription("set alerts for various things")
@@ -82,7 +65,9 @@ const slash = new SlashCommandBuilder()
             .setRequired(true)
             .addChoices(
                 {name: 'Battery Charge', value: 'ZZZ Battery Charge'},
-                {name: 'Dailies', value: 'ZZZ Dailies'}
+                {name: 'Dailies', value: 'ZZZ Dailies'},
+                {name: 'Hollow Zero', value: 'ZZZ Hollow Zero'},
+                {name: 'Shiyu Defense', value: 'ZZZ Shiyu Defense'}
             )
         )
         .addIntegerOption(option =>
@@ -102,7 +87,9 @@ const slash = new SlashCommandBuilder()
             .setRequired(true)
             .addChoices(
                 {name: 'Battery Charge', value: 'ZZZ Battery Charge'},
-                {name: 'Dailies', value: 'ZZZ Dailies'}
+                {name: 'Dailies', value: 'ZZZ Dailies'},
+                {name: 'Hollow Zero', value: 'ZZZ Hollow Zero'},
+                {name: 'Shiyu Defense', value: 'ZZZ Shiyu Defense'}
             )
         )
     )
@@ -137,46 +124,52 @@ const execute = async (interaction) => {
             const info = await zzz.buildUserEmbed();
             await defer;
             return info;
-        // } case 'daily': {
-        //     const hsr = getUidAndCookie(interaction.user.id);
-        //     if (hsr.error) return hsr.error;
-        //     const client = new HonkaiStarRail({
-        //         lang: LanguageEnum.ENGLISH,
-        //         region: 'prod_official_usa',
-        //         cookie: hsr.cookie,
-        //         uid: hsr.uid
-        //     })
-        //     const claim = await client.daily.claim()
-        //     if (claim?.status) return claim.status;
-        //     throw new Error(JSON.stringify(claim));
-        // } case 'moc': {
-        //     const uid = interaction.options.getInteger("uid");
-        //     const phase = interaction.options.getInteger("phase");
-        //     const defer = interaction.deferReply();
-        //     let hsr;
-        //     if (uid) hsr = new HsrClient({uid});
-        //     else hsr = new HsrClient(interaction.user.id);
-        //     const moc = await hsr.memoryOfChaos(phase, true);
-        //     let descLines = [];
-        //     descLines.push(`This Memory of Chaos ends <t:${moc.recovery_time}:R>`);
-        //     descLines.push(`**Stars**: ${moc.current_stars}/${moc.max_stars}`);
-        //     let embed = new EmbedBuilder()
-        //         .setTitle('Honkai: Star Rail — Memory of Chaos')
-        //         .setDescription(descLines.join("\n"))
-        //     moc.floors.forEach(floor => {
-        //         let lines = [];
-        //         lines.push(':star:'.repeat(floor.stars));
-        //         lines.push(`**Cycles**: ${floor.cycles}`)
-        //         embed.addFields({name: floor.name, value: lines.join("\n")});
-        //         floor.teams.forEach((team, i) => {
-        //             let desc = team.chars.map(char => {
-        //                 return `Lv.${char.level} E${char.eidolon} ${char.name}`;
-        //             }).join("\n")
-        //             embed.addFields({name: `Team ${i+1}`, value: desc, inline: true});
-        //         })
-        //     })
-        //     await defer;
-        //     return {embeds: [embed]};
+        } case 'news': {
+            const defer = interaction.deferReply();
+            let posts = await ZzzClient.news();
+            let desc = posts.map(post => {
+                return `[${escapeMarkdown(post.title)}](${post.url}) - <t:${post.created}>`
+            }).join("\n");
+            const embed = new EmbedBuilder()
+                .setTitle(`Zenless Zone Zero — news`)
+                .setDescription(desc)
+                .setTimestamp();
+            await defer;
+            return {embeds: [embed]};
+        } case 'auto-news': {
+            const toggle = interaction.options.getBoolean('toggle')
+            sql.prepare("UPDATE channels SET zzz_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel.id);
+            return `\`ZZZ news will ${toggle ? '' : 'no longer '}be automatically posted here\``;
+        } case 'critical-node': {
+            // const uid = interaction.options.getInteger("uid");
+            const phase = interaction.options.getInteger("phase");
+            const defer = interaction.deferReply();
+            // let zzz;
+            // if (uid) zzz = new ZzzClient({uid});
+            // else zzz = new ZzzClient(interaction.user.id);
+            let zzz = new ZzzClient(interaction.user.id);
+            const cn = await zzz.criticalNode(phase);
+            let descLines = [];
+            descLines.push(`This Critical Node ends <t:${cn.recovery_time}:R>`);
+            descLines.push(`**S-Ranks**: ${cn.s_ranks.cur}/${cn.s_ranks.max}`);
+            let embed = new EmbedBuilder()
+                .setTitle('Zenless Zone Zero — Critical Node')
+                .setDescription(descLines.join("\n"))
+            cn.floors.forEach(floor => {
+                let lines = [];
+                lines.push(`**Rating**: ${floor.rating}`);
+                embed.addFields({name: floor.name, value: lines.join("\n")});
+                floor.teams.forEach((team, i) => {
+                    let teamLines = [];
+                    team.chars.forEach(char => {
+                        teamLines.push(`Lv.${char.level} C${char.cinema} ${char.name}`);
+                    });
+                    teamLines.push(`Lv.${team.bangboo.level} ${team.bangboo.name}`);
+                    embed.addFields({name: `Team ${i+1}`, value: teamLines.join("\n"), inline: true});
+                })
+            })
+            await defer;
+            return {embeds: [embed]};
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         } case 'set-alert': {

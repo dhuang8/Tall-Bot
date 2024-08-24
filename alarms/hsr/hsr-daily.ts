@@ -1,8 +1,8 @@
-import {HsrClient} from '../util/hoyo.ts';
-import {timeOnNext} from '../util/functions.js';
-import {UserAlarm} from '../util/alarm.ts';
-import { StaticAlarm } from '../util/static-alarm.ts';
-import DiscordHelper from '../util/discord-helper.ts';
+import { HsrClient } from '../../util/hoyo/HsrClient.ts';
+import {timeOnNext} from '../../util/functions.js';
+import {UserAlarm} from '../../util/alarm.ts';
+import { StaticAlarm } from '../../util/static-alarm.ts';
+import DiscordHelper from '../../util/discord-helper.ts';
 
 class HsrDaily extends StaticAlarm {
     constructor() {

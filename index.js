@@ -26,7 +26,7 @@ client.sendEmbedToLog = function(embed) {
     logChannel?.send({embeds: [embed]});
 }
 
-for (const alarm_name of readdirSync('./alarms').filter(file => file.endsWith('.ts')).filter(file => file.indexOf("test") < 0)) {
+for (const alarm_name of readdirSync('./alarms', { recursive: true }).filter(file => file.endsWith('.ts')).filter(file => file.indexOf(".test.") < 0)) {
     try {
         const alarm = (await import(`./alarms/${alarm_name}`)).default;
         AlarmManager.addAlarm(alarm);
@@ -36,7 +36,7 @@ for (const alarm_name of readdirSync('./alarms').filter(file => file.endsWith('.
     }
 };
 
-let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm_all", "hi3", "zzz"];
+let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm_all", "hi3", "zzz", "hoyo"];
 
 for (const commandName of commandsList) {
     try {

@@ -1,8 +1,9 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
-import {HsrClient} from '../util/hoyo';
+import { HsrClient } from '../util/hoyo/HsrClient.ts';
 import {request} from '../util/functions.js';
 import AlarmManager from '../util/alarm-manager.js';
+import { escapeMarkdown } from '@discordjs/formatters';
 import fs from 'fs';
 
 let hsr_stats;
@@ -54,6 +55,19 @@ const slash = new SlashCommandBuilder()
             option.setName('uid')
             .setDescription('UID')
             .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("news")
+        .setDescription("recent posts")
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("auto-news")
+        .setDescription("auto post news")
+        .addBooleanOption(option =>
+            option.setName('toggle')
+            .setDescription('on or off')
+            .setRequired(true)
         )
     )
     .addSubcommand(subcommand => 
@@ -385,6 +399,22 @@ const execute = async (interaction) => {
             })
             await defer;
             return {embeds: [embed]};
+        } case 'news': {
+            const defer = interaction.deferReply();
+            let posts = await HsrClient.news();
+            let desc = posts.map(post => {
+                return `[${escapeMarkdown(post.title)}](${post.url}) - <t:${post.created}>`
+            }).join("\n");
+            const embed = new EmbedBuilder()
+                .setTitle(`Honkai: Star Rail — news`)
+                .setDescription(desc)
+                .setTimestamp();
+            await defer;
+            return {embeds: [embed]};
+        } case 'auto-news': {
+            const toggle = interaction.options.getBoolean('toggle')
+            sql.prepare("UPDATE channels SET hsr_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel.id);
+            return `\`HSR news will ${toggle ? '' : 'no longer '}be automatically posted here\``;
         } case 'help' : {
             return `Log into <https://www.hoyolab.com/home>, type \`java\` into the address bar and paste the rest \`\`\`script: (function(){if(document.cookie.includes('ltoken')&&document.cookie.includes('ltuid')){const e=document.createElement('input');e.value=document.cookie,document.body.appendChild(e),e.focus(),e.select();var t=document.execCommand('copy');document.body.removeChild(e),t?alert('HoYoLAB cookie copied to clipboard'):prompt('Failed to copy cookie. Manually copy the cookie below:\n\n',e.value)}else alert('Please logout and log back in. Cookie is expired/invalid!')})();\`\`\``;
         // } case 'test': {

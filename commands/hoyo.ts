@@ -24,6 +24,8 @@ async function createTimerEmbed(user_id: string) {
         proms.push(
             genshin.getTimers().then(thistimers => {
                 timers = timers.concat(thistimers);
+            }).catch(e => {
+                
             })
         )
     } catch (e) {
@@ -34,6 +36,8 @@ async function createTimerEmbed(user_id: string) {
         proms.push(
             zzz.getTimers().then(thistimers => {
                 timers = timers.concat(thistimers);
+            }).catch(e => {
+                
             })
         )
     } catch (e) {
@@ -44,6 +48,8 @@ async function createTimerEmbed(user_id: string) {
         proms.push(
             hsr.getTimers().then(thistimers => {
                 timers = timers.concat(thistimers);
+            }).catch(e => {
+
             })
         )
     } catch (e) {

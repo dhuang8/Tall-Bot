@@ -85,7 +85,7 @@ export class ZzzClient extends HoyoClient {
                     max: 1
                 },
                 video_store: {
-                    current: response.vhs_sale === "SaleStateDone" ? 1 : 0,
+                    current: response.vhs_sale === "SaleStateDoing" ? 1 : 0,
                     max: 1
                 },
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)

@@ -1,10 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, hoyoPost } from './HoyoClient.ts';
-import { getPosts } from './HoyoClient.ts';
-import { hoyoRequest } from './HoyoClient.ts';
-import { codes } from './HoyoClient.ts';
-import { crossIfTrue } from "./HoyoClient.ts";
+import { HoyoClient, Resource, User, hoyoPost, getPosts, hoyoRequest, codes, crossIfTrue } from './HoyoClient.ts';
 
 let hsrCharMap: {[key: number]: {name: string}} = {};
 request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json").then(body => {
@@ -418,6 +414,11 @@ export class HsrClient extends HoyoClient {
 
     async banners(): Promise<any> {
         return codes(8, this.cookie);
+    }
+
+    async redeem(code: string): Promise<any> {
+        const response = await hoyoRequest(`https://sg-hkrpg-api.hoyolab.com/common/apicdkey/api/webExchangeCdkeyHyl?cdkey=${code}&game_biz=hkrpg_global&lang=en&region=prod_official_usa&t=${Date.now()}&uid=${this.uid}`, this.cookie);
+        return response;
     }
 
     static async news() {

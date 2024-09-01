@@ -16,7 +16,9 @@ class ZzzDaily extends StaticAlarm {
     async executeUser(userAlarm: UserAlarm): Promise<void> {
         const zzz = new ZzzClient(userAlarm.user_id);
         const bc = await zzz.battleChronicle();
-        if (bc.daily.engagement.current < bc.daily.engagement.max || bc.daily.scratch_card.current < bc.daily.scratch_card.max) {
+        if (bc.daily.engagement.current < bc.daily.engagement.max 
+                || bc.daily.scratch_card.current < bc.daily.scratch_card.max 
+                || bc.daily.video_store.current < bc.daily.video_store.max) {
             const message = await zzz.buildUserEmbed();
             message.content = `Dailies expire <t:${bc.daily.recovery_time}:R>.`;
             DiscordHelper.whisper(userAlarm.user_id, message);

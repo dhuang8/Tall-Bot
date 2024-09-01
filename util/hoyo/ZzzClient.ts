@@ -66,8 +66,8 @@ export class ZzzClient extends HoyoClient {
                 max: number;
                 current: number;
             };
-            vhs_sale: string;
-            card_sign: string;
+            vhs_sale: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing";
+            card_sign: "CardSignNo" | "CardSignDone";
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
             battery_charge: {
@@ -81,7 +81,11 @@ export class ZzzClient extends HoyoClient {
                     max: response.vitality.max,
                 },
                 scratch_card: {
-                    current: response.card_sign === "CardSignDone" ? 1 : 0,
+                    current: response.card_sign == "CardSignDone" ? 1 : 0,
+                    max: 1
+                },
+                video_store: {
+                    current: response.vhs_sale === "SaleStateDone" ? 1 : 0,
                     max: 1
                 },
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)
@@ -119,7 +123,14 @@ export class ZzzClient extends HoyoClient {
 
     async criticalNode(type: number = 1): Promise<ZzzCriticalNode> {
         const response: {
-            end_time: number;
+            hadal_end_time: {
+                year: number,
+                month: number,
+                day: number,
+                hour: number,
+                minute: number,
+                second: number
+            }
             all_floor_detail: {
                 zone_name: string;
                 layer_index: number;
@@ -175,8 +186,11 @@ export class ZzzClient extends HoyoClient {
         let s_rank_count = floors.reduce((count, floor) => {
             return floor.rating === "S" ? count + 1 : count;
         }, 0);
+        let end_time = response.hadal_end_time;
+        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute, end_time.second+1);
         this.cn = {
-            recovery_time: response.end_time,
+            // 13 hours
+            recovery_time: end_date.valueOf() / 1000,
             s_ranks: {
                 cur: s_rank_count,
                 max: 7
@@ -213,6 +227,10 @@ export class ZzzClient extends HoyoClient {
         dailyLines.push(crossIfTrue(
             this.bc.daily.scratch_card.current >= this.bc.daily.scratch_card.max,
             `Scratch Card Mania`
+        ));
+        dailyLines.push(crossIfTrue(
+            this.bc.daily.video_store.current >= this.bc.daily.video_store.max,
+            `Video Store Open`
         ));
         dailyLines.push(crossIfTrue(
             this.bc.daily.engagement.current >= this.bc.daily.engagement.max,
@@ -277,6 +295,13 @@ export class ZzzClient extends HoyoClient {
             recovery_time: this.bc.daily.recovery_time
         })
         timers.push({
+            name: "ZZZ Video Store",
+            current: this.bc.daily.video_store.current,
+            max: this.bc.daily.video_store.max,
+            done: this.bc.daily.video_store.current == this.bc.daily.video_store.max,
+            recovery_time: this.bc.daily.recovery_time
+        })
+        timers.push({
             name: "ZZZ Engagement",
             current: this.bc.daily.engagement.current,
             max: this.bc.daily.engagement.max,
@@ -325,8 +350,12 @@ export interface ZzzBattleChronicle {
         engagement: {
             current: number;
             max: number;
-        };
+        },
         scratch_card: {
+            current: number;
+            max: number;
+        },
+        video_store: {
             current: number;
             max: number;
         };

@@ -187,7 +187,7 @@ export class ZzzClient extends HoyoClient {
             return floor.rating === "S" ? count + 1 : count;
         }, 0);
         let end_time = response.hadal_end_time;
-        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute, end_time.second+1);
+        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5 + 13, end_time.minute, end_time.second+1);
         this.cn = {
             // 13 hours
             recovery_time: end_date.valueOf() / 1000,

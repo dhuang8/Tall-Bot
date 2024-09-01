@@ -28,7 +28,7 @@ class DiscordHelperClass {
 
     async send(channelId: string, message: string | MessageCreateOptions) {
         this.client?.channels.fetch(channelId).then(async channel => {
-            if (channel instanceof TextChannel) {
+            if (channel != null && channel.isTextBased()) {
                 if (typeof message === "object" && message.embeds) {
                     let embeds = message.embeds;
                     let response_copy = message;

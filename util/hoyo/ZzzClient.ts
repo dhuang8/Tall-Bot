@@ -66,7 +66,9 @@ export class ZzzClient extends HoyoClient {
                 max: number;
                 current: number;
             };
-            vhs_sale: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing";
+            vhs_sale: {
+                sale_state: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing"
+            },
             card_sign: "CardSignNo" | "CardSignDone";
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
@@ -85,7 +87,7 @@ export class ZzzClient extends HoyoClient {
                     max: 1
                 },
                 video_store: {
-                    current: response.vhs_sale === "SaleStateDoing" ? 1 : 0,
+                    current: response.vhs_sale.sale_state === "SaleStateDoing" ? 1 : 0,
                     max: 1
                 },
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)

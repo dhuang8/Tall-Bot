@@ -55,7 +55,7 @@ const slash = new SlashCommandBuilder()
                 {name: 'Weekly Trounce', value: 'Genshin Weekly Trounce'},
                 {name: 'Transformer', value: 'Genshin Transformer'},
                 {name: 'Realm Currency', value: 'Genshin Realm Currency'},
-                {name: 'Spiral Abyss', value: 'Genshin Spiral Abyss'},
+                {name: 'Imaginarium Theater / Spiral Abyss', value: 'Genshin Spiral Abyss'},
                 {name: 'Resin', value: 'Genshin Resin'},
                 {name: 'Expeditions', value: 'Genshin Expeditions'}
             )
@@ -142,7 +142,7 @@ const slash = new SlashCommandBuilder()
             const sa = await genshin.spiralAbyss();
             let descLines = [];
             descLines.push(`Spiral Abyss reset <t:${sa.recovery_time}:R>`);
-            descLines.push(`**Stars**: ${sa.stars}/${sa.max_stars}`);
+            descLines.push(`**Stars**: ${sa.current}/${sa.max}`);
             let embeds = [];
             let embed = new EmbedBuilder()
                 .setTitle('Genshin Impact — Spiral Abyss')

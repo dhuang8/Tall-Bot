@@ -65,5 +65,5 @@ test('hsr news', async () => {
 
 test('hsr codes', async () => {
     const client = new HsrClient("1234567890");
-    console.log((await client.redeem('2BKWKEHL6DJX')));
+    console.log((await client.redeem('FeixiaoFiles')));
 });

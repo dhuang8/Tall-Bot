@@ -1,7 +1,7 @@
 import sql from '../SQLite.js';
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, hoyoPost } from './HoyoClient.ts';
+import { HoyoClient, Resource, User, hoyoPost, nextBimonthly } from './HoyoClient.ts';
 import { getPosts } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
@@ -125,7 +125,7 @@ export class ZzzClient extends HoyoClient {
 
     async criticalNode(type: number = 1): Promise<ZzzCriticalNode> {
         const response: {
-            hadal_end_time: {
+            hadal_end_time?: {
                 year: number,
                 month: number,
                 day: number,
@@ -188,11 +188,9 @@ export class ZzzClient extends HoyoClient {
         let s_rank_count = floors.reduce((count, floor) => {
             return floor.rating === "S" ? count + 1 : count;
         }, 0);
-        let end_time = response.hadal_end_time;
-        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5 + 13, end_time.minute, end_time.second+1);
         this.cn = {
             // 13 hours
-            recovery_time: end_date.valueOf() / 1000,
+            recovery_time: nextBimonthly(),
             s_ranks: {
                 cur: s_rank_count,
                 max: 7

@@ -1,5 +1,6 @@
-import { BaseInteraction, ChatInputCommandInteraction, EmbedBuilder, Interaction, SlashCommandBuilder, StringSelectMenuInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, escapeMarkdown } from 'discord.js';
 import sql from '../util/SQLite.js';
+import { Hi3Client } from '../util/hoyo/Hi3Client.ts';
 
 const slash = new SlashCommandBuilder()
     .setName('hi3')
@@ -18,6 +19,19 @@ const slash = new SlashCommandBuilder()
             .setRequired(false)
         )
     )
+    .addSubcommand(subcommand => 
+        subcommand.setName("news")
+        .setDescription("recent posts")
+    )
+    .addSubcommand(subcommand => 
+        subcommand.setName("auto-news")
+        .setDescription("auto post news")
+        .addBooleanOption(option =>
+            option.setName('toggle')
+            .setDescription('on or off')
+            .setRequired(true)
+        )
+    )
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
     switch (interaction.options.getSubcommand()) {
@@ -33,6 +47,22 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                     { name: 'cookie', value: user?.hsr_cookie ?? `not set` }
                 );
             return {embeds: [embed], ephemeral: true};
+        } case 'news': {
+            const defer = interaction.deferReply();
+            let posts = await Hi3Client.news();
+            let desc = posts.map(post => {
+                return `[${escapeMarkdown(post.title)}](${post.url}) - <t:${post.created}>`
+            }).join("\n");
+            const embed = new EmbedBuilder()
+                .setTitle(`Honkai Impact 3rd — news`)
+                .setDescription(desc)
+                .setTimestamp();
+            await defer;
+            return {embeds: [embed]};
+        } case 'auto-news': {
+            const toggle = interaction.options.getBoolean('toggle') || false;
+            sql.prepare("UPDATE channels SET hi3_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel?.id);
+            return `\`HI3 news will ${toggle ? '' : 'no longer '}be automatically posted here\``;
         }
     }
 }
@@ -43,4 +73,4 @@ export {
     slash, 
     execute,
     personal
-};
+}

@@ -30,7 +30,7 @@ class ZzzNews extends Alarm {
             const lastId = parseInt(alarm.extra_data);
             let embeds = posts.filter(post => {
                 return post.id > lastId;
-            }).map(post => {
+            }).reverse().map(post => {
                 return new EmbedBuilder()
                     .setTitle(post.title.substring(0, 256))
                     .setDescription(post.description.substring(0, 5000))

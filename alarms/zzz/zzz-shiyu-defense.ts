@@ -2,8 +2,7 @@ import { ZzzClient } from '../../util/hoyo/ZzzClient.ts';
 import {UserAlarm} from '../../util/alarm.ts';
 import { StaticAlarm } from '../../util/static-alarm.ts';
 import DiscordHelper from '../../util/discord-helper.ts';
-import config from '../../config.json' with { type: "json" };
-import { GenshinClient } from '../../util/hoyo/GenshinClient.ts';
+import { nextBimonthly } from '../../util/hoyo/HoyoClient.ts';
 
 class ZzzShiyuDefense extends StaticAlarm {
     constructor() {
@@ -11,12 +10,7 @@ class ZzzShiyuDefense extends StaticAlarm {
     }
 
     async calcNextTime(): Promise<number> {
-        const genshin = new GenshinClient(config.user_id);
-        const sa = await genshin.spiralAbyss();
-        return sa.recovery_time;
-        // const zzz = new ZzzClient(config.user_id);
-        // const cn = await zzz.criticalNode();
-        // return cn.recovery_time;
+        return nextBimonthly();
     }
 
     async executeUser(userAlarm: UserAlarm): Promise<void> {

@@ -106,6 +106,9 @@ export async function getPosts(id: number, cookie: string) {
             image_list: {
                 url: string;
             }[];
+            cover_list: {
+                url: string;
+            }[];
         }[];
     } = await hoyoRequest(`https://bbs-api-os.hoyolab.com/community/post/wapi/userPost?size=15&uid=${id}`, cookie);
     return posts.list.filter(p => {
@@ -117,7 +120,7 @@ export async function getPosts(id: number, cookie: string) {
             created: p.post.created_at,
             id: p.post.post_id,
             url: `https://www.hoyolab.com/article/${p.post.post_id}`,
-            images: p.image_list.map(image => image.url)
+            images: p.cover_list.map(image => image.url)
         };
     });
 }
@@ -182,4 +185,24 @@ export function crossIfTrue(test: boolean, string: string) {
     if (test) return `~~${string}~~`;
     return string;
 }
-
+export function next1stMonthly() {
+    let curDate = new Date();
+    let end_date = new Date(curDate.getFullYear(), curDate.getMonth(), 1, 9, 0, 0);
+    if (end_date < curDate) {
+        end_date.setMonth(end_date.getMonth()+1);
+        end_date.setDate(1);
+    }
+    return end_date.valueOf()/1000;
+}
+export function next16thMonthly() {
+    let curDate = new Date();
+    let end_date = new Date(curDate.getFullYear(), curDate.getMonth(), 16, 9, 0, 0);
+    if (end_date < curDate) {
+        end_date.setMonth(end_date.getMonth()+1);
+        end_date.setDate(1);
+    }
+    return end_date.valueOf()/1000;
+}
+export function nextBimonthly() {
+    return Math.min(next1stMonthly(), next16thMonthly())
+}

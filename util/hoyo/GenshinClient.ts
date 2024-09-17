@@ -1,6 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, getPosts, hoyoPost } from './HoyoClient.ts';
+import { HoyoClient, Resource, User, getPosts, hoyoPost, next1stMonthly } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
 import { codes } from './HoyoClient.ts';
@@ -17,6 +17,7 @@ request("https://api.uigf.org/dict/genshin/en.json").then(res => {
 export class GenshinClient extends HoyoClient {
     bc?: GenshinBattleChronicle;
     sa?: GenshinSpiralAbyss;
+    it?: GenshinImaginariumTheater;
 
     constructor(user_id: string) {
         super({
@@ -128,21 +129,51 @@ export class GenshinClient extends HoyoClient {
             };
         });
         this.sa = {
-            stars: response.total_star,
-            max_stars: 36,
+            name: "Spiral Abyss",
+            current: response.total_star,
+            max: 36,
             recovery_time: parseInt(response.end_time),
             floors
         };
         return this.sa;
     }
 
+    async imaginariumTheater(): Promise<GenshinImaginariumTheater> {
+        const response: {
+            data: {
+                stat: {
+                    medal_num: number
+                }
+            }[]
+        } = await hoyoRequest(this.root_url + `role_combat?server=os_usa&role_id=${this.uid}&need_detail=false`, this.cookie);
+        this.it = {
+            name: "Imaginarium Theater",
+            current: response.data[0].stat.medal_num,
+            max: 10,
+            recovery_time: next1stMonthly()
+        };
+        return this.it;
+    }
+
+    async endgameContent() {
+        const prom = [];
+        if (!this.sa) prom.push(this.spiralAbyss());
+        if (!this.it) prom.push(this.imaginariumTheater());
+        await Promise.all(prom);
+        if (!this.sa || !this.it) throw new Error('sa or it is undefined');
+        const endgame: GenshinImaginariumTheater[] = [this.sa, this.it];
+        return endgame.filter(a => a.recovery_time > Date.now() / 1000).sort((a, b) => a.recovery_time - b.recovery_time);
+    }
+
     async buildUserEmbed(): Promise<MessageCreateOptions> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
-        if (!this.sa) prom.push(this.spiralAbyss());
+        if (!this.sa || !this.it) prom.push(this.endgameContent());
         await Promise.all(prom);
 
-        if (!this.bc || !this.sa) throw new Error('bc or sa is undefined');
+        if (!this.bc || !this.sa || !this.it) throw new Error('bc, sa, or it is undefined');
+
+        let endgame = await this.endgameContent();
 
         let descLines = [];
         descLines.push(`**Resin**: ${this.bc.resin.current}/${this.bc.resin.max}, capped <t:${this.bc.resin.recovery_time}:R>`);
@@ -183,12 +214,14 @@ export class GenshinClient extends HoyoClient {
         ));
         embed.addFields({ name: `Weekly reset <t:${this.bc.weekly.recovery_time}:R>`, value: weeklyLines.join("\n") });
 
-        let spiralLines = [];
-        spiralLines.push(crossIfTrue(
-            this.sa.stars >= this.sa.max_stars,
-            `**Stars**: ${this.sa.stars}/${this.sa.max_stars}`
-        ));
-        embed.addFields({ name: `Spiral Abyss reset <t:${this.sa.recovery_time}:R>`, value: spiralLines.join("\n") });
+        for (let content of endgame) {
+            let contentLines = [];
+            contentLines.push(crossIfTrue(
+                content.current >= content.max,
+                `**Stars**: ${content.current}/${content.max}`
+            ));
+            embed.addFields({ name: `${content.name} reset <t:${content.recovery_time}:R>`, value: contentLines.join("\n") });
+        }
 
         const refreshButton = new ButtonBuilder()
             .setCustomId(`genshin|${this.user_id}`)
@@ -203,10 +236,10 @@ export class GenshinClient extends HoyoClient {
     async getTimers(): Promise<Resource[]> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
-        if (!this.sa) prom.push(this.spiralAbyss());
+        if (!this.sa || !this.it) prom.push(this.endgameContent());
         await Promise.all(prom);
 
-        if (!this.bc || !this.sa) throw new Error('bc or sa is undefined');
+        if (!this.bc || !this.sa || !this.it) throw new Error('bc, sa, or it is undefined');
         let timers = [];
         timers.push({
             name: "Genshin Resin",
@@ -245,10 +278,17 @@ export class GenshinClient extends HoyoClient {
         })
         timers.push({
             name: "Genshin Spiral Abyss",
-            current: this.sa.stars,
-            max: this.sa.max_stars,
-            done: this.sa.stars == this.sa.max_stars,
+            current: this.sa.current,
+            max: this.sa.max,
+            done: this.sa.current == this.sa.max,
             recovery_time: this.sa.recovery_time
+        })
+        timers.push({
+            name: "Genshin Imaginarium Theater",
+            current: this.it.current,
+            max: this.it.max,
+            done: this.it.current == this.it.max,
+            recovery_time: this.it.recovery_time
         })
         return timers;
     }
@@ -258,13 +298,20 @@ export class GenshinClient extends HoyoClient {
         return codes(2, this.cookie);
     }
 
-    static async news(): Promise<any> {
+    async redeem(code: string): Promise<any> {
+        const response = await hoyoRequest(`https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?uid=${this.uid}&region=os_usa&lang=en&cdkey=${code}&game_biz=hk4e_global&sLangKey=en-us`, this.cookie);
+        return response;
+    }
+
+    static async news() {
         return getPosts(1015537, '');
     }
 }
+
 export interface GenshinSpiralAbyss {
-    stars: number;
-    max_stars: number;
+    name: string,
+    current: number;
+    max: number;
     recovery_time: number;
     floors: {
         num: number;
@@ -284,6 +331,14 @@ export interface GenshinSpiralAbyss {
         }[];
     }[];
 }
+
+export interface GenshinImaginariumTheater {
+    name: string,
+    current: number;
+    max: number;
+    recovery_time: number;
+}
+
 export interface GenshinBattleChronicle {
     resin: {
         current: number;

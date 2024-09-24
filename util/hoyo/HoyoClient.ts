@@ -44,7 +44,7 @@ export abstract class HoyoClient {
         this.user_id = config.user_id;
         const user = sql.prepare<string, User>("SELECT hsr_cookie, genshin_uid, hi3_uid, hsr_uid, zzz_uid from users WHERE user_id = ?").get(this.user_id);
         if (user == null) throw new Error("`Missing user`");
-        if (user.genshin_uid == null) throw new Error("`Missing uid`");
+        if (this.getUid(user) == null) throw new Error("`Missing uid`");
         if (user.hsr_cookie == null) throw new Error("`Missing cookie`");
         this.uid = this.getUid(user);
         this.cookie = user.hsr_cookie;

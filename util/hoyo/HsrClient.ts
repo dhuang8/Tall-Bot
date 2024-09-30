@@ -1,6 +1,12 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
 import { HoyoClient, Resource, User, hoyoPost, getPosts, hoyoRequest, codes, crossIfTrue } from './HoyoClient.ts';
+import hsrDaily from '../../alarms/hsr/hsr-daily.ts';
+import hsrAssignment from '../../alarms/hsr/hsr-assignment.ts';
+import hsrEndgame from '../../alarms/hsr/hsr-endgame.ts';
+import hsrSu from '../../alarms/hsr/hsr-su.ts';
+import hsrTp from '../../alarms/hsr/hsr-tp.ts';
+import hsrWeekly from '../../alarms/hsr/hsr-weekly.ts';
 
 let hsrCharMap: {[key: number]: {name: string}} = {};
 request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json").then(body => {
@@ -17,7 +23,7 @@ export class HsrClient extends HoyoClient {
 
     constructor(user_id: string) {
         super({
-            user_id,
+            discord_id: user_id,
             root_url: 'https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/'
         })
     }
@@ -59,6 +65,11 @@ export class HsrClient extends HoyoClient {
                 recovery_time: cur + parseInt(expedition.remaining_time ?? 0)
             };
         });
+        const assignmentRecovery = Math.max(...this.bc.assignments.map(assignment => assignment.recovery_time));
+        hsrAssignment.updateNextTime(this.discord_id, assignmentRecovery);
+        if (this.bc.daily.current >= this.bc.daily.max) hsrDaily.setInactive(this.discord_id);
+        if (this.bc.weekly.current >= this.bc.weekly.max) hsrWeekly.setInactive(this.discord_id);
+        hsrTp.updateNextTime(this.discord_id, this.bc.trailblaze_power.recovery_time);
         return this.bc;
     }
 
@@ -70,6 +81,7 @@ export class HsrClient extends HoyoClient {
     async endgameContent() {
         const endgame: HsrEndgame[] = await Promise.all([this.memoryOfChaos(1), this.apocalypticShadow(1), this.pureFiction(1)]);
         this.eg = endgame.filter(a => a.recovery_time > Date.now() / 1000).sort((a, b) => a.recovery_time - b.recovery_time);
+        if (this.eg[0].current >= this.eg[0].max) hsrEndgame.setInactive(this.discord_id);
         return this.eg;
     }
 
@@ -128,8 +140,8 @@ export class HsrClient extends HoyoClient {
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {
             name: `Memory of Chaos`,
-            current_stars: response.star_num,
-            max_stars: 36,
+            current: response.star_num,
+            max: 36,
             recovery_time: end_date.getTime() / 1000,
             floors: floors
         };
@@ -204,8 +216,8 @@ export class HsrClient extends HoyoClient {
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {
             name: `Pure Fiction`,
-            current_stars: response.star_num,
-            max_stars: 12,
+            current: response.star_num,
+            max: 12,
             recovery_time: end_date.getTime() / 1000,
             floors: floors
         };
@@ -280,8 +292,8 @@ export class HsrClient extends HoyoClient {
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {
             name: `Apocalyptic Shadow`,
-            current_stars: response.star_num,
-            max_stars: 12,
+            current: response.star_num,
+            max: 12,
             recovery_time: end_date.getTime() / 1000,
             floors: floors
         };
@@ -294,11 +306,12 @@ export class HsrClient extends HoyoClient {
             max: response.current_record.basic.max_rogue_score,
             recovery_time: timeOnNext(7 * 24 * 60 * 60, 9 * 60 * 60 + 4 * 24 * 60 * 60)
         };
+        if (this.su.current >= this.su.max) hsrSu.setInactive(this.discord_id);
         return this.su;
     }
 
     async buildUserEmbed(): Promise<MessageCreateOptions> {
-        if (!this.user_id) {
+        if (!this.discord_id) {
             throw new Error("missing user");
         }
         const prom = [];
@@ -343,14 +356,14 @@ export class HsrClient extends HoyoClient {
 
         let egLines = this.eg.map(e => {
             return crossIfTrue(
-                e.current_stars >= e.max_stars,
-                `**${e.name}**: ${e.current_stars}/${e.max_stars} ends <t:${e.recovery_time}:R>`
+                e.current >= e.max,
+                `**${e.name}**: ${e.current}/${e.max} ends <t:${e.recovery_time}:R>`
             );
         });
         if (egLines.length > 0) embed.addFields({ name: `MoC/PF/AS`, value: egLines.join("\n") });
 
         const refreshButton = new ButtonBuilder()
-            .setCustomId(`hsr|${this.user_id}`)
+            .setCustomId(`hsr|${this.discord_id}`)
             .setLabel('Refresh')
             .setStyle(ButtonStyle.Primary);
 
@@ -399,9 +412,9 @@ export class HsrClient extends HoyoClient {
         for (let endgame of this.eg) {
             timers.push({
                 name: `HSR ${endgame.name}`,
-                current: endgame.current_stars,
-                max: endgame.max_stars,
-                done: endgame.current_stars == endgame.max_stars,
+                current: endgame.current,
+                max: endgame.max,
+                done: endgame.current == endgame.max,
                 recovery_time: endgame.recovery_time
             })
         }
@@ -434,8 +447,8 @@ export interface HsrSimulatedUniverse {
 
 export interface HsrEndgame {
     name: string;
-    current_stars: number;
-    max_stars: number;
+    current: number;
+    max: number;
     recovery_time: number;
     floors?: {
         name: string;

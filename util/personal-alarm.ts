@@ -11,12 +11,30 @@ export abstract class PersonalAlarm extends Alarm {
         this.waitOnTrigger = triggerOnWait;
     }
     
-    triggerAlarm(userAlarm: UserAlarm, nextTime: number) {
-        sql.prepare("UPDATE user_alarms SET triggered = true, next_time = ? WHERE user_id = ? AND alarm_id = ?").run(nextTime, userAlarm.user_id, this.id);
+    triggerAlarm(userAlarm: UserAlarm | string, nextTime: number) {
+        const discord_id = (typeof userAlarm == "string") ? userAlarm : userAlarm.user_id;
+        sql.prepare("UPDATE user_alarms SET triggered = true, next_time = ? WHERE user_id = ? AND alarm_id = ?").run(nextTime, discord_id, this.id);
     }
 
-    waitNext(userAlarm: UserAlarm, nextTime: number) {
-        sql.prepare("UPDATE user_alarms SET triggered = false, next_time = ? WHERE user_id = ? AND alarm_id = ?").run(nextTime, userAlarm.user_id, this.id);
+    waitNext(userAlarm: UserAlarm | string, nextTime: number) {
+        const discord_id = (typeof userAlarm == "string") ? userAlarm : userAlarm.user_id;
+        sql.prepare("UPDATE user_alarms SET triggered = false, next_time = ? WHERE user_id = ? AND alarm_id = ?").run(nextTime, discord_id, this.id);
+    }
+
+    updateNextTime(discord_id: string, maxRecoveryTime: number) {
+        let userAlarm = sql.prepare<[string, number], {triggered: number, time_before: number}>("SELECT triggered, time_before FROM user_alarms WHERE user_id = ? AND alarm_id = ?").get(discord_id, this.id);
+        if (userAlarm == null) return;
+        if (!userAlarm.triggered) {
+            this.waitNext(discord_id, maxRecoveryTime);
+            return;
+        }
+        const cur = Math.floor(Date.now() / 1000);
+        const newNext = maxRecoveryTime - userAlarm.time_before;
+        if (newNext > cur) {
+            this.waitNext(discord_id, maxRecoveryTime);
+        } else {
+            this.triggerAlarm(discord_id, cur + this.waitOnTrigger );
+        }
     }
 
     abstract executeUser(userAlarm: UserAlarm): Promise<void>;
@@ -31,8 +49,8 @@ export abstract class PersonalAlarm extends Alarm {
                 DiscordHelper.sendToLog(`<@${config.user_id}>`,"timer error", e.toString());
             }
             const cur = Math.floor(Date.now() / 1000);
-            // wait 5 min if error
-            this.waitNext(userAlarm, cur + 5*60 + userAlarm.time_before);
+            // wait 60 min if error
+            this.waitNext(userAlarm, cur + 60*60 + userAlarm.time_before);
         }
     }
 }

@@ -321,7 +321,7 @@ const execute = async (interaction) => {
             const moc = await hsr.memoryOfChaos(phase, true);
             let descLines = [];
             descLines.push(`This Memory of Chaos ends <t:${moc.recovery_time}:R>`);
-            descLines.push(`**Stars**: ${moc.current_stars}/${moc.max_stars}`);
+            descLines.push(`**Stars**: ${moc.current}/${moc.max}`);
             let embed = new EmbedBuilder()
                 .setTitle('Honkai: Star Rail — Memory of Chaos')
                 .setDescription(descLines.join("\n"))
@@ -349,7 +349,7 @@ const execute = async (interaction) => {
             const pf = await hsr.pureFiction(phase, true);
             let descLines = [];
             descLines.push(`This Pure Fiction ends <t:${pf.recovery_time}:R>`);
-            descLines.push(`**Stars**: ${pf.current_stars}/${pf.max_stars}`);
+            descLines.push(`**Stars**: ${pf.current}/${pf.max}`);
             let embed = new EmbedBuilder()
                 .setTitle('Honkai: Star Rail — Pure Fiction')
                 .setDescription(descLines.join("\n"))
@@ -379,7 +379,7 @@ const execute = async (interaction) => {
             const as = await hsr.apocalypticShadow(phase, true);
             let descLines = [];
             descLines.push(`This Apocalyptic Shadow ends <t:${as.recovery_time}:R>`);
-            descLines.push(`**Stars**: ${as.current_stars}/${as.max_stars}`);
+            descLines.push(`**Stars**: ${as.current}/${as.max}`);
             let embed = new EmbedBuilder()
                 .setTitle('Honkai: Star Rail — Apocalyptic Shadow')
                 .setDescription(descLines.join("\n"))

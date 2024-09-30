@@ -5,6 +5,10 @@ import { HoyoClient, Resource, User, hoyoPost, nextBimonthly } from './HoyoClien
 import { getPosts } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
+import zzzBc from '../../alarms/zzz/zzz-bc.ts';
+import zzzDaily from '../../alarms/zzz/zzz-daily.ts';
+import zzzWeekly from '../../alarms/zzz/zzz-weekly.ts';
+import zzzShiyuDefense from '../../alarms/zzz/zzz-shiyu-defense.ts';
 
 
 let zzzCharMap: { [key: number]: string; } = {};
@@ -32,7 +36,7 @@ export class ZzzClient extends HoyoClient {
 
     constructor(user_id: string) {
         super({
-            user_id,
+            discord_id: user_id,
             root_url: "https://sg-act-nap-api.hoyolab.com/event/game_record_zzz/api/zzz/"
         })
     }
@@ -93,6 +97,11 @@ export class ZzzClient extends HoyoClient {
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)
             }
         };
+        zzzBc.updateNextTime(this.discord_id, this.bc.battery_charge.recovery_time);
+        if (this.bc.daily.engagement.current >= this.bc.daily.engagement.max 
+                && this.bc.daily.scratch_card.current >= this.bc.daily.scratch_card.max 
+                && this.bc.daily.video_store.current >= this.bc.daily.video_store.max)
+            zzzDaily.setInactive(this.discord_id);
         return this.bc;
     }
 
@@ -120,6 +129,7 @@ export class ZzzClient extends HoyoClient {
             },
             recovery_time: cur + response.refresh_time
         };
+        if (this.hz.commission.cur >= this.hz.commission.cur) zzzWeekly.setInactive(this.discord_id);
         return this.hz;
     }
 
@@ -197,6 +207,7 @@ export class ZzzClient extends HoyoClient {
             },
             floors
         };
+        if (this.cn.s_ranks.cur >= this.cn.s_ranks.max) zzzShiyuDefense.setInactive(this.discord_id);
         return this.cn;
     }
 
@@ -257,7 +268,7 @@ export class ZzzClient extends HoyoClient {
         embed.addFields({ name: `Critical Node reset <t:${this.cn.recovery_time}:R>`, value: endgameLines.join("\n") });
 
         const refreshButton = new ButtonBuilder()
-            .setCustomId(`zzz|${this.user_id}`)
+            .setCustomId(`zzz|${this.discord_id}`)
             .setLabel('Refresh')
             .setStyle(ButtonStyle.Primary);
 

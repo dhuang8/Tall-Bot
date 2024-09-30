@@ -3,7 +3,7 @@ import sql from "../SQLite.js";
 import { request } from "../functions.js";
 import { MessageCreateOptions } from "discord.js";
 
-interface Post {
+export interface Post {
     title: string,
     description: string,
     created: number,
@@ -29,7 +29,7 @@ export interface User {
 };
 
 interface Config {
-    user_id: string;
+    discord_id: string;
     root_url: string;
 }
 
@@ -41,8 +41,8 @@ export interface HoyoClient extends Config {
 export abstract class HoyoClient {
 
     constructor(config: Config) {
-        this.user_id = config.user_id;
-        const user = sql.prepare<string, User>("SELECT hsr_cookie, genshin_uid, hi3_uid, hsr_uid, zzz_uid from users WHERE user_id = ?").get(this.user_id);
+        this.discord_id = config.discord_id;
+        const user = sql.prepare<string, User>("SELECT hsr_cookie, genshin_uid, hi3_uid, hsr_uid, zzz_uid from users WHERE user_id = ?").get(this.discord_id);
         if (user == null) throw new Error("`Missing user`");
         if (this.getUid(user) == null) throw new Error("`Missing uid`");
         if (user.hsr_cookie == null) throw new Error("`Missing cookie`");

@@ -4,6 +4,13 @@ import { HoyoClient, Resource, User, getPosts, hoyoPost, next1stMonthly } from '
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
 import { codes } from './HoyoClient.ts';
+import genshinDaily from '../../alarms/genshin/genshin-daily.ts';
+import genshinWeekly from '../../alarms/genshin/genshin-weekly.ts';
+import genshinEndgame from '../../alarms/genshin/genshin-endgame.ts';
+import genshinExpedition from '../../alarms/genshin/genshin-expedition.ts';
+import genshinRealm from '../../alarms/genshin/genshin-realm.ts';
+import genshinResin from '../../alarms/genshin/genshin-resin.ts';
+import genshinTransformer from '../../alarms/genshin/genshin-transformer.ts';
 
 let genshinCharMap: { [key: number]: string; } = [];
 
@@ -21,7 +28,7 @@ export class GenshinClient extends HoyoClient {
 
     constructor(user_id: string) {
         super({
-            user_id,
+            discord_id: user_id,
             root_url: 'https://bbs-api-os.hoyolab.com/game_record/genshin/api/'
         })
     }
@@ -75,6 +82,13 @@ export class GenshinClient extends HoyoClient {
                 recovery_time: cur + parseInt(expedition.remained_time)
             };
         });
+        if (this.bc.daily.commission_reward) genshinDaily.setInactive(this.discord_id);
+        if (this.bc.weekly.half_cost_count >= this.bc.weekly.half_cost_max) genshinWeekly.setInactive(this.discord_id);
+        const expeditionRecovery = Math.max(...this.bc.expeditions.map(expedition => expedition.recovery_time));
+        genshinExpedition.updateNextTime(this.discord_id, expeditionRecovery);
+        genshinRealm.updateNextTime(this.discord_id, this.bc.realm_currency.recovery_time);
+        genshinResin.updateNextTime(this.discord_id, this.bc.resin.recovery_time);
+        genshinTransformer.updateNextTime(this.discord_id, this.bc.transformer.recovery_time);
         return this.bc;
     }
 
@@ -161,8 +175,9 @@ export class GenshinClient extends HoyoClient {
         if (!this.it) prom.push(this.imaginariumTheater());
         await Promise.all(prom);
         if (!this.sa || !this.it) throw new Error('sa or it is undefined');
-        const endgame: GenshinImaginariumTheater[] = [this.sa, this.it];
-        return endgame.filter(a => a.recovery_time > Date.now() / 1000).sort((a, b) => a.recovery_time - b.recovery_time);
+        const eg: GenshinImaginariumTheater[] = [this.sa, this.it];
+        if (eg[0].current >= eg[0].max) genshinEndgame.setInactive(this.discord_id);
+        return eg.filter(a => a.recovery_time > Date.now() / 1000).sort((a, b) => a.recovery_time - b.recovery_time);
     }
 
     async buildUserEmbed(): Promise<MessageCreateOptions> {
@@ -224,7 +239,7 @@ export class GenshinClient extends HoyoClient {
         }
 
         const refreshButton = new ButtonBuilder()
-            .setCustomId(`genshin|${this.user_id}`)
+            .setCustomId(`genshin|${this.discord_id}`)
             .setLabel('Refresh')
             .setStyle(ButtonStyle.Primary);
 

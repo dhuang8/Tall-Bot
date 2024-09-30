@@ -18,7 +18,7 @@ class HsrEndgame extends StaticAlarm {
     async executeUser(userAlarm: UserAlarm): Promise<void> {
         const hsr = new HsrClient(userAlarm.user_id);
         const eg = await hsr.endgameContent();
-        if (eg[0].current_stars < eg[0].max_stars) {
+        if (eg[0].current < eg[0].max) {
             const message = await hsr.buildUserEmbed();
             message.content = `${eg[0].name} ends <t:${eg[0].recovery_time}:R>.`;
             DiscordHelper.whisper(userAlarm.user_id, message);

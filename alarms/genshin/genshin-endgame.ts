@@ -4,7 +4,7 @@ import { StaticAlarm } from '../../util/static-alarm.ts';
 import DiscordHelper from '../../util/discord-helper.ts';
 import { nextBimonthly } from '../../util/hoyo/HoyoClient.ts';
 
-class GenshinSpiralAbyss extends StaticAlarm {
+class GenshinEndgame extends StaticAlarm {
     constructor() {
         super("Genshin Spiral Abyss");
     }
@@ -26,4 +26,4 @@ class GenshinSpiralAbyss extends StaticAlarm {
     }
 }
 
-export default new GenshinSpiralAbyss();
+export default new GenshinEndgame();

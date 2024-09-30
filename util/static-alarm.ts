@@ -33,7 +33,7 @@ export abstract class StaticAlarm extends Alarm {
         }
         sql.prepare("UPDATE user_alarms SET active = false WHERE user_id = ? AND alarm_id = ?").run(userId, this.id);
         try {
-            this.executeUser(userAlarm);
+            await this.executeUser(userAlarm);
         } catch (e) {
             // TODO better way to handle error
             if (typeof e === "string") {
@@ -42,5 +42,9 @@ export abstract class StaticAlarm extends Alarm {
                 DiscordHelper.sendToLog(`<@${config.user_id}>`,"timer error auto trigger", e.toString());
             }
         }
+    }
+
+    setInactive(discordId: string) {
+        sql.prepare("UPDATE user_alarms SET active = false WHERE user_id = ? AND alarm_id = ?").run(discordId, this.id);
     }
 }

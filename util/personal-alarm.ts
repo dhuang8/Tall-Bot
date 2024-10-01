@@ -50,7 +50,7 @@ export abstract class PersonalAlarm extends Alarm {
             }
             const cur = Math.floor(Date.now() / 1000);
             // wait 60 min if error
-            this.waitNext(userAlarm, cur + 60*60 + userAlarm.time_before);
+            this.triggerAlarm(userAlarm, cur + 60*60);
         }
     }
 }

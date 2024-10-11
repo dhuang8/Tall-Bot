@@ -60,8 +60,7 @@ export abstract class HoyoClient {
     abstract getTimers(): Promise<Resource[]>;
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us&act_id=e202102251931481`, this.cookie);
-        return response;
+        throw new Error("Implement this");
     }
 
     static async news(): Promise<Post[]> {
@@ -69,29 +68,34 @@ export abstract class HoyoClient {
     }
 }
 
-export async function hoyoPost(url: string, cookie: string) {
+export async function hoyoPost(url: string, cookie: string, body: any = "", addHeader: {[key: string]: string} = {}) {
     const r = await request({
         url,
         headers: {
             Accept: "application/json, text/plain, */*",
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip, deflate, br",
-            "sec-ch-ua": '"Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99"',
+            "Sec-Ch-Ua": '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Windows"',
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-site",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
             "x-rpc-app_version": "1.5.0",
             "x-rpc-client_type": "5",
             "x-rpc-language": "en-us",
-            cookie
+            cookie,
+            ...addHeader
         },
-        method: 'POST'
+        method: 'POST',
+        body: JSON.stringify(body)
     });
     if (r.data != null) return r.data;
-    else throw new Error(`${r.retcode} ${r.message}`);
+    else {
+        console.log(r)
+        throw new Error(`${r.retcode} ${r.message}`);
+    }
 }
 
 export async function getPosts(id: number, cookie: string) {
@@ -124,7 +128,7 @@ export async function getPosts(id: number, cookie: string) {
         };
     });
 }
-export async function hoyoRequest(url: string, cookie: string) {
+export async function hoyoRequest(url: string, cookie: string, addHeader: {[key: string]: string} = {}) {
     const r = await request({
         url,
         headers: {
@@ -137,17 +141,18 @@ export async function hoyoRequest(url: string, cookie: string) {
             "Ds": generateDS(),
             "Origin": "https://act.hoyolab.com",
             "Referer": "https://act.hoyolab.com",
-            "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+            "Sec-Ch-Ua": '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
             "Sec-Ch-Ua-Mobile": "?0",
             "Sec-Ch-Ua-Platform": '"Windows"',
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
             "X-Rpc-App_version": "1.5.0",
             "X-Rpc-Client_type": "5",
             "X-Rpc-Language": "en-us",
-            "X-Rpc-Platform": "4"
+            "X-Rpc-Platform": "4",
+            ...addHeader
         }
     });
     if (r.data != null) return r.data;

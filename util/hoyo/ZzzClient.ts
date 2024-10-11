@@ -46,12 +46,19 @@ export class ZzzClient extends HoyoClient {
     }
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign?act_id=e202406031448091&lang=en-us`, this.cookie);
+        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/luna/zzz/os/sign`, this.cookie, {
+            act_id: "e202406031448091",
+            lang: "en-us"
+        }, {
+            "x-rpc-signgame": "zzz"
+        });
         return response;
     }
 
     async dailyInfo() {
-        const response = await hoyoRequest(`https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091`, this.cookie);
+        const response = await hoyoRequest(`https://sg-public-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091`, this.cookie, {
+            "x-rpc-signgame": "zzz",
+        });
         this.signIn = { checked: response.is_sign };
         return this.signIn;
     }

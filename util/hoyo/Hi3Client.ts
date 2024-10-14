@@ -20,7 +20,9 @@ export class Hi3Client {
     }
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/mani/sign?lang=en-us&act_id=e202110291205111`, this.cookie);
+        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/mani/sign?lang=en-us`, this.cookie, {
+            act_id: "e202110291205111"
+        });
         return response;
     }
 

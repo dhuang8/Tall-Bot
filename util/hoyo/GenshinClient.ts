@@ -25,6 +25,7 @@ export class GenshinClient extends HoyoClient {
     bc?: GenshinBattleChronicle;
     sa?: GenshinSpiralAbyss;
     it?: GenshinImaginariumTheater;
+    signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
         super({
@@ -38,8 +39,16 @@ export class GenshinClient extends HoyoClient {
     }
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us&act_id=e202102251931481`, this.cookie);
+        const response = await hoyoPost(`https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us`, this.cookie, {
+            act_id: "e202102251931481"
+        });
         return response;
+    }
+
+    async dailyInfo() {
+        const response = await hoyoRequest(`https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481`, this.cookie);
+        this.signIn = { checked: response.is_sign };
+        return this.signIn;
     }
 
     async battleChronicle(): Promise<GenshinBattleChronicle> {

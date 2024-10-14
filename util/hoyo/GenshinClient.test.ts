@@ -20,6 +20,11 @@ test('genshin daily', async () => {
     console.log(await client.dailySignIn());
 });
 
+test('genshin dailyinfo', async () => {
+    const client = new GenshinClient("1234567890");
+    console.log(await client.dailyInfo());
+});
+
 test('genshin redeem', async () => {
     const client = new GenshinClient("1234567890");
     console.log((await client.redeem('RNIF6H9394K8')));

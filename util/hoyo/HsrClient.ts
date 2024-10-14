@@ -20,6 +20,7 @@ export class HsrClient extends HoyoClient {
     bc?: HsrBattleChronicle;
     eg?: HsrEndgame[];
     su?: HsrSimulatedUniverse;
+    signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
         super({
@@ -74,8 +75,21 @@ export class HsrClient extends HoyoClient {
     }
 
     async dailySignIn() {
-        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/luna/os/sign?lang=en-us&act_id=e202303301540311`, this.cookie);
+        const response = await hoyoPost(`https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/sign`, this.cookie, {
+            act_id: "e202303301540311",
+            lang: "en-us"
+        }, {
+            "x-rpc-signgame": "hkrpg"
+        });
         return response;
+    }
+
+    async dailyInfo() {
+        const response = await hoyoRequest(`https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang=en-us&act_id=e202303301540311`, this.cookie, {
+            "x-rpc-signgame": "hkrpg",
+        });
+        this.signIn = { checked: response.is_sign };
+        return this.signIn;
     }
 
     async endgameContent() {

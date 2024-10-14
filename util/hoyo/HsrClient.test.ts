@@ -5,6 +5,11 @@ test('hsr daily', async () => {
     console.log(await client.dailySignIn());
 });
 
+test('hsr daily info', async () => {
+    const client = new HsrClient("1234567890");
+    console.log(await client.dailyInfo());
+});
+
 test('hsr info', async () => {
     const client = new HsrClient("1234567890");
     console.log(await client.info());

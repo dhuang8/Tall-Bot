@@ -1,9 +1,9 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, ButtonInteraction, AutocompleteInteraction } from 'discord.js';
 import sql from '../util/SQLite.js';
 import { ZzzClient } from '../util/hoyo/ZzzClient.ts';
 import AlarmManager from '../util/alarm-manager.js';
 import { escapeMarkdown } from '@discordjs/formatters';
-import fs from 'fs';
+import { User } from '../util/hoyo/HoyoClient.ts';
 
 const slash = new SlashCommandBuilder()
     .setName('zzz')
@@ -94,22 +94,32 @@ const slash = new SlashCommandBuilder()
         )
     )
     .addSubcommand(subcommand => 
+        subcommand.setName("char-build")
+        .setDescription("character equips")
+        .addStringOption(option =>
+            option.setName('name')
+            .setDescription('character name')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+    )
+    .addSubcommand(subcommand => 
         subcommand.setName("help")
         .setDescription("how to get cookie")
     )
 
-const execute = async (interaction) => {
+const execute = async (interaction: ChatInputCommandInteraction) => {
     switch (interaction.options.getSubcommand()) {
         case 'set': {
             const uid = interaction.options.getInteger("uid");
             const cookie = interaction.options.getString("cookie");
-            const user = sql.prepare("INSERT INTO users(user_id, hsr_cookie, zzz_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=COALESCE(excluded.hsr_cookie, hsr_cookie), zzz_uid=COALESCE(excluded.zzz_uid, zzz_uid) RETURNING hsr_cookie, zzz_uid;")
+            const user = sql.prepare<[string, string | null, number | null], User>("INSERT INTO users(user_id, hsr_cookie, zzz_uid) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET hsr_cookie=COALESCE(excluded.hsr_cookie, hsr_cookie), zzz_uid=COALESCE(excluded.zzz_uid, zzz_uid) RETURNING hsr_cookie, zzz_uid;")
                 .get(interaction.user.id, cookie, uid);
             const embed = new EmbedBuilder()
                 .setTitle('Zenless Zone Zero info')
                 .addFields(
-                    { name: 'uid', value: user.zzz_uid?.toString() ?? `not set` },
-                    { name: 'cookie', value: user.hsr_cookie ?? `not set` }
+                    { name: 'uid', value: user?.zzz_uid?.toString() ?? `not set` },
+                    { name: 'cookie', value: user?.hsr_cookie ?? `not set` }
                 );
             return {embeds: [embed], ephemeral: true};
         } case 'sign-in': {
@@ -137,12 +147,12 @@ const execute = async (interaction) => {
             await defer;
             return {embeds: [embed]};
         } case 'auto-news': {
-            const toggle = interaction.options.getBoolean('toggle')
-            sql.prepare("UPDATE channels SET zzz_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel.id);
+            const toggle = interaction.options.getBoolean('toggle') ?? false;
+            sql.prepare("UPDATE channels SET zzz_news = ? WHERE channel_id = ?;").run(+toggle, interaction.channel?.id);
             return `\`ZZZ news will ${toggle ? '' : 'no longer '}be automatically posted here\``;
         } case 'critical-node': {
             // const uid = interaction.options.getInteger("uid");
-            const phase = interaction.options.getInteger("phase");
+            const phase = interaction.options.getInteger("phase") ?? 1;
             const defer = interaction.deferReply();
             // let zzz;
             // if (uid) zzz = new ZzzClient({uid});
@@ -175,7 +185,7 @@ const execute = async (interaction) => {
         } case 'set-alert': {
             const user_id = interaction.user.id;
             const alarm = AlarmManager.getAlarmFromName(interaction.options.getString("alert"));
-            const minutes_before = interaction.options.getInteger('minutes-before')
+            const minutes_before = interaction.options.getInteger('minutes-before') ?? 0;
             alarm.addUserAlarm(user_id, minutes_before*60, null, 0, 1);
             const embed = AlarmManager.createUserAlarmEmbed(user_id);
             return {embeds: [embed], ephemeral: true};
@@ -185,11 +195,37 @@ const execute = async (interaction) => {
             sql.prepare("DELETE FROM user_alarms WHERE user_id = ? AND alarm_id = ?;").run(user_id, alarm.id);
             const embed = AlarmManager.createUserAlarmEmbed(user_id);
             return {embeds: [embed], ephemeral: true};
+        } case 'char-build': {
+            const char_id = ZzzClient.getCharacterId(interaction.options.getString("name")!);
+            const zzz = new ZzzClient(interaction.user.id);
+            const char = await zzz.getCharacter(char_id);
+            if (char == null) {
+                return "`Character not found`";
+            }
+            const embed = new EmbedBuilder()
+                .setTitle(char.name)
+                .setThumbnail(char.image);
+            let descLines = [];
+            if (char.w_engine) descLines.push(`**W-Engine**: Lv.${char.w_engine.level} ${char.w_engine.name}`)
+            for (let stat of char.stats) {
+                descLines.push(`**${stat.name}**: ${stat.value}`)
+            }
+            embed.addFields({name: "Stats", value: descLines.join("\n").slice(0,4095), inline: false});
+            for (let disk_drive of char.disk_drives) {
+                let descLines = [];
+                descLines.push(`**${disk_drive.main_stat.name}**: ${disk_drive.main_stat.value}`);
+                descLines.push(`**Lv.${disk_drive.level}**`);
+                for (let sub_stat of disk_drive.sub_stats) {
+                    descLines.push(`**${sub_stat.name}**: ${sub_stat.value}`)
+                }
+                embed.addFields({name: disk_drive.name, value: descLines.join("\n").slice(0,1000), inline: true});
+            }
+            return {embeds: [embed]};
         }
     }
 }
 
-const buttonClick = async (interaction) => {
+const buttonClick = async (interaction: ButtonInteraction) => {
     let args = interaction.customId.split("|");
     if (interaction.user.id != args[1]) return interaction.reply({content: "`only the user can refresh`", ephemeral: true});
     const defer = interaction.deferUpdate();
@@ -204,6 +240,21 @@ const buttonClick = async (interaction) => {
     }
 }
 
+const autocomplete = async (interaction: AutocompleteInteraction) => {
+    switch (interaction.options.getSubcommand()) {
+        case "char-build": {
+            const focusedOption = interaction.options.getFocused(true);
+            if (focusedOption.name === 'name') {
+                const charNames = Object.keys(ZzzClient.listCharacters());
+                return charNames.filter(name => name.toLowerCase().indexOf(focusedOption.value.toLowerCase()) > -1)
+                    .map(name => {
+                        return {name: name, value: name}
+                    }).slice(0,25);
+            }
+        }
+    }
+}
+
 export {
-    slash, execute, buttonClick
+    slash, execute, buttonClick, autocomplete
 };

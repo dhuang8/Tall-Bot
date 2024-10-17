@@ -14,3 +14,8 @@ test('zzz dailySignIn', async () => {
     const client = new ZzzClient("1234567890");
     console.log(await client.dailySignIn());
 });
+
+test('zzz character', async () => {
+    const client = new ZzzClient("1234567890");
+    console.log(await client.getCharacter(1251));
+});

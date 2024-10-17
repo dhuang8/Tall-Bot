@@ -122,6 +122,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
             logChannel?.send(logMessage(interaction.user.id, interaction.customId)).catch(console.error);
             const command = interaction.client.commands.get(args[0]);
             await command.execute(interaction);
+        } else if (interaction.isAutocomplete()) {
+            const command = interaction.client.commands.get(interaction.commandName);
+            const choices = await command.autocomplete(interaction);
+            await interaction.respond(choices);
         }
     } catch (e) {
         console.error(e);

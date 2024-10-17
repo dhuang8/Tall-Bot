@@ -1,4 +1,3 @@
-import sql from '../SQLite.js';
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
 import { HoyoClient, Resource, User, hoyoPost, nextBimonthly } from './HoyoClient.ts';
@@ -11,13 +10,15 @@ import zzzWeekly from '../../alarms/zzz/zzz-weekly.ts';
 import zzzShiyuDefense from '../../alarms/zzz/zzz-shiyu-defense.ts';
 
 
-let zzzCharMap: { [key: number]: string; } = {};
+let zzzCharIdToName: { [key: number]: string; } = {};
+let zzzCharNameToId: { [key: string]: number; } = {};
 let zzzBangbooMap: { [key: number]: string; } = {};
 
 request("https://api.hakush.in/zzz/data/character.json").then(body => {
     let data: {[key: string]: {EN: string}} = body
     Object.entries(data).forEach(entry => {
-        zzzCharMap[parseInt(entry[0])] = entry[1].EN
+        zzzCharIdToName[parseInt(entry[0])] = entry[1].EN
+        zzzCharNameToId[ entry[1].EN] =parseInt(entry[0])
     })
 })
 
@@ -37,12 +38,20 @@ export class ZzzClient extends HoyoClient {
     constructor(user_id: string) {
         super({
             discord_id: user_id,
-            root_url: "https://sg-act-nap-api.hoyolab.com/event/game_record_zzz/api/zzz/"
+            root_url: "https://sg-public-api.hoyolab.com/event/game_record_zzz/api/zzz/"
         })
     }
 
     getUid(user: User): number {
         return user.zzz_uid;
+    }
+
+    static listCharacters() {
+        return zzzCharNameToId;
+    }
+
+    static getCharacterId(name: string) {
+        return zzzCharNameToId[name];
     }
 
     async dailySignIn() {
@@ -186,7 +195,7 @@ export class ZzzClient extends HoyoClient {
                     chars: node.avatars.map(char => {
                         return {
                             level: char.level,
-                            name: zzzCharMap[char.id],
+                            name: zzzCharIdToName[char.id],
                             cinema: char.rank
                         };
                     }),
@@ -341,6 +350,69 @@ export class ZzzClient extends HoyoClient {
             recovery_time: this.cn.recovery_time
         })
         return timers;
+    }
+
+    async getCharacter(char_id: number) {
+        const response: {
+            avatar_list: {
+                name_mi18n: string,
+                level: number,
+                rank: number,
+                hollow_icon_path: string,
+                weapon: {
+                    name: string,
+                    star: number,
+                    level: number
+                }
+                properties: {
+                    property_name: string,
+                    add: string,
+                    base: string,
+                    final: string
+                }[],
+                equip: {
+                    level: number,
+                    name: string,
+                    rarity: string,
+                    main_properties: {
+                        property_name: string,
+                        base: string
+                    }[],
+                    properties: {
+                        property_name: string,
+                        base: string
+                    }[],
+                    equip_suit: {
+                        desc1: string,
+                        desc2: string,
+                        name: string,
+                        own: number
+                    }
+                }[]
+            }[]
+        } = await hoyoRequest(this.root_url + `avatar/info?id_list[]=${char_id}&need_wiki=false&server=prod_gf_us&role_id=${this.uid}`, this.cookie);
+        if (response.avatar_list.length < 1) return null;
+        const char = response.avatar_list[0];
+        return {
+            name: char.name_mi18n,
+            image: char.hollow_icon_path,
+            w_engine: {
+                name: char.weapon.name,
+                level: char.weapon.level
+            },
+            stats: char.properties.map(prop => {return {name: prop.property_name, value: prop.final}}),
+            disk_drives: char.equip.map(dd => {
+                return {
+                    name: dd.name,
+                    level: dd.level,
+                    main_stat: {
+                        name: dd.main_properties[0].property_name,
+                        value: dd.main_properties[0].base
+                    },
+                    sub_stats: dd.properties.map(prop => {return {name: prop.property_name, value: prop.base}})
+                }
+            })
+        };
     }
 
     static async news() {

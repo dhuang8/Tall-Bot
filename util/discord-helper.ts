@@ -1,4 +1,4 @@
-import { Client, TextChannel, Embed, User, MessageCreateOptions, EmbedBuilder } from 'discord.js';
+import { Client, TextChannel, Embed, User, MessageCreateOptions, EmbedBuilder, ChannelType, APIEmbed } from 'discord.js';
 import config from '../config.json' with { type: "json" };
 
 class DiscordHelperClass {
@@ -27,22 +27,24 @@ class DiscordHelperClass {
     }
 
     async send(channelId: string, message: string | MessageCreateOptions) {
-        this.client?.channels.fetch(channelId).then(async channel => {
+        this.client?.channels.fetch(channelId).then(async (channel) => {
             if (channel != null && channel.isTextBased()) {
+                channel = channel as TextChannel;
                 if (typeof message === "object" && message.embeds) {
-                    let embeds = message.embeds;
+                    let newEmbeds: APIEmbed[] = [];
                     let response_copy = message;
-                    response_copy.embeds = [];
                     let text_length = 0;
-                    for (let count=0; count < embeds.length; count++) {
-                        let embed = EmbedBuilder.from(embeds[count]);
+                    for (let count=0; count < message.embeds.length; count++) {
+                        let embed = EmbedBuilder.from(message.embeds[count]);
                         if (embed.length > 6000) throw new Error("embed length > 6000");
-                        if ((text_length + embed.length) > 6000 || (response_copy.embeds && response_copy.embeds.length > 9)) {
+                        if ((text_length + embed.length) > 6000 || (newEmbeds.length > 9)) {
+                            response_copy.embeds = newEmbeds;
                             await channel.send(response_copy);
-                            response_copy = {embeds: []}
+                            newEmbeds = [];
                             text_length = 0;
+                            response_copy = {};
                         }
-                        response_copy.embeds?.push(embed);
+                        newEmbeds.push(embed.toJSON());
                         text_length += embed.length;
                     }
                     await channel.send(response_copy);

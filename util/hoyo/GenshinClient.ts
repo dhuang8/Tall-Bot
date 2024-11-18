@@ -30,7 +30,7 @@ export class GenshinClient extends HoyoClient {
     constructor(user_id: string) {
         super({
             discord_id: user_id,
-            root_url: 'https://bbs-api-os.hoyolab.com/game_record/genshin/api/'
+            root_url: 'https://sg-public-api.hoyolab.com/event/game_record/genshin/api/'
         })
     }
 
@@ -165,13 +165,13 @@ export class GenshinClient extends HoyoClient {
         const response: {
             data: {
                 stat: {
-                    medal_num: number
+                    max_round_id: number
                 }
             }[]
         } = await hoyoRequest(this.root_url + `role_combat?server=os_usa&role_id=${this.uid}&need_detail=false`, this.cookie);
         this.it = {
             name: "Imaginarium Theater",
-            current: response.data[0].stat.medal_num,
+            current: response.data[0].stat.max_round_id,
             max: 10,
             recovery_time: next1stMonthly()
         };

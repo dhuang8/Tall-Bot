@@ -10,6 +10,11 @@ test('genshin spiralAbyss', async () => {
     console.log(JSON.stringify(await client.spiralAbyss()));
 });
 
+test('genshin it', async () => {
+    const client = new GenshinClient("1234567890");
+    console.log(JSON.stringify(await client.imaginariumTheater()));
+});
+
 test('genshin codes', async () => {
     const client = new GenshinClient("1234567890");
     console.log((await client.codes())[0]);

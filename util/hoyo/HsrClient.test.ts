@@ -54,6 +54,11 @@ test('hsr endgame', async () => {
     console.log(await client.endgameContent());
 });
 
+test('hsr events', async () => {
+    const client = new HsrClient("1234567890");
+    console.log(await client.actCalendar());
+});
+
 test('hsr codes', async () => {
     const client = new HsrClient("1234567890");
     console.log((await client.codes())[0]);

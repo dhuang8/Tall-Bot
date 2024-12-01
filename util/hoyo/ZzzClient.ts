@@ -89,6 +89,11 @@ export class ZzzClient extends HoyoClient {
             vhs_sale: {
                 sale_state: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing"
             },
+            weekly_task: {
+                cur_point: number,
+                max_point: number,
+                refresh_time: number
+            },
             card_sign: "CardSignNo" | "CardSignDone";
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
@@ -111,6 +116,11 @@ export class ZzzClient extends HoyoClient {
                     max: 1
                 },
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)
+            },
+            weekly: {
+                current: response.weekly_task.cur_point,
+                max: response.weekly_task.max_point,
+                recovery_time: cur + response.weekly_task.refresh_time,
             }
         };
         zzzBc.updateNextTime(this.discord_id, this.bc.battery_charge.recovery_time);
@@ -227,6 +237,27 @@ export class ZzzClient extends HoyoClient {
         return this.cn;
     }
 
+    async actCalendar() {
+        const response: {
+            act_list: {
+                all_finished: boolean,
+                name: string,
+                time_info: {
+                    start_ts: string,
+                    end_ts: string
+                }
+                act_type: "ActivityTypeOther" | "ActivityTypeSign" | "ActivityTypeDouble",
+                act_time_type: "ActTimeTypeLong" | "ActTimeTypeDefault",
+                current_progress: number,
+                total_progress: number
+            }[]
+        } = await hoyoPost(this.root_url + `act_calendar`, this.cookie, {
+            "server": "prod_gf_us",
+            "role_id": this.uid
+        });
+        return;
+    }
+
     async buildUserEmbed(): Promise<MessageCreateOptions> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
@@ -274,7 +305,11 @@ export class ZzzClient extends HoyoClient {
             this.hz.commission.cur >= this.hz.commission.max,
             `**Bounty Commissions**: ${this.hz.commission.cur}/${this.hz.commission.max}`
         ));
-        embed.addFields({ name: `Hollow Zero reset <t:${this.hz.recovery_time}:R>`, value: weeklyLines.join("\n") });
+        weeklyLines.push(crossIfTrue(
+            this.bc.weekly.current >= this.bc.weekly.max,
+            `**Ridu Weekly Points**: ${this.bc.weekly.current}/${this.bc.weekly.max}`
+        ));
+        embed.addFields({ name: `Weekly reset <t:${this.hz.recovery_time}:R>`, value: weeklyLines.join("\n") });
 
         let endgameLines = [];
         endgameLines.push(crossIfTrue(
@@ -449,6 +484,11 @@ export interface ZzzBattleChronicle {
             current: number;
             max: number;
         };
+        recovery_time: number;
+    },
+    weekly: {
+        current: number;
+        max: number;
         recovery_time: number;
     };
 }

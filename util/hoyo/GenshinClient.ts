@@ -1,6 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, getPosts, hoyoPost, next1stMonthly } from './HoyoClient.ts';
+import { HoyoClient, HoyoEvent, Resource, User, getPosts, hoyoPost, next1stMonthly } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
 import { codes } from './HoyoClient.ts';
@@ -25,6 +25,7 @@ export class GenshinClient extends HoyoClient {
     bc?: GenshinBattleChronicle;
     sa?: GenshinSpiralAbyss;
     it?: GenshinImaginariumTheater;
+    events?: HoyoEvent[];
     signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
@@ -178,6 +179,43 @@ export class GenshinClient extends HoyoClient {
         return this.it;
     }
 
+    async actCalendar(): Promise<HoyoEvent[]> {
+        const response: {
+            act_list: {
+                is_finished: boolean,
+                name: string,
+                start_timestamp: string,
+                end_timestamp: string,
+                status: number,
+                type: "ActTypeOther" | "ActTypeExplore" | "ActTypeDouble",
+                explore_detail?: {
+                    explore_percent: number
+                }
+            }[]
+        } = await hoyoPost(this.root_url + `act_calendar`, this.cookie, {
+            "server": "os_usa",
+            "role_id": this.uid
+        });
+        let now = Math.floor(Date.now() / 1000);
+        this.events = response.act_list.map(event => {
+            return {
+                name: event.name,
+                start_time: parseInt(event.start_timestamp),
+                done: event.is_finished,
+                recovery_time: parseInt(event.end_timestamp),
+                current: event.explore_detail?.explore_percent,
+                max: event.explore_detail ? 100 : undefined,
+                started: event.status == 2
+            }
+        }).sort((a,b)=>{
+            if (a.start_time < now && b.start_time < now) {
+                return a.recovery_time-b.recovery_time;
+            }
+            return +b.started - +a.started;
+        })
+        return this.events;
+    }
+
     async endgameContent() {
         const prom = [];
         if (!this.sa) prom.push(this.spiralAbyss());
@@ -193,9 +231,10 @@ export class GenshinClient extends HoyoClient {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.sa || !this.it) prom.push(this.endgameContent());
+        if (!this.events) prom.push(this.actCalendar());
         await Promise.all(prom);
 
-        if (!this.bc || !this.sa || !this.it) throw new Error('bc, sa, or it is undefined');
+        if (!this.bc || !this.sa || !this.it || !this.events) throw new Error('bc, sa, or it is undefined');
 
         let endgame = await this.endgameContent();
 
@@ -247,6 +286,24 @@ export class GenshinClient extends HoyoClient {
             embed.addFields({ name: `${content.name} reset <t:${content.recovery_time}:R>`, value: contentLines.join("\n") });
         }
 
+        let ongoingEventLines = [];
+        let upcomingEventLines = [];
+        for (let event of this.events) {
+            if (event.started) {
+                let progress = (event.max && event.max > 1) ? `${event.current}/${event.max}` : ""
+                ongoingEventLines.push(crossIfTrue(
+                    event.done,
+                    `**${event.name}** ${progress} ends in <t:${event.recovery_time}:R>`
+                ));
+            } else {
+                upcomingEventLines.push(
+                    `${event.name}`
+                );
+            }
+        }
+        if (ongoingEventLines.length > 0) embed.addFields({ name: `Active Events`, value: ongoingEventLines.join("\n") });
+        if (upcomingEventLines.length > 0) embed.addFields({ name: `Upcoming Events`, value: upcomingEventLines.join("\n") });
+
         const refreshButton = new ButtonBuilder()
             .setCustomId(`genshin|${this.discord_id}`)
             .setLabel('Refresh')
@@ -261,9 +318,10 @@ export class GenshinClient extends HoyoClient {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.sa || !this.it) prom.push(this.endgameContent());
+        if (!this.events) prom.push(this.actCalendar());
         await Promise.all(prom);
 
-        if (!this.bc || !this.sa || !this.it) throw new Error('bc, sa, or it is undefined');
+        if (!this.bc || !this.sa || !this.it || !this.events) throw new Error('bc, sa, or it is undefined');
         let timers = [];
         timers.push({
             name: "Genshin Resin",
@@ -313,6 +371,18 @@ export class GenshinClient extends HoyoClient {
             max: this.it.max,
             done: this.it.current == this.it.max,
             recovery_time: this.it.recovery_time
+        })
+        let now = Math.floor(Date.now() / 1000);
+        this.events.filter(event => {
+            return event.started
+        }).forEach(event => {
+            timers.push({
+                name: `Genshin ${event.name}`,
+                current: event.current ?? +event.done,
+                max: event.max ?? 1,
+                done: event.done,
+                recovery_time: event.recovery_time
+            })
         })
         return timers;
     }

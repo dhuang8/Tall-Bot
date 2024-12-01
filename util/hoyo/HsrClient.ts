@@ -1,6 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, hoyoPost, getPosts, hoyoRequest, codes, crossIfTrue } from './HoyoClient.ts';
+import { HoyoClient, Resource, User, hoyoPost, getPosts, hoyoRequest, codes, crossIfTrue, HoyoEvent } from './HoyoClient.ts';
 import hsrDaily from '../../alarms/hsr/hsr-daily.ts';
 import hsrAssignment from '../../alarms/hsr/hsr-assignment.ts';
 import hsrEndgame from '../../alarms/hsr/hsr-endgame.ts';
@@ -20,6 +20,7 @@ export class HsrClient extends HoyoClient {
     bc?: HsrBattleChronicle;
     eg?: HsrEndgame[];
     su?: HsrSimulatedUniverse;
+    events?: HoyoEvent[];
     signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
@@ -324,6 +325,42 @@ export class HsrClient extends HoyoClient {
         return this.su;
     }
 
+    async actCalendar(): Promise<HoyoEvent[]> {
+        const response: {
+            act_list: {
+                all_finished: boolean,
+                name: string,
+                time_info: {
+                    start_ts: string,
+                    end_ts: string
+                }
+                act_type: "ActivityTypeOther" | "ActivityTypeSign" | "ActivityTypeDouble",
+                act_time_type: "ActTimeTypeLong" | "ActTimeTypeDefault",
+                current_progress: number,
+                total_progress: number
+            }[]
+        } = await hoyoRequest(this.root_url + `get_act_calender?server=prod_official_usa&role_id=${this.uid}`, this.cookie);
+        let now = Math.floor(Date.now() / 1000);
+        this.events = response.act_list.filter(event => {
+            return event.act_time_type != "ActTimeTypeLong";
+        }).map(event => {
+            return {
+                name: event.name,
+                start_time: parseInt(event.time_info.start_ts),
+                done: event.all_finished,
+                recovery_time: parseInt(event.time_info.end_ts),
+                current: event.current_progress,
+                max: event.total_progress
+            }
+        }).sort((a,b)=>{
+            if (a.start_time < now && b.start_time < now) {
+                return a.recovery_time-b.recovery_time;
+            }
+            return a.start_time - b.start_time;
+        })
+        return this.events;
+    }
+
     async buildUserEmbed(): Promise<MessageCreateOptions> {
         if (!this.discord_id) {
             throw new Error("missing user");
@@ -332,9 +369,10 @@ export class HsrClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.eg) prom.push(this.endgameContent());
         if (!this.su) prom.push(this.simulatedUniverse());
+        if (!this.events) prom.push(this.actCalendar());
         await Promise.all(prom);
 
-        if (!this.bc || !this.eg || !this.su) throw new Error('something is undefined');
+        if (!this.bc || !this.eg || !this.su || !this.events) throw new Error('something is undefined');
 
         let descLines = [];
         descLines.push(`**TP**: ${this.bc.trailblaze_power.current}/${this.bc.trailblaze_power.max}, capped <t:${this.bc.trailblaze_power.recovery_time}:R>`);
@@ -376,6 +414,24 @@ export class HsrClient extends HoyoClient {
         });
         if (egLines.length > 0) embed.addFields({ name: `MoC/PF/AS`, value: egLines.join("\n") });
 
+        let ongoingEventLines = [];
+        let upcomingEventLines = [];
+        let now = Math.floor(Date.now() / 1000);
+        for (let event of this.events) {
+            if (event.start_time < now) {
+                ongoingEventLines.push(crossIfTrue(
+                    event.done,
+                    `${event.name} ends in <t:${event.recovery_time}:R>`
+                ));
+            } else {
+                upcomingEventLines.push(
+                    `${event.name} starts in <t:${event.recovery_time}:R>`
+                );
+            }
+        }
+        if (ongoingEventLines.length > 0) embed.addFields({ name: `Active Events`, value: ongoingEventLines.join("\n") });
+        if (upcomingEventLines.length > 0) embed.addFields({ name: `Upcoming Events`, value: upcomingEventLines.join("\n") });
+
         const refreshButton = new ButtonBuilder()
             .setCustomId(`hsr|${this.discord_id}`)
             .setLabel('Refresh')
@@ -391,9 +447,10 @@ export class HsrClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.eg) prom.push(this.endgameContent());
         if (!this.su) prom.push(this.simulatedUniverse());
+        if (!this.events) prom.push(this.actCalendar());
         await Promise.all(prom);
 
-        if (!this.bc || !this.eg || !this.su) throw new Error('something is undefined');
+        if (!this.bc || !this.eg || !this.su || !this.events) throw new Error('something is undefined');
         let timers = [];
         timers.push({
             name: "HSR Trailblaze Power",
@@ -432,6 +489,18 @@ export class HsrClient extends HoyoClient {
                 recovery_time: endgame.recovery_time
             })
         }
+        let now = Math.floor(Date.now() / 1000);
+        this.events.filter(event => {
+            return now > event.start_time
+        }).forEach(event => {
+            timers.push({
+                name: `HSR ${event.name}`,
+                current: event.current,
+                max: event.max,
+                done: event.done,
+                recovery_time: event.recovery_time
+            })
+        })
         return timers;
     }
 

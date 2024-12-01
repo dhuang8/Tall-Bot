@@ -19,3 +19,8 @@ test('zzz character', async () => {
     const client = new ZzzClient("1234567890");
     console.log(await client.getCharacter(1251));
 });
+
+test('zzz event', async () => {
+    const client = new ZzzClient("1234567890");
+    console.log(await client.actCalendar());
+});

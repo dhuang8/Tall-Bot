@@ -20,6 +20,16 @@ export interface Resource {
     recovery_time: number
 };
 
+export interface HoyoEvent {
+    name: string,
+    done: boolean,
+    start_time: number,
+    recovery_time: number,
+    current?: number,
+    max?: number,
+    started?: boolean
+};
+
 export interface User {
     hsr_cookie: string;
     genshin_uid: number;
@@ -104,7 +114,7 @@ export async function getPosts(id: number, cookie: string) {
             post: {
                 content: string;
                 created_at: number;
-                post_id: number;
+                post_id: string;
                 subject: string;
             };
             image_list: {
@@ -115,14 +125,12 @@ export async function getPosts(id: number, cookie: string) {
             }[];
         }[];
     } = await hoyoRequest(`https://bbs-api-os.hoyolab.com/community/post/wapi/userPost?size=15&uid=${id}`, cookie);
-    return posts.list.filter(p => {
-        return p.post.subject.indexOf("Prize Event") < 0;
-    }).map(p => {
+    return posts.list.map(p => {
         return {
             title: p.post.subject,
             description: p.post.content,
             created: p.post.created_at,
-            id: p.post.post_id,
+            id: parseInt(p.post.post_id),
             url: `https://www.hoyolab.com/article/${p.post.post_id}`,
             images: p.cover_list.map(image => image.url)
         };

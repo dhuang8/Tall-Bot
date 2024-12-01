@@ -15,6 +15,11 @@ test('genshin it', async () => {
     console.log(JSON.stringify(await client.imaginariumTheater()));
 });
 
+test('genshin event', async () => {
+    const client = new GenshinClient("1234567890");
+    console.log(JSON.stringify(await client.actCalendar()));
+});
+
 test('genshin codes', async () => {
     const client = new GenshinClient("1234567890");
     console.log((await client.codes())[0]);
@@ -28,6 +33,10 @@ test('genshin daily', async () => {
 test('genshin dailyinfo', async () => {
     const client = new GenshinClient("1234567890");
     console.log(await client.dailyInfo());
+});
+
+test('genshin news', async () => {
+    console.log(await GenshinClient.news());
 });
 
 test('genshin redeem', async () => {

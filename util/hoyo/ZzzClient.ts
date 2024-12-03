@@ -93,7 +93,7 @@ export class ZzzClient extends HoyoClient {
                 cur_point: number,
                 max_point: number,
                 refresh_time: number
-            },
+            } | null,
             card_sign: "CardSignNo" | "CardSignDone";
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
@@ -118,9 +118,9 @@ export class ZzzClient extends HoyoClient {
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)
             },
             weekly: {
-                current: response.weekly_task.cur_point,
-                max: response.weekly_task.max_point,
-                recovery_time: cur + response.weekly_task.refresh_time,
+                current: response.weekly_task?.cur_point ?? 0,
+                max: response.weekly_task?.max_point ?? 1300,
+                recovery_time: response.weekly_task ? cur + response.weekly_task.refresh_time : timeOnNext(7*24*60*60, 9*60*60+4*24*60*60),
             }
         };
         zzzBc.updateNextTime(this.discord_id, this.bc.battery_charge.recovery_time);

@@ -1,6 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, hoyoPost, nextBimonthly } from './HoyoClient.ts';
+import { HoyoClient, Resource, User, hoyoPost, nextBimonthly, nextWeekly } from './HoyoClient.ts';
 import { getPosts } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
@@ -137,7 +137,7 @@ export class ZzzClient extends HoyoClient {
             abyss_duty: {
                 cur_duty: number;
                 max_duty: number;
-            };
+            } | null;
             abyss_point: {
                 cur_point: number;
                 max_point: number;
@@ -146,14 +146,14 @@ export class ZzzClient extends HoyoClient {
         } = await hoyoRequest(this.root_url + `abyss_abstract?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.hz = {
             commission: {
-                cur: response.abyss_duty.cur_duty,
-                max: response.abyss_duty.max_duty
+                cur: response.abyss_duty?.cur_duty ?? 0,
+                max: response.abyss_duty?.max_duty ?? 4
             },
             investigation: {
                 cur: response.abyss_point.cur_point,
                 max: response.abyss_point.max_point
             },
-            recovery_time: cur + response.refresh_time
+            recovery_time: response.refresh_time == 0 ? nextWeekly() : cur + response.refresh_time
         };
         if (this.hz.commission.cur >= this.hz.commission.cur) zzzWeekly.setInactive(this.discord_id);
         return this.hz;
@@ -225,11 +225,11 @@ export class ZzzClient extends HoyoClient {
             return floor.rating === "S" ? count + 1 : count;
         }, 0);
         this.cn = {
-            // 13 hours
+            // TODO: need a better way to count S-ranks
             recovery_time: nextBimonthly(),
             s_ranks: {
                 cur: s_rank_count,
-                max: 7
+                max: 4
             },
             floors
         };

@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import sql from "../SQLite.js";
-import { request } from "../functions.js";
+import { request, timeOnNext } from "../functions.js";
 import { MessageCreateOptions } from "discord.js";
 
 export interface Post {
@@ -25,9 +25,9 @@ export interface HoyoEvent {
     done: boolean,
     start_time: number,
     recovery_time: number,
-    current?: number,
-    max?: number,
-    started?: boolean
+    started?: boolean,
+    current: number,
+    max: number
 };
 
 export interface User {
@@ -218,4 +218,7 @@ export function next16thMonthly() {
 }
 export function nextBimonthly() {
     return Math.min(next1stMonthly(), next16thMonthly())
+}
+export function nextWeekly() {
+    return timeOnNext(7*24*60*60, 9*60*60+4*24*60*60);
 }

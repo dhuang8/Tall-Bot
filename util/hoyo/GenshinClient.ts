@@ -203,8 +203,8 @@ export class GenshinClient extends HoyoClient {
                 start_time: parseInt(event.start_timestamp),
                 done: event.is_finished,
                 recovery_time: parseInt(event.end_timestamp),
-                current: event.explore_detail?.explore_percent,
-                max: event.explore_detail ? 100 : undefined,
+                current: +event.is_finished,
+                max: 1,
                 started: event.status == 2
             }
         }).sort((a,b)=>{
@@ -293,12 +293,14 @@ export class GenshinClient extends HoyoClient {
                 let progress = (event.max && event.max > 1) ? `${event.current}/${event.max}` : ""
                 ongoingEventLines.push(crossIfTrue(
                     event.done,
-                    `**${event.name}** ${progress} ends in <t:${event.recovery_time}:R>`
+                    `**${event.name}** ${progress} ends <t:${event.recovery_time}:R>`
                 ));
             } else {
-                upcomingEventLines.push(
-                    `${event.name}`
-                );
+                if (event.recovery_time > 0) {
+                    upcomingEventLines.push(`**${event.name}** starts <t:${event.recovery_time}:R>`);
+                } else {
+                    upcomingEventLines.push(`**${event.name}**`);
+                }
             }
         }
         if (ongoingEventLines.length > 0) embed.addFields({ name: `Active Events`, value: ongoingEventLines.join("\n") });
@@ -374,12 +376,12 @@ export class GenshinClient extends HoyoClient {
         })
         let now = Math.floor(Date.now() / 1000);
         this.events.filter(event => {
-            return event.started
+            return event.started;
         }).forEach(event => {
             timers.push({
                 name: `Genshin ${event.name}`,
-                current: event.current ?? +event.done,
-                max: event.max ?? 1,
+                current: event.current,
+                max: event.max,
                 done: event.done,
                 recovery_time: event.recovery_time
             })

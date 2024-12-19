@@ -421,11 +421,11 @@ export class HsrClient extends HoyoClient {
             if (event.start_time < now) {
                 ongoingEventLines.push(crossIfTrue(
                     event.done,
-                    `${event.name} ends in <t:${event.recovery_time}:R>`
+                    `**${event.name}** ends <t:${event.recovery_time}:R>`
                 ));
             } else {
                 upcomingEventLines.push(
-                    `${event.name} starts in <t:${event.recovery_time}:R>`
+                    `**${event.name}** starts <t:${event.recovery_time}:R>`
                 );
             }
         }

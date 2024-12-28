@@ -213,6 +213,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                 let lines = [];
                 lines.push(`**Stars**: ${node.stars.cur}/${node.stars.max}`);
                 lines.push(`**Score**: ${node.score}`);
+                lines.push(`**Buff**: ${node.buff}`);
                 node.team.chars.forEach(char => {
                     lines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
                 })

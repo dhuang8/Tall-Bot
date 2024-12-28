@@ -33,6 +33,7 @@ export class ZzzClient extends HoyoClient {
     bc?: ZzzBattleChronicle;
     hz?: ZzzHollowZero;
     cn?: ZzzCriticalNode;
+    da?: ZzzDeadlyAssault;
     signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
@@ -75,6 +76,12 @@ export class ZzzClient extends HoyoClient {
     async battleChronicle(): Promise<ZzzBattleChronicle> {
         let cur = Math.floor(Date.now() / 1000);
         const response: {
+            bounty_commission: {
+                num: number,
+ 				total: number,
+                refresh_time: number,
+            },
+            card_sign: "CardSignNo" | "CardSignDone",
             energy: {
                 progress: {
                     max: number;
@@ -93,8 +100,7 @@ export class ZzzClient extends HoyoClient {
                 cur_point: number,
                 max_point: number,
                 refresh_time: number
-            } | null,
-            card_sign: "CardSignNo" | "CardSignDone";
+            } | null
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
             battery_charge: {
@@ -118,8 +124,14 @@ export class ZzzClient extends HoyoClient {
                 recovery_time: timeOnNext(24 * 60 * 60, 9 * 60 * 60)
             },
             weekly: {
-                current: response.weekly_task?.cur_point ?? 0,
-                max: response.weekly_task?.max_point ?? 1300,
+				weekly_points: {
+					current: response.weekly_task?.cur_point ?? 0,
+					max: response.weekly_task?.max_point ?? 1300,
+				},
+				bounty_commission: {
+					current: response.bounty_commission.num,
+					max: response.bounty_commission.total
+				},
                 recovery_time: response.weekly_task ? cur + response.weekly_task.refresh_time : timeOnNext(7*24*60*60, 9*60*60+4*24*60*60),
             }
         };
@@ -128,10 +140,25 @@ export class ZzzClient extends HoyoClient {
                 && this.bc.daily.scratch_card.current >= this.bc.daily.scratch_card.max 
                 && this.bc.daily.video_store.current >= this.bc.daily.video_store.max)
             zzzDaily.setInactive(this.discord_id);
+		if (this.bc.weekly.bounty_commission.current >= this.bc.weekly.bounty_commission.max 
+				&& this.bc.weekly.weekly_points.current >= this.bc.weekly.weekly_points.max)
+			zzzWeekly.setInactive(this.discord_id);
         return this.bc;
     }
 
-    async hollowZero(): Promise<ZzzHollowZero> {
+    async lostVoid() {
+        let cur = Math.floor(Date.now() / 1000);
+        const response: {
+            abyss_duty: {
+                cur_duty: number;
+                max_duty: number;
+            } | null;
+            refresh_time: number;
+        } = await hoyoRequest(this.root_url + `abysss2_abstract?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
+        return response;
+    }
+
+    async witheredDomain() {
         let cur = Math.floor(Date.now() / 1000);
         const response: {
             abyss_duty: {
@@ -144,16 +171,28 @@ export class ZzzClient extends HoyoClient {
             };
             refresh_time: number;
         } = await hoyoRequest(this.root_url + `abyss_abstract?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
+        return response;
+    }
+
+    async hollowZero(): Promise<ZzzHollowZero> {
+        let cur = Math.floor(Date.now() / 1000);
+        let [lv, wd] = await Promise.all([this.lostVoid(), this.witheredDomain()]);
+        let recovery_time = lv.refresh_time || wd.refresh_time;
+        if (recovery_time == 0) {
+            recovery_time += cur;
+        } else {
+            recovery_time = nextWeekly();
+        }
         this.hz = {
             commission: {
-                cur: response.abyss_duty?.cur_duty ?? 0,
-                max: response.abyss_duty?.max_duty ?? 4
+                cur: lv.abyss_duty?.cur_duty ?? wd.abyss_duty?.cur_duty ?? 0,
+                max: lv.abyss_duty?.max_duty ?? wd.abyss_duty?.max_duty ?? 4
             },
-            investigation: {
-                cur: response.abyss_point.cur_point,
-                max: response.abyss_point.max_point
-            },
-            recovery_time: response.refresh_time == 0 ? nextWeekly() : cur + response.refresh_time
+            // investigation: {
+            //     cur: response.abyss_point.cur_point,
+            //     max: response.abyss_point.max_point
+            // },
+            recovery_time
         };
         if (this.hz.commission.cur >= this.hz.commission.cur) zzzWeekly.setInactive(this.discord_id);
         return this.hz;
@@ -237,6 +276,86 @@ export class ZzzClient extends HoyoClient {
         return this.cn;
     }
 
+    async deadass(type: number = 1): Promise<ZzzDeadlyAssault> {
+        const response: {
+            end_time: {
+                year: number,
+                month: number,
+                day: number,
+                hour: number,
+                minute: number,
+                second: number
+            },
+			list: {
+				avatar_list: {
+					id: number,
+					level: number,
+					rank: number
+				}[],
+				boss: {
+					name: string
+				}[],
+				buddy: {
+					id: number,
+					level: number
+				},
+				buffer: {
+					name: string
+				}[],
+				score: number,
+				star: 3,
+				total_star: 3
+			}[],
+			rank_percent: number,
+			total_score: number,
+			total_star: number
+        } = await hoyoRequest(this.root_url + `mem_detail?region=prod_gf_us&uid=${this.uid}&schedule_type=${type}`, this.cookie);
+		let end_time = response.end_time;
+        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
+		let recovery_time = end_date.getTime() / 1000;
+        const floors = response.list.map(node => {
+			let boss = node.boss[0].name;
+			let bangboo = {
+				name: zzzBangbooMap[node.buddy.id],
+				level: node.buddy.level
+			}
+			let buff = node.buffer[0].name;
+			let chars = node.avatar_list.map(char => {
+				return {
+					level: char.level,
+					name: zzzCharIdToName[char.id],
+					cinema: char.rank
+				}
+			})
+			return {
+				score: node.score,
+				stars: {
+					cur: node.star,
+					max: node.total_star
+				},
+				boss,
+				team: {
+					chars,
+					bangboo
+				},
+				buff
+			}
+        });
+        this.da = {
+			stars: {
+				// total_star might be the max or cur idk
+				cur: response.total_star,
+				max: 9
+			},
+			score: response.total_score,
+			top: response.rank_percent/100,
+			recovery_time,
+			nodes: floors,
+
+        };
+        return this.da;
+    }
+
     async actCalendar() {
         const response: {
             act_list: {
@@ -263,13 +382,13 @@ export class ZzzClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.cn) prom.push(this.criticalNode());
         if (!this.signIn) prom.push(this.dailyInfo());
-        if (!this.hz) prom.push(this.hollowZero());
+        // if (!this.hz) prom.push(this.hollowZero());
         await Promise.all(prom);
 
         if (!this.bc) throw new Error('bc is undefined');
         if (!this.signIn) throw new Error('signIn is undefined');
         if (!this.cn) throw new Error('cn is undefined');
-        if (!this.hz) throw new Error('hz is undefined');
+        // if (!this.hz) throw new Error('hz is undefined');
 
         let descLines = [];
         descLines.push(`**Battery Power**: ${this.bc.battery_charge.current}/${this.bc.battery_charge.max}, capped <t:${this.bc.battery_charge.recovery_time}:R>`);
@@ -297,19 +416,19 @@ export class ZzzClient extends HoyoClient {
         embed.addFields({ name: `Daily reset <t:${this.bc.daily.recovery_time}:R>`, value: dailyLines.join("\n") });
 
         let weeklyLines = [];
+        // weeklyLines.push(crossIfTrue(
+        //     this.hz.investigation.cur >= this.hz.investigation.max,
+        //     `**Investigation Points**: ${this.hz.investigation.cur}/${this.hz.investigation.max}`
+        // ));
         weeklyLines.push(crossIfTrue(
-            this.hz.investigation.cur >= this.hz.investigation.max,
-            `**Investigation Points**: ${this.hz.investigation.cur}/${this.hz.investigation.max}`
+            this.bc.weekly.bounty_commission.current >= this.bc.weekly.bounty_commission.max,
+            `**Bounty Commissions**: ${this.bc.weekly.bounty_commission.current}/${this.bc.weekly.bounty_commission.max}`
         ));
         weeklyLines.push(crossIfTrue(
-            this.hz.commission.cur >= this.hz.commission.max,
-            `**Bounty Commissions**: ${this.hz.commission.cur}/${this.hz.commission.max}`
+            this.bc.weekly.weekly_points.current >= this.bc.weekly.weekly_points.max,
+            `**Ridu Weekly Points**: ${this.bc.weekly.weekly_points.current}/${this.bc.weekly.weekly_points.max}`
         ));
-        weeklyLines.push(crossIfTrue(
-            this.bc.weekly.current >= this.bc.weekly.max,
-            `**Ridu Weekly Points**: ${this.bc.weekly.current}/${this.bc.weekly.max}`
-        ));
-        embed.addFields({ name: `Weekly reset <t:${this.hz.recovery_time}:R>`, value: weeklyLines.join("\n") });
+        embed.addFields({ name: `Weekly reset <t:${this.bc.weekly.recovery_time}:R>`, value: weeklyLines.join("\n") });
 
         let endgameLines = [];
         endgameLines.push(crossIfTrue(
@@ -333,13 +452,13 @@ export class ZzzClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.cn) prom.push(this.criticalNode());
         if (!this.signIn) prom.push(this.dailyInfo());
-        if (!this.hz) prom.push(this.hollowZero());
+        // if (!this.hz) prom.push(this.hollowZero());
         await Promise.all(prom);
 
         if (!this.bc) throw new Error('bc is undefined');
         if (!this.signIn) throw new Error('signIn is undefined');
         if (!this.cn) throw new Error('cn is undefined');
-        if (!this.hz) throw new Error('hz is undefined');
+        // if (!this.hz) throw new Error('hz is undefined');
 
         let timers = [];
         timers.push({
@@ -371,11 +490,18 @@ export class ZzzClient extends HoyoClient {
             recovery_time: this.bc.daily.recovery_time
         })
         timers.push({
-            name: "ZZZ Hollow Zero",
-            current: this.hz.commission.cur,
-            max: this.hz.commission.max,
-            done: this.hz.commission.cur == this.hz.commission.max,
-            recovery_time: this.hz.recovery_time
+            name: "ZZZ Bounty Commissions",
+            current: this.bc.weekly.bounty_commission.current,
+            max: this.bc.weekly.bounty_commission.max,
+            done: this.bc.weekly.bounty_commission.current == this.bc.weekly.bounty_commission.max,
+            recovery_time: this.bc.weekly.recovery_time
+        })
+        timers.push({
+            name: "ZZZ Ridu Weekly Points",
+            current: this.bc.weekly.weekly_points.current,
+            max: this.bc.weekly.weekly_points.max,
+            done: this.bc.weekly.weekly_points.current == this.bc.weekly.weekly_points.max,
+            recovery_time: this.bc.weekly.recovery_time
         })
         timers.push({
             name: "ZZZ Critical Node",
@@ -459,10 +585,6 @@ export interface ZzzHollowZero {
         cur: number;
         max: number;
     };
-    investigation: {
-        cur: number;
-        max: number;
-    };
     recovery_time: number;
 }
 export interface ZzzBattleChronicle {
@@ -487,8 +609,14 @@ export interface ZzzBattleChronicle {
         recovery_time: number;
     },
     weekly: {
-        current: number;
-        max: number;
+		bounty_commission: {
+			current: number;
+			max: number;
+		},
+		weekly_points: {
+			current: number;
+			max: number;
+		},
         recovery_time: number;
     };
 }
@@ -501,18 +629,40 @@ export interface ZzzCriticalNode {
     floors: {
         name: string;
         rating: string;
-        teams: {
-            chars: {
-                level: number;
-                name: string;
-                cinema: number;
-            }[];
-            bangboo: {
-                name: string;
-                level: number;
-            };
-        }[];
+        teams: ZzzTeam[];
     }[];
+}
+export interface ZzzDeadlyAssault {
+    stars: {
+        cur: number,
+        max: number
+    },
+	score: number,
+	top: number,
+    recovery_time: number;
+    nodes: {
+		score: number,
+		stars: {
+			cur: number,
+			max: number
+		},
+        boss: string;
+        buff: string;
+        team: ZzzTeam;
+    }[];
+}
+interface ZzzTeam {
+	chars: ZzzCharacter[],
+	bangboo: Bangboo
+}
+interface ZzzCharacter {
+	level: number,
+	name: string,
+	cinema: number
+}
+interface Bangboo {
+	name: string,
+	level: number
 }
 async function banners(id: number, cookie: string): Promise<any> {
     const response = await hoyoRequest(`https://bbs-api-os.hoyolab.com/community/painter/wapi/banner/list?gids=${id}`, cookie);

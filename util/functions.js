@@ -3,7 +3,7 @@ import {Embed} from 'discord.js';
 export function timeOnNext(interval, offset) {
     interval *= 1000;
     offset *= 1000;
-    return Math.floor(((Math.floor((new Date().getTime()-offset) / interval)+1) * interval + offset) / 1000);
+    return Math.floor(((Math.floor((Date.now()-offset) / interval)+1) * interval + offset) / 1000);
 }
 
 export function escapeMarkdownText(str, noemotes = true) {

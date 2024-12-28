@@ -57,6 +57,19 @@ const slash = new SlashCommandBuilder()
         )
     )
     .addSubcommand(subcommand => 
+        subcommand.setName("deadly-assault")
+        .setDescription("Deadly Assault")
+        .addIntegerOption(option =>
+            option.setName('phase')
+            .setDescription('which phase')
+            .setRequired(true)
+            .addChoices(
+                {name: 'recent', value: 1},
+                {name: 'previous', value: 2}
+            )
+        )
+    )
+    .addSubcommand(subcommand => 
         subcommand.setName("set-alert")
         .setDescription("set alerts for various things")
         .addStringOption(option =>
@@ -172,11 +185,39 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                 floor.teams.forEach((team, i) => {
                     let teamLines = [];
                     team.chars.forEach(char => {
-                        teamLines.push(`Lv.${char.level} C${char.cinema} ${char.name}`);
+                        teamLines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
                     });
                     teamLines.push(`Lv.${team.bangboo.level} ${team.bangboo.name}`);
                     embed.addFields({name: `Team ${i+1}`, value: teamLines.join("\n"), inline: true});
                 })
+            })
+            await defer;
+            return {embeds: [embed]};
+        } case 'deadly-assault': {
+            // const uid = interaction.options.getInteger("uid");
+            const phase = interaction.options.getInteger("phase") ?? 1;
+            const defer = interaction.deferReply();
+            // let zzz;
+            // if (uid) zzz = new ZzzClient({uid});
+            // else zzz = new ZzzClient(interaction.user.id);
+            let zzz = new ZzzClient(interaction.user.id);
+            const da = await zzz.deadass(phase);
+            let descLines = [];
+            descLines.push(`This Deadly Assault ends <t:${da.recovery_time}:R>`);
+            descLines.push(`**Stars**: ${da.stars.cur}/${da.stars.max}`);
+            descLines.push(`**Top** ${da.top}%`);
+            let embed = new EmbedBuilder()
+                .setTitle('Zenless Zone Zero — Deadly Assault')
+                .setDescription(descLines.join("\n"))
+            da.nodes.forEach(node => {
+                let lines = [];
+                lines.push(`**Stars**: ${node.stars.cur}/${node.stars.max}`);
+                lines.push(`**Score**: ${node.score}`);
+                node.team.chars.forEach(char => {
+                    lines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
+                })
+                lines.push(`Lv.${node.team.bangboo.level} ${node.team.bangboo.name}`);
+                embed.addFields({name: node.boss, value: lines.join("\n")});
             })
             await defer;
             return {embeds: [embed]};

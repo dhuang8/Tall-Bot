@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuOptionBuilder, StringSelectMenuBuilder } from 'discord.js';
-import {getVoiceConnection , joinVoiceChannel, createAudioPlayer, createAudioResource, StreamType, demuxProbe } from '@discordjs/voice';
+import {getVoiceConnection , joinVoiceChannel, createAudioPlayer, createAudioResource } from '@discordjs/voice';
 import yt from 'play-dl';
 
 function escapeMarkdownText(str, noemotes = true) {

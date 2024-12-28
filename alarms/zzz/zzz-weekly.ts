@@ -15,10 +15,12 @@ class ZzzWeekly extends StaticAlarm {
 
     async executeUser(userAlarm: UserAlarm): Promise<void> {
         const zzz = new ZzzClient(userAlarm.user_id);
-        const hz = await zzz.hollowZero();
-        if (hz.commission.cur < hz.commission.max) {
+        const bc = await zzz.battleChronicle();
+        if (bc.weekly.weekly_points.current < bc.weekly.weekly_points.max || 
+            bc.weekly.bounty_commission.current < bc.weekly.bounty_commission.max
+        ) {
             const message = await zzz.buildUserEmbed();
-            message.content = `Hollow Zero resets <t:${hz.recovery_time}:R>.`;
+            message.content = `Weeklies resets <t:${bc.weekly.recovery_time}:R>.`;
             DiscordHelper.whisper(userAlarm.user_id, message);
         } else {
             DiscordHelper.sendToLog("zzz weeklies are done");

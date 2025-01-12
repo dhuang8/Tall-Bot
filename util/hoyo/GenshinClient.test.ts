@@ -39,7 +39,12 @@ test('genshin news', async () => {
     console.log(await GenshinClient.news());
 });
 
-test('genshin redeem', async () => {
-    const client = new GenshinClient("1234567890");
-    console.log((await client.redeem('RNIF6H9394K8')));
-});
+// test('genshin redeem', async () => {
+//     const client = new GenshinClient("1234567890");
+//     console.log((await client.redeem('RNIF6H9394K8')));
+// });
+
+// test('genshin test2', async () => {
+//     const client = new GenshinClient("1234567890");
+//     console.log((await client.test2()));
+// });

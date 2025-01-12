@@ -394,10 +394,28 @@ export class GenshinClient extends HoyoClient {
         return codes(2, this.cookie);
     }
 
-    async redeem(code: string): Promise<any> {
-        const response = await hoyoRequest(`https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?uid=${this.uid}&region=os_usa&lang=en&cdkey=${code}&game_biz=hk4e_global&sLangKey=en-us`, this.cookie);
-        return response;
-    }
+    // async redeem(code: string): Promise<any> {
+    //     const response = await hoyoRequest(`https://public-operation-hk4e.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?uid=${this.uid}&region=os_usa&lang=en&cdkey=${code}&game_biz=hk4e_global&sLangKey=en-us`, this.cookie);
+    //     return response;
+    // }
+
+    // async test(): Promise<any> {
+    //     const response = await hoyoPost(`https://sg-public-api.hoyoverse.com/account/ma-passport/token/getBySToken`, this.cookie.replace("ltmid_v2", "mid"), {
+    //         "dst_token_types": [2,4]
+    //     },{
+    //         "x-rpc-app_id": "c9oqaq3s3gu8",
+    //     });
+    //     return response;
+    // }
+
+    // async test2(): Promise<any> {
+    //     const response = await hoyoPost(`https://sg-public-api.hoyoverse.com/account/ma-passport/token/verifyCookieToken`, this.cookie, {
+    //         "dst_token_types": [2,4]
+    //     },{
+    //         "x-rpc-app_id": "ce1tbuwb00zk",
+    //     });
+    //     return response;
+    // }
 
     static async news() {
         return getPosts(1015537, '');

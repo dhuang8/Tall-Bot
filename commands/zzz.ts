@@ -205,6 +205,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
             let descLines = [];
             descLines.push(`This Deadly Assault ends <t:${da.recovery_time}:R>`);
             descLines.push(`**Stars**: ${da.stars.cur}/${da.stars.max}`);
+            descLines.push(`**Total Score**: ${da.score}`);
             descLines.push(`**Top** ${da.top}%`);
             let embed = new EmbedBuilder()
                 .setTitle('Zenless Zone Zero — Deadly Assault')

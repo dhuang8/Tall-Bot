@@ -76,12 +76,14 @@ export class ZzzClient extends HoyoClient {
     async battleChronicle(): Promise<ZzzBattleChronicle> {
         let cur = Math.floor(Date.now() / 1000);
         const response: {
+			abyss_refresh: number,
             bounty_commission: {
                 num: number,
  				total: number,
                 refresh_time: number,
             },
             card_sign: "CardSignNo" | "CardSignDone",
+			coffee: null,
             energy: {
                 progress: {
                     max: number;
@@ -89,6 +91,7 @@ export class ZzzClient extends HoyoClient {
                 };
                 restore: number;
             };
+			survey_points: null,
             vitality: {
                 max: number;
                 current: number;
@@ -218,6 +221,7 @@ export class ZzzClient extends HoyoClient {
                         level: number;
                         rank: number;
                     }[];
+                    battle_time: number,
                     buddy: {
                         id: number;
                         level: number;
@@ -230,6 +234,7 @@ export class ZzzClient extends HoyoClient {
                         level: number;
                         rank: number;
                     }[];
+                    battle_time: number,
                     buddy: {
                         id: number;
                         level: number;
@@ -251,7 +256,8 @@ export class ZzzClient extends HoyoClient {
                     bangboo: {
                         name: zzzBangbooMap[node.buddy.id],
                         level: node.buddy.level
-                    }
+                    },
+					time: node.battle_time
                 };
             });
             return {
@@ -452,12 +458,14 @@ export class ZzzClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.cn) prom.push(this.criticalNode());
         if (!this.signIn) prom.push(this.dailyInfo());
+        if (!this.da) prom.push(this.deadass());
         // if (!this.hz) prom.push(this.hollowZero());
         await Promise.all(prom);
 
         if (!this.bc) throw new Error('bc is undefined');
         if (!this.signIn) throw new Error('signIn is undefined');
         if (!this.cn) throw new Error('cn is undefined');
+        if (!this.da) throw new Error('da is undefined');
         // if (!this.hz) throw new Error('hz is undefined');
 
         let timers = [];
@@ -509,6 +517,13 @@ export class ZzzClient extends HoyoClient {
             max: this.cn.s_ranks.max,
             done: this.cn.s_ranks.cur == this.cn.s_ranks.max,
             recovery_time: this.cn.recovery_time
+        })
+        timers.push({
+            name: "ZZZ Deadly Assault",
+            current: this.da.stars.cur,
+            max: this.da.stars.max,
+            done: this.da.stars.cur == this.da.stars.max,
+            recovery_time: this.da.recovery_time
         })
         return timers;
     }

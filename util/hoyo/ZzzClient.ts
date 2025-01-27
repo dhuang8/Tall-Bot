@@ -271,7 +271,7 @@ export class ZzzClient extends HoyoClient {
         }, 0);
         this.cn = {
             // TODO: need a better way to count S-ranks
-            recovery_time: nextBimonthly(),
+            recovery_time: timeOnNext(7*24*60*60*2, 9*60*60+1*24*60*60),
             s_ranks: {
                 cur: s_rank_count,
                 max: 4
@@ -317,8 +317,7 @@ export class ZzzClient extends HoyoClient {
 			total_star: number
         } = await hoyoRequest(this.root_url + `mem_detail?region=prod_gf_us&uid=${this.uid}&schedule_type=${type}`, this.cookie);
 		let end_time = response.end_time;
-        let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
-		let recovery_time = end_date.getTime() / 1000;
+        let recovery_time = end_time ? new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute).getTime() / 1000 : timeOnNext(7*24*60*60*2, 9*60*60+8*24*60*60);
         const floors = response.list.map(node => {
 			let boss = node.boss[0].name;
 			let bangboo = {

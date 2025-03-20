@@ -19,7 +19,7 @@
   },
   "scripts": {
     "test": "jest",
-    "start": "npx tsx .\\index.js"
+    "start": "npx tsx index.js"
   },
   "author": "",
   "license": "ISC",

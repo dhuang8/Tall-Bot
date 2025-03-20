@@ -387,12 +387,14 @@ export class ZzzClient extends HoyoClient {
         if (!this.bc) prom.push(this.battleChronicle());
         if (!this.cn) prom.push(this.criticalNode());
         if (!this.signIn) prom.push(this.dailyInfo());
+        if (!this.da) prom.push(this.deadass());
         // if (!this.hz) prom.push(this.hollowZero());
         await Promise.all(prom);
 
         if (!this.bc) throw new Error('bc is undefined');
         if (!this.signIn) throw new Error('signIn is undefined');
         if (!this.cn) throw new Error('cn is undefined');
+        if (!this.da) throw new Error('da is undefined');
         // if (!this.hz) throw new Error('hz is undefined');
 
         let descLines = [];
@@ -441,6 +443,13 @@ export class ZzzClient extends HoyoClient {
             `**S-Ranks**: ${this.cn.s_ranks.cur}/${this.cn.s_ranks.max}`
         ));
         embed.addFields({ name: `Critical Node reset <t:${this.cn.recovery_time}:R>`, value: endgameLines.join("\n") });
+
+        let daLines = [];
+        daLines.push(crossIfTrue(
+            this.da.stars.cur >= this.da.stars.max,
+            `**Stars**: ${this.da.stars.cur}/${this.da.stars.max}`
+        ));
+        embed.addFields({ name: `Deadly Assault reset <t:${this.cn.recovery_time}:R>`, value: daLines.join("\n") });
 
         const refreshButton = new ButtonBuilder()
             .setCustomId(`zzz|${this.discord_id}`)

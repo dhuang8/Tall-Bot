@@ -26,7 +26,7 @@ export class HsrClient extends HoyoClient {
     constructor(user_id: string) {
         super({
             discord_id: user_id,
-            root_url: 'https://bbs-api-os.hoyolab.com/game_record/hkrpg/api/'
+            root_url: 'https://sg-public-api.hoyolab.com/event/game_record/hkrpg/api/'
         })
     }
 

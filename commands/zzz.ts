@@ -184,6 +184,9 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                 embed.addFields({name: floor.name, value: lines.join("\n")});
                 floor.teams.forEach((team, i) => {
                     let teamLines = [];
+                    const minutes = Math.floor(team.time / 60);
+                    const seconds = team.time % 60;
+                    teamLines.push(`**Time**: ${minutes}m ${seconds}s`);
                     team.chars.forEach(char => {
                         teamLines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
                     });

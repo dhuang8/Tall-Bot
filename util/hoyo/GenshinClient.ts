@@ -14,12 +14,29 @@ import genshinTransformer from '../../alarms/genshin/genshin-transformer.ts';
 
 let genshinCharMap: { [key: number]: string; } = [];
 
+/*
 request("https://api.uigf.org/dict/genshin/en.json").then(res => {
     let chars: {[key: string]: number} = res;
     Object.entries(chars).forEach(entry => {
         genshinCharMap[entry[1]] = entry[0];
     })
 });
+*/
+async function getCharNameFromId(id: number): Promise<string> {
+    if (genshinCharMap[id]) return genshinCharMap[id];
+    await updateCharMap();
+    if (genshinCharMap[id]) return genshinCharMap[id];
+    return `Unknown (${id})`;
+}
+
+async function updateCharMap() {
+    let body = await request("https://api.hakush.in/gi/data/character.json") as { [key: string]: { EN: string } };
+    Object.entries(body).forEach(entry => {
+        genshinCharMap[parseInt(entry[0])] = entry[1].EN;
+    })
+}
+
+updateCharMap();
 
 export class GenshinClient extends HoyoClient {
     bc?: GenshinBattleChronicle;
@@ -124,34 +141,34 @@ export class GenshinClient extends HoyoClient {
                 }[];
             }[];
         } = await hoyoRequest(this.root_url + `spiralAbyss?server=os_usa&role_id=${this.uid}&schedule_type=1`, this.cookie);
-        const floors = response.floors.map(floor => {
-            const chambers = floor.levels.map(chamber => {
-                const sides = chamber.battles.map(side => {
-                    const team = side.avatars.map(char => {
+        const floors = await Promise.all(response.floors.map(async floor => {
+            const chambers = await Promise.all(floor.levels.map(async chamber => {
+                const sides = await Promise.all(chamber.battles.map(async side => {
+                    const team = await Promise.all(side.avatars.map(async char => {
                         return {
                             level: char.level,
-                            name: genshinCharMap[char.id]
+                            name: await getCharNameFromId(char.id)
                         };
-                    });
+                    }));
                     return {
                         num: side.index,
                         team
                     };
-                });
+                }));
                 return {
                     num: chamber.index,
                     stars: chamber.star,
                     max_stars: chamber.max_star,
                     sides
                 };
-            });
+            }));
             return {
                 num: floor.index,
                 max_stars: floor.max_star,
                 stars: floor.star,
                 chambers
             };
-        });
+        }));
         this.sa = {
             name: "Spiral Abyss",
             current: response.total_star,

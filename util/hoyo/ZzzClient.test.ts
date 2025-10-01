@@ -5,6 +5,11 @@ test('zzz battleChronicle', async () => {
     console.log(await client.battleChronicle());
 });
 
+test('zzz critical node', async () => {
+    const client = new ZzzClient("1234567890");
+    console.log(await client.criticalNode());
+});
+
 test('zzz deadass', async () => {
     const client = new ZzzClient("1234567890");
     console.log(await client.deadass());

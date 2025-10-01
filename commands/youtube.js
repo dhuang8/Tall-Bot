@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuOptionBuilder, StringSelectMenuBuilder } from 'discord.js';
 import {getVoiceConnection , joinVoiceChannel, createAudioPlayer, createAudioResource } from '@discordjs/voice';
+import { useMainPlayer } from "discord-player"
 import yt from 'play-dl';
 
 function escapeMarkdownText(str, noemotes = true) {
@@ -76,8 +77,19 @@ const buttonClick = async function(interaction) {
     let args = interaction.customId.split("|");
     switch (args[1]){
         case "play": {
-            let user_channel_id = interaction.member?.voice?.channel?.id
-            if (!user_channel_id) return;
+            // let user_channel = interaction.member?.voice?.channel
+            // if (!user_channel) return;
+            // const player = useMainPlayer();
+            // const result = await player.search(`https://youtu.be/u_FRDqHT5y0`, {
+            //     requestedBy: interaction.user
+            // });
+            // console.log(result);
+            // try {
+            //     await player.play(user_channel, `https://youtu.be/u_FRDqHT5y0`);
+            // } catch (e) {
+            //     console.error(e);
+            // }
+            /*
             let connection = getVoiceConnection(interaction.guildId);
             if (connection) {
                 if (connection.joinConfig.channelId != user_channel_id) connection = undefined;
@@ -110,6 +122,7 @@ const buttonClick = async function(interaction) {
             audioPlayer.play(audioResource);
 
             connection.subscribe(audioPlayer);
+            */
             /*if (interaction.message.components[1].components[0].placeholder != `Volume: 100%`){
                 interaction.message.components[1].components[0].setPlaceholder(`Volume: 100%`)
                 interaction.update({content: interaction.message.content, components: interaction.message.components})

@@ -8,13 +8,35 @@ import hsrSu from '../../alarms/hsr/hsr-su.ts';
 import hsrTp from '../../alarms/hsr/hsr-tp.ts';
 import hsrWeekly from '../../alarms/hsr/hsr-weekly.ts';
 
-let hsrCharMap: {[key: number]: {name: string}} = {};
-request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json").then(body => {
-    hsrCharMap = JSON.parse(body);
-    hsrCharMap[8001].name = hsrCharMap[8002].name = "Trailblazer (Physical)"
-    hsrCharMap[8003].name = hsrCharMap[8004].name = "Trailblazer (Fire)"
-    hsrCharMap[8005].name = hsrCharMap[8006].name = "Trailblazer (Imaginary)"
-});
+let hsrCharMap: {[key: number]: string} = {};
+
+async function getNameFromId(id: number): Promise<string> {
+    if (hsrCharMap[id]) return hsrCharMap[id];
+    await updateCharMap();
+    if (hsrCharMap[id]) return hsrCharMap[id];
+    return `Unknown (${id})`;
+}
+
+async function updateCharMap() {
+    let body = await request("https://api.hakush.in/hsr/data/character.json");
+    Object.entries(body).forEach(([id, data]) => {
+        hsrCharMap[parseInt(id)] = (data as { en: string })['en'];
+    })
+    hsrCharMap[8001] = hsrCharMap[8002] = "Trailblazer (Physical)";
+    hsrCharMap[8003] = hsrCharMap[8004] = "Trailblazer (Fire)";
+    hsrCharMap[8005] = hsrCharMap[8006] = "Trailblazer (Imaginary)";
+    hsrCharMap[8007] = hsrCharMap[8008] = "Trailblazer (Ice)";
+    hsrCharMap[8009] = hsrCharMap[8010] = "Trailblazer (Unknown)";
+    // let body = await request("https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/index_min/en/characters.json").then(body => {
+    //     hsrCharMap = JSON.parse(body);
+    //     hsrCharMap[8001].name = hsrCharMap[8002].name = "Trailblazer (Physical)"
+    //     hsrCharMap[8003].name = hsrCharMap[8004].name = "Trailblazer (Fire)"
+    //     hsrCharMap[8005].name = hsrCharMap[8006].name = "Trailblazer (Imaginary)"
+    //     hsrCharMap[8007].name = hsrCharMap[8008].name = "Trailblazer (Imaginary)"
+    // });
+}
+
+updateCharMap();
 
 export class HsrClient extends HoyoClient {
     bc?: HsrBattleChronicle;
@@ -132,25 +154,26 @@ export class HsrClient extends HoyoClient {
                 };
             }[];
         } = await hoyoRequest(this.root_url + `challenge?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
-        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
-            const teams = [floor.node_1, floor.node_2].map(node => {
+        const floors = await Promise.all(response.all_floor_detail.filter(floor => !floor.is_fast).map(async floor => {
+            const teams = await Promise.all([floor.node_1, floor.node_2].map(async node => {
                 return {
-                    chars: node.avatars.map(char => {
+                    chars: await Promise.all(node.avatars.map(async char => {
                         return {
                             level: char.level,
-                            name: hsrCharMap[char.id].name,
+                            name: await getNameFromId(char.id),
                             eidolon: char.rank
                         };
-                    })
+                    }))
+
                 };
-            });
+            }));
             return {
                 name: floor.name,
                 cycles: floor.round_num,
                 stars: floor.star_num,
                 teams
             };
-        });
+        }));
         const end_time = response.end_time;
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {
@@ -205,28 +228,28 @@ export class HsrClient extends HoyoClient {
                 };
             }[];
         } = await hoyoRequest(this.root_url + `challenge_story?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
-        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
-            const teams = [floor.node_1, floor.node_2].map(node => {
-                const chars = node.avatars.map(char => {
+        const floors = await Promise.all(response.all_floor_detail.filter(floor => !floor.is_fast).map(async floor => {
+            const teams = await Promise.all([floor.node_1, floor.node_2].map(async node => {
+                const chars = await Promise.all(node.avatars.map(async char => {
                     return {
                         level: char.level,
-                        name: hsrCharMap[char.id].name,
+                        name: await getNameFromId(char.id),
                         eidolon: char.rank
                     };
-                });
+                }));
                 return {
                     buff: node.buff.name_mi18n,
                     score: node.score,
                     chars
                 };
-            });
+            }));
             return {
                 name: floor.name,
                 cycles: floor.round_num,
                 stars: floor.star_num,
                 teams
             };
-        });
+        }));
         const end_time = response.groups[type - 1].end_time;
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {
@@ -281,28 +304,28 @@ export class HsrClient extends HoyoClient {
                 };
             }[];
         } = await hoyoRequest(this.root_url + `challenge_boss?schedule_type=${type}&server=prod_official_usa&role_id=${this.uid}&need_all=${need_all}`, this.cookie);
-        const floors = response.all_floor_detail.filter(floor => !floor.is_fast).map(floor => {
-            const teams = [floor.node_1, floor.node_2].map(node => {
-                const chars = node.avatars.map(char => {
+        const floors = await Promise.all(response.all_floor_detail.filter(floor => !floor.is_fast).map(async floor => {
+            const teams = await Promise.all([floor.node_1, floor.node_2].map(async node => {
+                const chars = await Promise.all(node.avatars.map(async char => {
                     return {
                         level: char.level,
-                        name: hsrCharMap[char.id].name,
+                        name: await getNameFromId(char.id),
                         eidolon: char.rank
                     };
-                });
+                }));
                 return {
-                    buff: node.buff.name_mi18n,
+                    buff: node.buff?.name_mi18n,
                     score: node.score,
                     chars
                 };
-            });
+            }));
             return {
                 name: floor.name,
                 cycles: floor.round_num,
                 stars: floor.star_num,
                 teams
             };
-        });
+        }));
         const end_time = response.groups[type - 1].end_time;
         let end_date = new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute);
         return {

@@ -4,6 +4,8 @@ import AlarmManager from './util/alarm-manager.js';
 import DiscordHelperClass from './util/discord-helper.js';
 import config from './config.json' with { type: "json" };
 import { readdirSync } from 'fs';
+import { Player } from 'discord-player';
+import { YoutubeiExtractor, generateOauthTokens } from "discord-player-youtubei"
 
 const client = new Client({
     intents: [
@@ -13,6 +15,26 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates
     ]
 });
+
+// const player = new Player(client, {
+//     deafenOnJoin: true,
+//     ytdlOptions: {
+//         filter: "audioonly",
+//         quality: "highestaudio",
+//         highWaterMark: 1 << 25
+//     }
+// });
+// player.extractors.register(YoutubeiExtractor, {
+//     authentication: "",
+//     generateWithPoToken: true,
+//     streamOptions: {
+//         useClient: "WEB"
+//     }
+// })
+// player.events.on('playerStart', (queue, track) => queue.metadata.channel.send(`🎶 | Now playing **${track.title}**!`));
+// player.events.on('error', (queue, error) => console.log(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`));
+// player.events.on('debug', (_queue, message) => console.log("debug", message));
+// player.events.on('playerError', console.error);
 
 client.commands = new Collection();
 AlarmManager.attachClient(client);

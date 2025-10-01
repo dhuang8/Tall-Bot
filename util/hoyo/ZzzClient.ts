@@ -14,20 +14,44 @@ let zzzCharIdToName: { [key: number]: string; } = {};
 let zzzCharNameToId: { [key: string]: number; } = {};
 let zzzBangbooMap: { [key: number]: string; } = {};
 
-request("https://api.hakush.in/zzz/data/character.json").then(body => {
-    let data: {[key: string]: {EN: string}} = body
-    Object.entries(data).forEach(entry => {
+async function updateCharMap() {
+    const body = await request("https://api.hakush.in/zzz/data/character.json") as { [key: string]: { EN: string } };
+    Object.entries(body).forEach(entry => {
         zzzCharIdToName[parseInt(entry[0])] = entry[1].EN
-        zzzCharNameToId[ entry[1].EN] =parseInt(entry[0])
+        zzzCharNameToId[entry[1].EN] = parseInt(entry[0])
     })
-})
+}
 
-request("https://api.hakush.in/zzz/data/bangboo.json").then(body => {
-    let data: {[key: string]: {EN: string}} = body
-    Object.entries(data).forEach(entry => {
+async function updateBangbooMap() {
+    const body = await request("https://api.hakush.in/zzz/data/bangboo.json") as { [key: string]: { EN: string } };
+    Object.entries(body).forEach(entry => {
         zzzBangbooMap[parseInt(entry[0])] = entry[1].EN
     })
-})
+}
+
+async function getCharNameFromId(id: number) {
+    if (zzzCharIdToName[id]) return zzzCharIdToName[id];
+    await updateCharMap();
+    if (zzzCharIdToName[id]) return zzzCharIdToName[id];
+    return `Unknown (${id})`;
+}
+
+async function getIdFromCharName(name: number) {
+    if (zzzCharNameToId[name]) return zzzCharNameToId[name];
+    await updateCharMap();
+    if (zzzCharNameToId[name]) return zzzCharNameToId[name];
+    return `Unknown (${name})`;
+}
+
+async function getBangbooNameFromId(id: number) {
+    if (zzzBangbooMap[id]) return zzzBangbooMap[id];
+    await updateBangbooMap();
+    if (zzzBangbooMap[id]) return zzzBangbooMap[id];
+    return `Unknown (${id})`;
+}
+
+updateCharMap();
+updateBangbooMap();
 
 export class ZzzClient extends HoyoClient {
     bc?: ZzzBattleChronicle;
@@ -92,17 +116,22 @@ export class ZzzClient extends HoyoClient {
                 restore: number;
             };
 			survey_points: null,
+            temple_running: {
+                currency_next_refresh_ts: string,
+                current_currency: number;
+                weekly_currency_max: number;
+            }
             vitality: {
                 max: number;
                 current: number;
             };
             vhs_sale: {
-                sale_state: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing"
+                sale_state: "SaleStateDone" | "SaleStateNo" | "SaleStateDoing";
             },
             weekly_task: {
-                cur_point: number,
-                max_point: number,
-                refresh_time: number
+                cur_point: number;
+                max_point: number;
+                refresh_time: number;
             } | null
         } = await hoyoRequest(this.root_url + `note?server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         this.bc = {
@@ -136,6 +165,11 @@ export class ZzzClient extends HoyoClient {
 					max: response.bounty_commission.total
 				},
                 recovery_time: response.weekly_task ? cur + response.weekly_task.refresh_time : timeOnNext(7*24*60*60, 9*60*60+4*24*60*60),
+            },
+            omnicoins: {
+                current: response.temple_running.current_currency,
+                max: response.temple_running.weekly_currency_max,
+                recovery_time: cur + parseInt(response.temple_running.currency_next_refresh_ts),
             }
         };
         zzzBc.updateNextTime(this.discord_id, this.bc.battery_charge.recovery_time);
@@ -243,29 +277,29 @@ export class ZzzClient extends HoyoClient {
                 };
             }[];
         } = await hoyoRequest(this.root_url + `challenge?server=prod_gf_us&role_id=${this.uid}&schedule_type=${type}`, this.cookie);
-        const floors = response.all_floor_detail.map(floor => {
-            const teams = [floor.node_1, floor.node_2].map(node => {
+        const floors = await Promise.all(response.all_floor_detail.map(async floor => {
+            const teams = await Promise.all([floor.node_1, floor.node_2].map(async node => {
                 return {
-                    chars: node.avatars.map(char => {
+                    chars: await Promise.all(node.avatars.map(async char => {
                         return {
                             level: char.level,
-                            name: zzzCharIdToName[char.id],
+                            name: await getCharNameFromId(char.id),
                             cinema: char.rank
                         };
-                    }),
+                    })),
                     bangboo: {
-                        name: zzzBangbooMap[node.buddy.id],
+                        name: await getBangbooNameFromId(node.buddy.id),
                         level: node.buddy.level
                     },
 					time: node.battle_time
                 };
-            });
+            }));
             return {
                 name: floor.zone_name,
                 rating: floor.rating,
                 teams
             };
-        });
+        }));
         let s_rank_count = floors.reduce((count, floor) => {
             return floor.rating === "S" ? count + 1 : count;
         }, 0);
@@ -318,20 +352,20 @@ export class ZzzClient extends HoyoClient {
         } = await hoyoRequest(this.root_url + `mem_detail?region=prod_gf_us&uid=${this.uid}&schedule_type=${type}`, this.cookie);
 		let end_time = response.end_time;
         let recovery_time = end_time ? new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute).getTime() / 1000 : timeOnNext(7*24*60*60*2, 9*60*60+8*24*60*60);
-        const floors = response.list.map(node => {
+        const floors = await Promise.all(response.list.map(async node => {
 			let boss = node.boss[0].name;
 			let bangboo = {
-				name: zzzBangbooMap[node.buddy.id],
+				name: await getBangbooNameFromId(node.buddy.id),
 				level: node.buddy.level
 			}
 			let buff = node.buffer[0].name;
-			let chars = node.avatar_list.map(char => {
+			let chars = await Promise.all(node.avatar_list.map(async char => {
 				return {
 					level: char.level,
-					name: zzzCharIdToName[char.id],
+					name: await getCharNameFromId(char.id),
 					cinema: char.rank
 				}
-			})
+			}))
 			return {
 				score: node.score,
 				stars: {
@@ -345,7 +379,7 @@ export class ZzzClient extends HoyoClient {
 				},
 				buff
 			}
-        });
+        }));
         this.da = {
 			stars: {
 				// total_star might be the max or cur idk
@@ -436,6 +470,13 @@ export class ZzzClient extends HoyoClient {
             `**Ridu Weekly Points**: ${this.bc.weekly.weekly_points.current}/${this.bc.weekly.weekly_points.max}`
         ));
         embed.addFields({ name: `Weekly reset <t:${this.bc.weekly.recovery_time}:R>`, value: weeklyLines.join("\n") });
+
+        let monthlyLines = [];
+        monthlyLines.push(crossIfTrue(
+            this.bc.omnicoins.current >= this.bc.omnicoins.max,
+            `**Omnicoins**: ${this.bc.omnicoins.current}/${this.bc.omnicoins.max}`
+        ));
+        embed.addFields({ name: `Omnicoin reset <t:${this.bc.omnicoins.recovery_time}:R>`, value: monthlyLines.join("\n") });
 
         let endgameLines = [];
         endgameLines.push(crossIfTrue(
@@ -533,6 +574,13 @@ export class ZzzClient extends HoyoClient {
             done: this.da.stars.cur == this.da.stars.max,
             recovery_time: this.da.recovery_time
         })
+        timers.push({
+            name: "ZZZ Omincoins",
+            current: this.bc.omnicoins.current,
+            max: this.bc.omnicoins.max,
+            done: this.bc.omnicoins.current == this.bc.omnicoins.max,
+            recovery_time: this.bc.omnicoins.recovery_time
+        })
         return timers;
     }
 
@@ -598,6 +646,9 @@ export class ZzzClient extends HoyoClient {
             })
         };
     }
+    static redeem(code: string) {
+        //https://public-operation-nap.hoyolab.com/common/apicdkey/api/webExchangeCdkeyHyl?cdkey=${code}&game_biz=nap_global&lang=en&region=prod_gf_us&t=1748041243087&uid=${this.uid}
+    }
 
     static async news() {
         return getPosts(219270333, '');
@@ -641,6 +692,11 @@ export interface ZzzBattleChronicle {
 			max: number;
 		},
         recovery_time: number;
+    },
+    omnicoins: {
+        current: number;
+        max: number;
+        recovery_time: number;
     };
 }
 export interface ZzzCriticalNode {
@@ -652,7 +708,7 @@ export interface ZzzCriticalNode {
     floors: {
         name: string;
         rating: string;
-        teams: ZzzTeam[];
+        teams: (ZzzTeam & { time: number })[];
     }[];
 }
 export interface ZzzDeadlyAssault {

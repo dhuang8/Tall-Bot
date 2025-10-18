@@ -385,7 +385,7 @@ const execute = async (interaction) => {
                 .setDescription(descLines.join("\n"))
             as.floors.forEach(floor => {
                 let lines = [];
-                lines.push(':star:'.repeat(floor.stars));
+                lines.push(':star:'.repeat(floor.stars) + '‎');
                 embed.addFields({name: floor.name, value: lines.join("\n")});
                 floor.teams.forEach((team, i) => {
                     let teamLines = [];

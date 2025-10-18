@@ -4,12 +4,13 @@ import AlarmManager from './util/alarm-manager.js';
 import DiscordHelperClass from './util/discord-helper.js';
 import config from './config.json' with { type: "json" };
 import { readdirSync } from 'fs';
-import { Player } from 'discord-player';
-import { YoutubeiExtractor, generateOauthTokens } from "discord-player-youtubei"
+// import { Player } from 'discord-player';
+// import { YoutubeiExtractor, generateOauthTokens } from "discord-player-youtubei"
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages, 
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildVoiceStates
@@ -25,14 +26,17 @@ const client = new Client({
 //     }
 // });
 // player.extractors.register(YoutubeiExtractor, {
-//     authentication: "",
+//   innertubeConfigRaw: {
+//     player_id: '0004de42'
+//   },
+//     cookie: config.youtubei,
 //     generateWithPoToken: true,
 //     streamOptions: {
 //         useClient: "WEB"
 //     }
 // })
-// player.events.on('playerStart', (queue, track) => queue.metadata.channel.send(`🎶 | Now playing **${track.title}**!`));
-// player.events.on('error', (queue, error) => console.log(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`));
+// player.events.on('playerStart', (queue, track) => console.log(`Now playing ${track.title}`));
+// //player.events.on('error', (queue, error) => console.log(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`));
 // player.events.on('debug', (_queue, message) => console.log("debug", message));
 // player.events.on('playerError', console.error);
 

@@ -37,10 +37,12 @@ export abstract class HoyoNews extends Alarm {
                 sql.prepare("UPDATE alarms SET next_time = ?, extra_data=? WHERE id = ?").run(this.nextTime(), posts[0].id.toString(), this.id);
                 return;
             }
-            const lastId = parseInt(alarm.extra_data);
+            const lastCreated = parseInt(alarm.extra_data);
             let embeds = posts.filter(post => {
-                return post.id > lastId;
-            }).reverse().map(post => {
+                return post.created > lastCreated;
+            }).sort((a,b) => {
+                return a.created - b.created;
+            }).map(post => {
                 return new EmbedBuilder()
                     .setTitle(post.title.substring(0, 256))
                     .setDescription(post.description.substring(0, 5000))
@@ -54,7 +56,8 @@ export abstract class HoyoNews extends Alarm {
                     DiscordHelper.send(channel.channel_id, {embeds: embeds});
                 })
             }
-            sql.prepare("UPDATE alarms SET next_time = ?, extra_data=? WHERE id = ?").run(this.nextTime(), posts[0].id.toString(), this.id);
+            let maxCreated = Math.max(...posts.map(post => post.created));
+            sql.prepare("UPDATE alarms SET next_time = ?, extra_data=? WHERE id = ?").run(this.nextTime(), maxCreated, this.id);
         } catch (e) {
             sql.prepare("UPDATE alarms SET next_time = ? WHERE id = ?").run(this.nextTime(), this.id);
         }

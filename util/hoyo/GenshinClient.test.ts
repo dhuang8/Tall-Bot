@@ -39,6 +39,11 @@ test('genshin news', async () => {
     console.log(await GenshinClient.news());
 });
 
+test('genshin timers', async () => {
+    const client = new GenshinClient("1234567890");
+    console.log(await client.getTimers());
+})
+
 // test('genshin redeem', async () => {
 //     const client = new GenshinClient("1234567890");
 //     console.log((await client.redeem('RNIF6H9394K8')));

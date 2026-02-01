@@ -171,28 +171,23 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
             // if (uid) zzz = new ZzzClient({uid});
             // else zzz = new ZzzClient(interaction.user.id);
             let zzz = new ZzzClient(interaction.user.id);
-            const cn = await zzz.criticalNode(phase);
+            const cn = await zzz.newShiyu(phase);
             let descLines = [];
-            descLines.push(`This Critical Node ends <t:${cn.recovery_time}:R>`);
-            descLines.push(`**S-Ranks**: ${cn.s_ranks.cur}/${cn.s_ranks.max}`);
+            descLines.push(`This Shiyu Defense ends <t:${cn.recovery_time}:R>`);
+            descLines.push(`**Total Score**: ${cn.score}/100000`);
+            descLines.push(`**Top** ${cn.top}%`);
             let embed = new EmbedBuilder()
-                .setTitle('Zenless Zone Zero — Critical Node')
+                .setTitle('Zenless Zone Zero — Shiyu Defense')
                 .setDescription(descLines.join("\n"))
-            cn.floors.forEach(floor => {
+            cn.nodes?.forEach((node, i) => {
                 let lines = [];
-                lines.push(`**Rating**: ${floor.rating}`);
-                embed.addFields({name: floor.name, value: lines.join("\n")});
-                floor.teams.forEach((team, i) => {
-                    let teamLines = [];
-                    const minutes = Math.floor(team.time / 60);
-                    const seconds = team.time % 60;
-                    teamLines.push(`**Time**: ${minutes}m ${seconds}s`);
-                    team.chars.forEach(char => {
-                        teamLines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
-                    });
-                    teamLines.push(`Lv.${team.bangboo.level} ${team.bangboo.name}`);
-                    embed.addFields({name: `Team ${i+1}`, value: teamLines.join("\n"), inline: true});
-                })
+                lines.push(`**Score**: ${node.score}`);
+                lines.push(`**Buff**: ${node.buff}`);
+                node.team.chars.forEach(char => {
+                    lines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
+                });
+                lines.push(`Lv.${node.team.bangboo.level} ${node.team.bangboo.name}`);
+                embed.addFields({name: `Team ${i+1}`, value: lines.join("\n"), inline: true});
             })
             await defer;
             return {embeds: [embed]};
@@ -222,7 +217,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                     lines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
                 })
                 lines.push(`Lv.${node.team.bangboo.level} ${node.team.bangboo.name}`);
-                embed.addFields({name: node.boss, value: lines.join("\n")});
+                embed.addFields({name: node.boss, value: lines.join("\n"), inline: true});
             })
             await defer;
             return {embeds: [embed]};
@@ -263,6 +258,12 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                 descLines.push(`**Lv.${disk_drive.level}**`);
                 for (let sub_stat of disk_drive.sub_stats) {
                     descLines.push(`**${sub_stat.name}**: ${sub_stat.value}`)
+                }
+                if (disk_drive.cost) {
+                    descLines.push(`**Cost**: ${disk_drive.cost == Infinity ? Infinity : Math.floor(disk_drive.cost)}`);
+                }
+                if (disk_drive.score) {
+                    descLines.push(`**Score**: ${Math.floor(disk_drive.score)}`);
                 }
                 embed.addFields({name: disk_drive.name, value: descLines.join("\n").slice(0,1000), inline: true});
             }

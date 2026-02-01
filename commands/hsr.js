@@ -269,6 +269,11 @@ function createCharEmbed(char) {
             descLines.push(`**${sub.name}**: ${changeToPercent(sub)}`)
         }
         descLines.push(calcScore(name_for_relic, relic));
+        let new_score = HsrClient.getCdf(char.name, relic.type-1, relic);
+        if (new_score.cost > 0) {
+            descLines.push(`**Cost2**: ${Math.floor(new_score.cost)}`);
+            descLines.push(`**Score2**: ${Math.floor(new_score.score)}`);
+        }
         embed.addFields({name: relic.name, value: descLines.join("\n").slice(0,1000), inline: true});
     }
     // console.log(char.relic_sets.map(set => `${set.name} (${set.num}): ${set.desc}`).join("\n"));

@@ -15,13 +15,13 @@ class ZzzShiyuDefense extends StaticAlarm {
 
     async executeUser(userAlarm: UserAlarm): Promise<void> {
         const zzz = new ZzzClient(userAlarm.user_id);
-        const cn = await zzz.criticalNode();
-        if (cn.s_ranks.cur < cn.s_ranks.max) {
+        const cn = await zzz.newShiyu();
+        if (cn.score < 100_000) {
             const message = await zzz.buildUserEmbed();
-            message.content = `Critical Node ends <t:${cn.recovery_time}:R>.`;
+            message.content = `Shiyu ends <t:${cn.recovery_time}:R>.`;
             DiscordHelper.whisper(userAlarm.user_id, message);
         } else {
-            DiscordHelper.sendToLog("Critical Node is done");
+            DiscordHelper.sendToLog("Shiyu is done");
         }
     }
 }

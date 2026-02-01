@@ -21,7 +21,8 @@
   },
   "scripts": {
     "test": "jest",
-    "start": "npx tsx index.js"
+    "start": "npx tsx index.js",
+    "build-cdf": "npx tsx ./data/hoyo/hsr/hsrcdfbuilder.ts && npx tsx ./data/hoyo/zzz/zzzcdfbuilder.ts"
   },
   "author": "",
   "license": "ISC",

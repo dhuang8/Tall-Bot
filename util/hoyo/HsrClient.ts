@@ -7,6 +7,7 @@ import hsrEndgame from '../../alarms/hsr/hsr-endgame.ts';
 import hsrSu from '../../alarms/hsr/hsr-su.ts';
 import hsrTp from '../../alarms/hsr/hsr-tp.ts';
 import hsrWeekly from '../../alarms/hsr/hsr-weekly.ts';
+import fs from 'fs';
 
 let hsrCharMap: {[key: number]: string} = {};
 
@@ -542,6 +543,86 @@ export class HsrClient extends HoyoClient {
 
     static async news() {
         return getPosts(172534910, '');
+    }
+
+    static getCdf(name: string, slot:number,relic:{
+        main_affix: { type: string },
+        sub_affix: { type: string, count: number, step: number }[]
+    }) {
+        let cdf = null;
+        let path = `./data/hoyo/hsr/cdfs/${name}.json`
+        if (fs.existsSync(path)) {
+            // console.log("Loading CDF from", path);
+            cdf = new characterCdf(path);
+        } else {
+            // console.log("failed to load CDF from", path);
+            return 0;
+        }
+        if (cdf) {
+            // console.log("score", cdf.getCdf(slot, relic))
+            return cdf.getCdf(slot, relic);
+        }
+    }
+}
+
+class characterCdf {
+    scores: Uint32Array[] = [];
+    cdf: Float64Array[] = [];
+    character_scores: { [key: string]: number; };
+    constructor(file_path: string) {
+        let json = JSON.parse(fs.readFileSync(file_path, "utf-8"));
+        // console.log(json);
+        for (let i=0; i<json.serialized.length; i++) {
+            let {scores, cdf} = json.serialized[i];
+            let bytes = new Uint8Array(Buffer.from(scores, 'base64'));
+            this.scores[i] = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4);
+            bytes = new Uint8Array(Buffer.from(cdf, 'base64'));
+            this.cdf[i] = new Float64Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 8);
+        }
+        this.character_scores = json.char_score;
+    }
+
+    getMinScore(slot: number) {
+        return this.scores[slot][this.scores[slot].length - 1];
+    }
+
+    getMaxScore(slot: number) {
+        return this.scores[slot][0];
+    }
+
+    getCdf(slot: number, relic: {
+        main_affix: { type: string },
+        sub_affix: { type: string, count: number, step: number }[]
+    }) {
+        let main_score = this.character_scores[relic.main_affix.type] ?? 0;
+        let relic_score = main_score*500;
+        // console.log("main", relic_score);
+        for (let subs of relic.sub_affix) {
+            let sub_score = this.character_scores[subs.type] ?? 0;
+            // console.log("sub", sub_score*subs.count*40 + sub_score*subs.step*5);
+            // if speed, multi 6
+            relic_score += sub_score*subs.count*40 + sub_score*subs.step*5;
+            if (subs.type == "SpeedDelta") {
+                relic_score += sub_score*subs.step;
+            }
+        }
+        // console.log("relic score", relic_score);
+        let left = 0, right = this.scores[slot].length - 1;
+        while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            if (this.scores[slot][mid] <= relic_score) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        let chance = left < this.scores[slot].length ? this.cdf[slot][left] : 1;
+        if (slot > 3) chance *= 2;
+        // console.log("score", dd_score, "chance", chance, "slot", slot, "left", left);
+        return {
+            cost: 320/2.1/chance,
+            score: (relic_score-this.getMinScore(slot))*100/(this.getMaxScore(slot)-this.getMinScore(slot))
+        };
     }
 }
 

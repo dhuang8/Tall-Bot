@@ -68,12 +68,14 @@ test('hsr support-char', async () => {
     const interaction = new mockInteraction()
     interaction.user = {id: "1234567890"}
     interaction.options.setSubcommand("support-char");
-    interaction.options.setInteger("uid", uid);
+    interaction.options.setString("char-name", "Phainon");
+    // interaction.options.setInteger("uid", uid);
     let response = await execute(interaction);
-    // console.log(response.embeds[1].data.fields);
+    console.log(response.embeds[0].data.fields);
     // console.log(JSON.stringify(response, null, 4));o
-    expect(response.embeds.length).toBe(4);
+    expect(response.embeds.length).toBe(1);
 }, 10000);
+
 test('hsr redeem', async () => {
     const interaction = new mockInteraction()
     interaction.user = {id: "1234567890"}

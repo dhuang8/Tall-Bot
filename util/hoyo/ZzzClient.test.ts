@@ -5,9 +5,9 @@ test('zzz battleChronicle', async () => {
     console.log(await client.battleChronicle());
 });
 
-test('zzz critical node', async () => {
+test('zzz new shiyu', async () => {
     const client = new ZzzClient("1234567890");
-    console.log(await client.criticalNode());
+    console.log(await client.newShiyu());
 });
 
 test('zzz deadass', async () => {
@@ -32,10 +32,17 @@ test('zzz getTimers', async () => {
 
 test('zzz character', async () => {
     const client = new ZzzClient("1234567890");
-    console.log(await client.getCharacter(1251));
+    let c = await client.getCharacter(1431);
+    console.log(c);
 });
 
 test('zzz event', async () => {
     const client = new ZzzClient("1234567890");
     console.log(await client.actCalendar());
+});
+
+test('zzz cdf', async () => {
+    const client = new ZzzClient("1234567890");
+    let c = await client.getCharacter(1431);
+    console.log(c);
 });

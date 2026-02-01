@@ -1,6 +1,6 @@
 import { request, timeOnNext } from '../functions.js';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
-import { HoyoClient, Resource, User, hoyoPost, nextBimonthly, nextWeekly } from './HoyoClient.ts';
+import { ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageCreateOptions } from 'discord.js';
+import { HoyoClient, HoyoEvent, Resource, User, hoyoPost, nextBimonthly, nextWeekly } from './HoyoClient.ts';
 import { getPosts } from './HoyoClient.ts';
 import { hoyoRequest } from './HoyoClient.ts';
 import { crossIfTrue } from "./HoyoClient.ts";
@@ -8,6 +8,7 @@ import zzzBc from '../../alarms/zzz/zzz-bc.ts';
 import zzzDaily from '../../alarms/zzz/zzz-daily.ts';
 import zzzWeekly from '../../alarms/zzz/zzz-weekly.ts';
 import zzzShiyuDefense from '../../alarms/zzz/zzz-shiyu-defense.ts';
+import fs from 'fs';
 
 
 let zzzCharIdToName: { [key: number]: string; } = {};
@@ -53,11 +54,65 @@ async function getBangbooNameFromId(id: number) {
 updateCharMap();
 updateBangbooMap();
 
+class characterCdf {
+    scores: Uint32Array[] = [];
+    cdf: Float64Array[] = [];
+    character_scores: { [key: string]: number; };
+    constructor(file_path: string) {
+        let json = JSON.parse(fs.readFileSync(file_path, "utf-8"));
+        // console.log(json);
+        for (let i=0; i<json.serialized.length; i++) {
+            let {scores, cdf} = json.serialized[i];
+	        let bytes = new Uint8Array(Buffer.from(scores, 'base64'));
+	        this.scores[i] = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4);
+	        bytes = new Uint8Array(Buffer.from(cdf, 'base64'));
+	        this.cdf[i] = new Float64Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 8);
+        }
+        this.character_scores = json.char_score;
+    }
+
+    getMinScore(slot: number) {
+        return this.scores[slot][this.scores[slot].length - 1];
+    }
+
+    getMaxScore(slot: number) {
+        return this.scores[slot][0];
+    }
+
+	getCdf(slot: number, dd: {
+        main_properties: { property_id: number, level: number }[],
+        properties: { property_id: number, level: number }[]
+    }) {
+        let main_score = this.character_scores[dd.main_properties[0].property_id] ?? 0;
+        let dd_score = main_score*10;
+        for (let prop of dd.properties) {
+            let sub_score = this.character_scores[prop.property_id] ?? 0;
+            dd_score += sub_score*prop.level;
+        }
+		let left = 0, right = this.scores[slot].length - 1;
+		while (left <= right) {
+			const mid = Math.floor((left + right) / 2);
+			if (this.scores[slot][mid] <= dd_score) {
+				right = mid - 1;
+			} else {
+				left = mid + 1;
+			}
+		}
+		let chance = left < this.scores[slot].length ? this.cdf[slot][left] : 1;
+        // console.log("score", dd_score, "chance", chance, "slot", slot, "left", left);
+        return {
+            cost: 288/chance,
+            score: (dd_score-this.getMinScore(slot))*100/(this.getMaxScore(slot)-this.getMinScore(slot))
+        };
+	}
+}
+
 export class ZzzClient extends HoyoClient {
     bc?: ZzzBattleChronicle;
     hz?: ZzzHollowZero;
     cn?: ZzzCriticalNode;
     da?: ZzzDeadlyAssault;
+    events?: HoyoEvent[];
     signIn?: { checked: boolean; };
 
     constructor(user_id: string) {
@@ -77,6 +132,10 @@ export class ZzzClient extends HoyoClient {
 
     static getCharacterId(name: string) {
         return zzzCharNameToId[name];
+    }
+
+    static loadCharacterCdf(path: string) {
+        return new characterCdf(path);
     }
 
     async dailySignIn() {
@@ -235,52 +294,65 @@ export class ZzzClient extends HoyoClient {
         return this.hz;
     }
 
-    async criticalNode(type: number = 1): Promise<ZzzCriticalNode> {
+    async newShiyu(type: number = 1): Promise<ZzzCriticalNode> {
         const response: {
-            hadal_end_time?: {
-                year: number,
-                month: number,
-                day: number,
-                hour: number,
-                minute: number,
-                second: number
+            hadal_info_v2: {
+                brief: {
+                    max_score: number,
+                    rank_percent: number,
+                    rating: string,
+                    score: number
+                },
+                begin_time: string,
+                end_time: string,
+                fitfh_layer_detail: null | {
+                    layer_challenge_info_list: {
+                        avatar_list: {
+                            avatar_profession: number,
+                            element_type: number,
+                            id: number,
+                            level: number,
+                            rank: number,
+                            rarity: string,
+                            sub_element_type: number
+                        }[],
+                        battle_time: number,
+                        buddy: {
+                            id: number,
+                            level: number,
+                            rarity: string
+                        },
+                        buffer: {
+                            title: string,
+                            text: string
+                        },
+                        max_score: number,
+                        rating: string,
+                        score: number,
+                    }[]
+                },
+                hadal_end_time: {
+                    year: number,
+                    month: number,
+                    day: number,
+                    hour: number,
+                    minute: number,
+                    second: number
+                },
+                pass_fifth_floor: boolean
             }
-            all_floor_detail: {
-                zone_name: string;
-                layer_index: number;
-                rating: string;
-                node_1: {
-                    avatars: {
-                        id: number;
-                        level: number;
-                        rank: number;
-                    }[];
-                    battle_time: number,
-                    buddy: {
-                        id: number;
-                        level: number;
-                        rarity: string;
-                    };
-                };
-                node_2: {
-                    avatars: {
-                        id: number;
-                        level: number;
-                        rank: number;
-                    }[];
-                    battle_time: number,
-                    buddy: {
-                        id: number;
-                        level: number;
-                        rarity: string;
-                    };
-                };
-            }[];
-        } = await hoyoRequest(this.root_url + `challenge?server=prod_gf_us&role_id=${this.uid}&schedule_type=${type}`, this.cookie);
-        const floors = await Promise.all(response.all_floor_detail.map(async floor => {
-            const teams = await Promise.all([floor.node_1, floor.node_2].map(async node => {
-                return {
-                    chars: await Promise.all(node.avatars.map(async char => {
+        } = await hoyoRequest(this.root_url + `hadal_info_v2?server=prod_gf_us&role_id=${this.uid}&schedule_type=${type}`, this.cookie);
+        if (!response.hadal_info_v2.fitfh_layer_detail) {
+            this.cn = {
+                recovery_time: parseInt(response.hadal_info_v2.end_time),
+                score: 0
+            }
+            return this.cn;
+        };
+        const nodes = await Promise.all(response.hadal_info_v2.fitfh_layer_detail.layer_challenge_info_list.map(async node => {
+            return {
+                team: {
+                    chars: await Promise.all(node.avatar_list.map(async char => {
                         return {
                             level: char.level,
                             name: await getCharNameFromId(char.id),
@@ -290,29 +362,20 @@ export class ZzzClient extends HoyoClient {
                     bangboo: {
                         name: await getBangbooNameFromId(node.buddy.id),
                         level: node.buddy.level
-                    },
-					time: node.battle_time
-                };
-            }));
-            return {
-                name: floor.zone_name,
-                rating: floor.rating,
-                teams
-            };
-        }));
-        let s_rank_count = floors.reduce((count, floor) => {
-            return floor.rating === "S" ? count + 1 : count;
-        }, 0);
+                    }
+                },
+                buff: node.buffer.title,
+                score: node.score,
+            }
+        }))
         this.cn = {
-            // TODO: need a better way to count S-ranks
-            recovery_time: timeOnNext(7*24*60*60*2, 9*60*60+1*24*60*60),
-            s_ranks: {
-                cur: s_rank_count,
-                max: 4
-            },
-            floors
+            recovery_time: parseInt(response.hadal_info_v2.end_time),
+            score: response.hadal_info_v2.brief.score,
+            rating: response.hadal_info_v2.brief.rating,
+			top: response.hadal_info_v2.brief.rank_percent/100,
+            nodes
         };
-        if (this.cn.s_ranks.cur >= this.cn.s_ranks.max) zzzShiyuDefense.setInactive(this.discord_id);
+        if (this.cn.score >= 100_000) zzzShiyuDefense.setInactive(this.discord_id);
         return this.cn;
     }
 
@@ -397,29 +460,42 @@ export class ZzzClient extends HoyoClient {
 
     async actCalendar() {
         const response: {
-            act_list: {
-                all_finished: boolean,
+            activity_list: {
+                activity_id: number,
+                end_ts: number,
+                left_end_ts: number,
+                left_start_ts: number,
+                monochrome_cnt: number,
+                monochrome_got_cnt: number,
                 name: string,
-                time_info: {
-                    start_ts: string,
-                    end_ts: string
-                }
-                act_type: "ActivityTypeOther" | "ActivityTypeSign" | "ActivityTypeDouble",
-                act_time_type: "ActTimeTypeLong" | "ActTimeTypeDefault",
-                current_progress: number,
-                total_progress: number
+                start_ts: number,
+                state: "STATE_IN_PROGRESS" | "STATE_NOT_START" | "STATE_COMPLETED"
             }[]
-        } = await hoyoPost(this.root_url + `act_calendar`, this.cookie, {
-            "server": "prod_gf_us",
-            "role_id": this.uid
-        });
-        return;
+        } = await hoyoRequest(this.root_url + `activity_calendar?region=prod_gf_us&uid=${this.uid}`, this.cookie);
+        let now = Math.floor(Date.now() / 1000);
+        this.events = response.activity_list.map(event => {
+            return {
+                name: event.name,
+                start_time: event.start_ts,
+                done: event.monochrome_got_cnt >= event.monochrome_cnt,
+                recovery_time: event.end_ts,
+                current: event.monochrome_got_cnt,
+                max: event.monochrome_cnt,
+                started: event.state == "STATE_IN_PROGRESS"
+            }
+        }).sort((a,b)=>{
+            if (a.start_time < now && b.start_time < now) {
+                return a.recovery_time-b.recovery_time;
+            }
+            return +b.started - +a.started;
+        })
+        return this.events;
     }
 
-    async buildUserEmbed(): Promise<MessageCreateOptions> {
+    async buildUserEmbed(): Promise<BaseMessageOptions> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
-        if (!this.cn) prom.push(this.criticalNode());
+        if (!this.cn) prom.push(this.newShiyu());
         if (!this.signIn) prom.push(this.dailyInfo());
         if (!this.da) prom.push(this.deadass());
         // if (!this.hz) prom.push(this.hollowZero());
@@ -480,8 +556,8 @@ export class ZzzClient extends HoyoClient {
 
         let endgameLines = [];
         endgameLines.push(crossIfTrue(
-            this.cn.s_ranks.cur >= this.cn.s_ranks.max,
-            `**S-Ranks**: ${this.cn.s_ranks.cur}/${this.cn.s_ranks.max}`
+            this.cn.score >= 100_000,
+            `**Score**: ${this.cn.score}/300000`
         ));
         embed.addFields({ name: `Critical Node reset <t:${this.cn.recovery_time}:R>`, value: endgameLines.join("\n") });
 
@@ -505,9 +581,10 @@ export class ZzzClient extends HoyoClient {
     async getTimers(): Promise<Resource[]> {
         const prom = [];
         if (!this.bc) prom.push(this.battleChronicle());
-        if (!this.cn) prom.push(this.criticalNode());
+        if (!this.cn) prom.push(this.newShiyu());
         if (!this.signIn) prom.push(this.dailyInfo());
         if (!this.da) prom.push(this.deadass());
+        if (!this.events) prom.push(this.actCalendar());
         // if (!this.hz) prom.push(this.hollowZero());
         await Promise.all(prom);
 
@@ -515,6 +592,7 @@ export class ZzzClient extends HoyoClient {
         if (!this.signIn) throw new Error('signIn is undefined');
         if (!this.cn) throw new Error('cn is undefined');
         if (!this.da) throw new Error('da is undefined');
+        if (!this.events) throw new Error('events is undefined');
         // if (!this.hz) throw new Error('hz is undefined');
 
         let timers = [];
@@ -562,9 +640,9 @@ export class ZzzClient extends HoyoClient {
         })
         timers.push({
             name: "ZZZ Critical Node",
-            current: this.cn.s_ranks.cur,
-            max: this.cn.s_ranks.max,
-            done: this.cn.s_ranks.cur == this.cn.s_ranks.max,
+            current: this.cn.score,
+            max: 100_000,
+            done: this.cn.score >= 100_000,
             recovery_time: this.cn.recovery_time
         })
         timers.push({
@@ -574,12 +652,17 @@ export class ZzzClient extends HoyoClient {
             done: this.da.stars.cur == this.da.stars.max,
             recovery_time: this.da.recovery_time
         })
-        timers.push({
-            name: "ZZZ Omincoins",
-            current: this.bc.omnicoins.current,
-            max: this.bc.omnicoins.max,
-            done: this.bc.omnicoins.current == this.bc.omnicoins.max,
-            recovery_time: this.bc.omnicoins.recovery_time
+        let now = Math.floor(Date.now() / 1000);
+        this.events.filter(event => {
+            return now > event.start_time;
+        }).forEach(event => {
+            timers.push({
+                name: `ZZZ ${event.name}`,
+                current: event.current,
+                max: event.max,
+                done: event.done,
+                recovery_time: event.recovery_time
+            })
         })
         return timers;
     }
@@ -591,7 +674,7 @@ export class ZzzClient extends HoyoClient {
                 level: number,
                 rank: number,
                 hollow_icon_path: string,
-                weapon: {
+                weapon?: {
                     name: string,
                     star: number,
                     level: number
@@ -608,10 +691,14 @@ export class ZzzClient extends HoyoClient {
                     rarity: string,
                     main_properties: {
                         property_name: string,
+                        property_id: number,
+                        level: number,
                         base: string
                     }[],
                     properties: {
                         property_name: string,
+                        property_id: number,
+                        level: number,
                         base: string
                     }[],
                     equip_suit: {
@@ -619,30 +706,40 @@ export class ZzzClient extends HoyoClient {
                         desc2: string,
                         name: string,
                         own: number
-                    }
+                    },
+                    equipment_type: number
                 }[]
             }[]
         } = await hoyoRequest(this.root_url + `avatar/info?id_list[]=${char_id}&need_wiki=false&server=prod_gf_us&role_id=${this.uid}`, this.cookie);
         if (response.avatar_list.length < 1) return null;
         const char = response.avatar_list[0];
+        
+        let cdf = null;
+        let path = `./data/hoyo/zzz/cdfs/${char.name_mi18n}.json`
+        if (fs.existsSync(path)) {
+            cdf = ZzzClient.loadCharacterCdf(path);
+        }
         return {
             name: char.name_mi18n,
             image: char.hollow_icon_path,
             w_engine: {
-                name: char.weapon.name,
-                level: char.weapon.level
+                name: char.weapon?.name,
+                level: char.weapon?.level
             },
             stats: char.properties.map(prop => {return {name: prop.property_name, value: prop.final}}),
             disk_drives: char.equip.map(dd => {
-                return {
+                const scores = cdf ? cdf.getCdf(dd.equipment_type - 1, dd) : undefined;
+                let this_dd = {
                     name: dd.name,
                     level: dd.level,
                     main_stat: {
                         name: dd.main_properties[0].property_name,
                         value: dd.main_properties[0].base
                     },
-                    sub_stats: dd.properties.map(prop => {return {name: prop.property_name, value: prop.base}})
+                    sub_stats: dd.properties.map(prop => {return {name: prop.property_name, value: prop.base}}),
+                    ...(scores !== undefined && { cost: scores.cost, score: scores.score })
                 }
+                return this_dd;
             })
         };
     }
@@ -700,16 +797,15 @@ export interface ZzzBattleChronicle {
     };
 }
 export interface ZzzCriticalNode {
-    s_ranks: {
-        cur: number;
-        max: number;
-    };
+    score: number;
+    top?: number;
     recovery_time: number;
-    floors: {
-        name: string;
-        rating: string;
-        teams: (ZzzTeam & { time: number })[];
-    }[];
+    rating?: string;
+    nodes?: {
+		score: number,
+        buff: string;
+        team: ZzzTeam;
+    }[]
 }
 export interface ZzzDeadlyAssault {
     stars: {

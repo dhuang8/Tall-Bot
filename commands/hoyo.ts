@@ -60,7 +60,7 @@ async function createTimerEmbed(user_id: string) {
         .setTitle('Hoyo Timers')
         .setTimestamp();
     let desc = timers.filter(timer => !timer.done).sort((a, b) => {
-        return a.recovery_time - b.recovery_time;
+        return a.recovery_time - b.recovery_time || a.name.localeCompare(b.name);
     }).map(timer => {
         if (timer.max > 1)
             return `**${timer.name}** ${timer.current}/${timer.max} <t:${timer.recovery_time}:R>`

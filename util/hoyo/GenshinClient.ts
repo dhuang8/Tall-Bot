@@ -30,9 +30,9 @@ async function getCharNameFromId(id: number): Promise<string> {
 }
 
 async function updateCharMap() {
-    let body = await request("https://api.hakush.in/gi/data/character.json") as { [key: string]: { EN: string } };
+    let body = await request("https://api.lunaris.moe/data/latest/charlist.json") as { [key: string]: { enName: string } };
     Object.entries(body).forEach(entry => {
-        genshinCharMap[parseInt(entry[0])] = entry[1].EN;
+        genshinCharMap[parseInt(entry[0])] = entry[1].enName;
     })
 }
 

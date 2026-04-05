@@ -19,9 +19,9 @@ async function getNameFromId(id: number): Promise<string> {
 }
 
 async function updateCharMap() {
-    let body = await request("https://api.hakush.in/hsr/data/character.json");
-    Object.entries(body).forEach(([id, data]) => {
-        hsrCharMap[parseInt(id)] = (data as { en: string })['en'];
+    let body = await request("https://sr.yatta.moe/api/v2/EN/avatar");
+    Object.entries(body.data.items).forEach(([id, data]) => {
+        hsrCharMap[parseInt(id)] = (data as { name: string })['name'];
     })
     hsrCharMap[8001] = hsrCharMap[8002] = "Trailblazer (Physical)";
     hsrCharMap[8003] = hsrCharMap[8004] = "Trailblazer (Fire)";

@@ -16,18 +16,26 @@ let zzzCharNameToId: { [key: string]: number; } = {};
 let zzzBangbooMap: { [key: number]: string; } = {};
 
 async function updateCharMap() {
-    const body = await request("https://api.hakush.in/zzz/data/character.json") as { [key: string]: { EN: string } };
-    Object.entries(body).forEach(entry => {
-        zzzCharIdToName[parseInt(entry[0])] = entry[1].EN
-        zzzCharNameToId[entry[1].EN] = parseInt(entry[0])
-    })
+    const [avatarsData, locsData] = await Promise.all([
+        request("https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/zzz/avatars.json"),
+        request("https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/zzz/locs.json")
+    ]);
+    const avatars = typeof avatarsData === 'string' ? JSON.parse(avatarsData) : avatarsData;
+    const locs = typeof locsData === 'string' ? JSON.parse(locsData) : locsData;
+
+    Object.entries(avatars).forEach(([id, avatar]: [string, any]) => {
+        const enName = avatar.Name;
+        const localizedName = locs.en[enName] ?? enName;
+        zzzCharIdToName[parseInt(id)] = localizedName;
+        zzzCharNameToId[localizedName] = parseInt(id);
+    });
 }
 
 async function updateBangbooMap() {
-    const body = await request("https://api.hakush.in/zzz/data/bangboo.json") as { [key: string]: { EN: string } };
-    Object.entries(body).forEach(entry => {
-        zzzBangbooMap[parseInt(entry[0])] = entry[1].EN
-    })
+    // const body = await request("https://api.hakush.in/zzz/data/bangboo.json") as { [key: string]: { EN: string } };
+    // Object.entries(body).forEach(entry => {
+    //     zzzBangbooMap[parseInt(entry[0])] = entry[1].EN
+    // })
 }
 
 async function getCharNameFromId(id: number) {

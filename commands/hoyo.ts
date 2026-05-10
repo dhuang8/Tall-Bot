@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction } from 'discord.js';
-import { GenshinClient} from '../util/hoyo/GenshinClient.js';
+import { GenshinClient} from '../util/hoyo/GenshinClient.ts';
 import { HoyoClient, Resource } from '../util/hoyo/HoyoClient.ts';
 import { ZzzClient } from '../util/hoyo/ZzzClient.ts';
 import { HsrClient } from '../util/hoyo/HsrClient.ts';

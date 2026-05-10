@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import sql from '../util/SQLite.js';
 import AlarmManager from '../util/alarm-manager.js';
-import { GenshinClient} from '../util/hoyo/GenshinClient.js';
+import { GenshinClient} from '../util/hoyo/GenshinClient.ts';
 import { escapeMarkdown } from '@discordjs/formatters';
 
 const slash = new SlashCommandBuilder()

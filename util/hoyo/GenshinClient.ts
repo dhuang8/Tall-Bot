@@ -30,7 +30,8 @@ async function getCharNameFromId(id: number): Promise<string> {
 }
 
 async function updateCharMap() {
-    let body = await request("https://api.lunaris.moe/data/latest/charlist.json") as { [key: string]: { enName: string } };
+    let version = await request("https://api.lunaris.moe/data/version.json") as { version: string };
+    let body = await request(`https://api.lunaris.moe/data/${version}/charlist.json`) as { [key: string]: { enName: string } };
     Object.entries(body).forEach(entry => {
         genshinCharMap[parseInt(entry[0])] = entry[1].enName;
     })

@@ -2,6 +2,7 @@
 import { Client, Events, GatewayIntentBits, Collection} from 'discord.js';
 import AlarmManager from './util/alarm-manager.js';
 import DiscordHelperClass from './util/discord-helper.js';
+import { getFixupXLinks } from './util/fixupx.js';
 import config from './config.json' with { type: "json" };
 import { readdirSync } from 'fs';
 // import { Player } from 'discord-player';
@@ -11,6 +12,7 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
         GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildVoiceStates
     ]
@@ -96,6 +98,28 @@ async function interactionReply(interaction, response, replied = false) {
 client.on(Events.Error, async (e) => {
     console.error("error event", e);
 })
+
+client.on(Events.MessageCreate, async (message) => {
+    if (message.author.bot) return;
+
+    const fixupLinks = getFixupXLinks(message.content);
+    if (fixupLinks.length === 0) return;
+
+    try {
+        await message.suppressEmbeds();
+    } catch (error) {
+        console.error("Could not suppress X post embeds", error);
+    }
+
+    try {
+        await message.reply({
+            content: fixupLinks.join("\n"),
+            allowedMentions: { repliedUser: false }
+        });
+    } catch (error) {
+        console.error("Could not post fixupx links", error);
+    }
+});
 
 client.on(Events.InteractionCreate, async (interaction) => {
     try {

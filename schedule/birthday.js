@@ -8,8 +8,16 @@ export default class birthdayschedule {
             console.log('checking birthdays');
             let users = sql.prepare(`SELECT user_id, birthday_channel FROM users WHERE birthday LIKE ?`).all(`%${new Date().toISOString().substring(4,10)}`);
             users.forEach(async user=>{
-                //TODO fill and use birthday_channel
-                (await client.channels.fetch(user.birthday_channel))?.send(`Happy birthday <@${user.user_id}>`);
+                const channel = await client.channels.fetch(user.birthday_channel);
+                if (channel) {
+                    const guild = channel.guild;
+                    try {
+                        await guild.members.fetch(user.user_id);
+                        channel.send(`Happy birthday <@${user.user_id}>`);
+                    } catch {
+                        console.log(`User ${user.user_id} not found in guild ${guild.id}`);
+                    }
+                }
             })
         }, null, true, "UTC");
         job.start();

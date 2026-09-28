@@ -118,6 +118,7 @@ const slash = new SlashCommandBuilder()
             option.setName('char-name')
             .setDescription('character name')
             .setRequired(false)
+            .setAutocomplete(true)
         )
     )
     .addSubcommand(subcommand => 
@@ -189,6 +190,9 @@ function createListFromAvatarList(avatars) {
 function calcScore(name, relic) {
     const include_main_stat = true;
     let slot = parseInt(relic.id % 10) - 1;
+    if (hsr_stats.weights[name] == null) {
+        return "";
+    }
     // weights = [["AttackAddedRatio", 4, 2], ...] where 4 is value of a high roll substat and 2 is points per substat
     let weights = Object.entries(hsr_stats.weights[name]).sort((a,b) => {
         return b[1] - a[1];
@@ -504,6 +508,22 @@ const buttonClick = async (interaction) => {
     }
 }
 
+const autocomplete = async (interaction) => {
+    switch (interaction.options.getSubcommand()) {
+        case "support-char": {
+            const focusedOption = interaction.options.getFocused(true);
+            if (focusedOption.name === 'char-name') {
+                const charNames = HsrClient.listCharacters();
+                // console.log("charNames", charNames);
+                return charNames.filter(name => name.toLowerCase().indexOf(focusedOption.value.toLowerCase()) > -1)
+                    .map(name => {
+                        return {name: name, value: name}
+                    }).slice(0,25);
+            }
+        }
+    }
+}
+
 export {
-    slash, execute, buttonClick
+    slash, execute, buttonClick, autocomplete
 };

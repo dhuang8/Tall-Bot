@@ -126,7 +126,7 @@ export class ZzzClient extends HoyoClient {
     constructor(user_id: string) {
         super({
             discord_id: user_id,
-            root_url: "https://sg-public-api.hoyolab.com/event/game_record_zzz/api/zzz/"
+            root_url: "https://sg-act-public-api.hoyolab.com/event/game_record_zzz/api/zzz/"
         })
     }
 
@@ -414,13 +414,35 @@ export class ZzzClient extends HoyoClient {
 					name: string
 				}[],
 				score: number,
-				star: 3,
-				total_star: 3
+				star: number,
+				total_star: number
 			}[],
 			rank_percent: number,
 			total_score: number,
-			total_star: number
-        } = await hoyoRequest(this.root_url + `mem_detail?region=prod_gf_us&uid=${this.uid}&schedule_type=${type}`, this.cookie);
+			total_star: number,
+            has_hard: boolean,
+            hard_list: {
+                score: number
+                star: number
+                total_star: number
+                boss: {
+                    name: string
+                }[],
+                buffer: {
+                    name: string
+                }[],
+                avatar_list: {
+                    id: number,
+                    level: number,
+                    rank: number
+                }[],
+                buddy: {
+                    id: number,
+                    level: number
+                }
+            }[],
+            hard_rank_percent: number,
+        } = await hoyoRequest(this.root_url + `hadal_mem_detail_v2?region=prod_gf_us&uid=${this.uid}&schedule_type=${type}`, this.cookie);
 		let end_time = response.end_time;
         let recovery_time = end_time ? new Date(end_time.year, end_time.month - 1, end_time.day, end_time.hour + 5, end_time.minute).getTime() / 1000 : timeOnNext(7*24*60*60*2, 9*60*60+8*24*60*60);
         const floors = await Promise.all(response.list.map(async node => {
@@ -451,6 +473,35 @@ export class ZzzClient extends HoyoClient {
 				buff
 			}
         }));
+        const hardFloors = response.hard_list ? await Promise.all(response.hard_list.map(async node => {
+			let boss = node.boss[0].name;
+			let bangboo = {
+				name: await getBangbooNameFromId(node.buddy.id),
+				level: node.buddy.level
+			}
+			let buff = node.buffer[0].name;
+			let chars = await Promise.all(node.avatar_list.map(async char => {
+				return {
+					level: char.level,
+					name: await getCharNameFromId(char.id),
+					cinema: char.rank
+				}
+			}))
+			return {
+				score: node.score,
+				stars: {
+					cur: node.star,
+					max: node.total_star
+				},
+				boss,
+				team: {
+					chars,
+					bangboo
+				},
+				buff
+			}
+        })) : undefined;
+        const hardRankPercent = typeof response.hard_rank_percent === 'number' ? response.hard_rank_percent / 100 : undefined;
         this.da = {
 			stars: {
 				// total_star might be the max or cur idk
@@ -461,7 +512,8 @@ export class ZzzClient extends HoyoClient {
 			top: response.rank_percent/100,
 			recovery_time,
 			nodes: floors,
-
+			...(hardFloors !== undefined && { hard_list: hardFloors }),
+			...(hardRankPercent !== undefined && { hard_rank_percent: hardRankPercent }),
         };
         return this.da;
     }
@@ -833,6 +885,17 @@ export interface ZzzDeadlyAssault {
         buff: string;
         team: ZzzTeam;
     }[];
+    hard_list?: {
+		score: number,
+		stars: {
+			cur: number,
+			max: number
+		},
+        boss: string;
+        buff: string;
+        team: ZzzTeam;
+    }[];
+    hard_rank_percent?: number;
 }
 interface ZzzTeam {
 	chars: ZzzCharacter[],

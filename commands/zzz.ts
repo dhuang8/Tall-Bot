@@ -219,6 +219,22 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
                 lines.push(`Lv.${node.team.bangboo.level} ${node.team.bangboo.name}`);
                 embed.addFields({name: node.boss, value: lines.join("\n"), inline: true});
             })
+            if (da.hard_list) {
+                da.hard_list.forEach(node => {
+                    let lines = [];
+                    lines.push(`**Stars**: ${node.stars.cur}/${node.stars.max}`);
+                    lines.push(`**Score**: ${node.score}`);
+                    lines.push(`**Buff**: ${node.buff}`);
+                    if (da.hard_rank_percent !== undefined) {
+                        lines.push(`**Top** ${da.hard_rank_percent}%`);
+                    }
+                    node.team.chars.forEach(char => {
+                        lines.push(`Lv.${char.level} M${char.cinema} ${char.name}`);
+                    })
+                    lines.push(`Lv.${node.team.bangboo.level} ${node.team.bangboo.name}`);
+                    embed.addFields({name: node.boss, value: lines.join("\n"), inline: true});
+                })
+            }
             await defer;
             return {embeds: [embed]};
         } case 'help' : {

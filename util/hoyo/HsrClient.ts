@@ -21,7 +21,7 @@ async function getNameFromId(id: number): Promise<string> {
 async function updateCharMap() {
     let body = await request("https://sr.yatta.moe/api/v2/EN/avatar");
     Object.entries(body.data.items).forEach(([id, data]) => {
-        hsrCharMap[parseInt(id)] = (data as { name: string })['name'];
+        hsrCharMap[parseInt(id)] = (data as { name: string })['name'].replace(/<\/?unbreak>/gi, '');
     })
     hsrCharMap[8001] = hsrCharMap[8002] = "Trailblazer (Physical)";
     hsrCharMap[8003] = hsrCharMap[8004] = "Trailblazer (Fire)";
@@ -545,12 +545,17 @@ export class HsrClient extends HoyoClient {
         return getPosts(172534910, '');
     }
 
+    static listCharacters() {
+        return Object.values(hsrCharMap);
+    }
+
     static getCdf(name: string, slot:number,relic:{
         main_affix: { type: string },
         sub_affix: { type: string, count: number, step: number }[]
     }) {
         let cdf = null;
-        let path = `./data/hoyo/hsr/cdfs/${name}.json`
+        const safeName = name.replace(/[^a-zA-Z0-9 ]/g, '');
+        let path = `./data/hoyo/hsr/cdfs/${safeName}.json`
         if (fs.existsSync(path)) {
             // console.log("Loading CDF from", path);
             cdf = new characterCdf(path);

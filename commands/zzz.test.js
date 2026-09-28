@@ -10,3 +10,13 @@ test('zzz test', async () => {
     console.log(response);
     //expect(response.embeds.length).toBe(1);
 });
+
+test('zzz char', async () => {
+    const interaction = new mockInteraction()
+    interaction.user = {id: "1234567890"}
+    interaction.options.setSubcommand("char-build");
+    interaction.options.setString("name", "Velina");
+    let response = await execute(interaction);
+    console.log(response);
+    //expect(response.embeds.length).toBe(1);
+});

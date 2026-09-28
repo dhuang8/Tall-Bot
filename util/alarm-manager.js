@@ -37,31 +37,26 @@ class AlarmManager {
             this.timeout = null;
             this.loop();
         }
-        this.client.sendEmbedToLog(this.createAlarmEmbed());
     }
 
     async loop() {
         //TODO "multithread" alarms
         let user_alarm = this.getFirstAlarm();
-        this.client.sendToLog("user alarm", JSON.stringify(user_alarm));
         let cur_epoch = Date.now()/1000;
-        if (!user_alarm) {
-            this.client.sendToLog("inactive alarm");
-        } else if (user_alarm.next_time <= cur_epoch) {
-            this.client.sendToLog("alarm", `${user_alarm.alarm_id} - ${user_alarm.user_id}`);
+        if (user_alarm && user_alarm.next_time <= cur_epoch) {
             let alarm = this.alarms.get(user_alarm.alarm_id);
             await alarm.execute(user_alarm);
             this.timeout = setTimeout(()=> {
                 this.loop();
             }, 5000)
         } else {
-            let sleepMs = Math.max(5000, (user_alarm.next_time-cur_epoch) * 1000);
-            this.client.sendToLog(`next alarm in ${sleepMs/1000} seconds.`, `${user_alarm.alarm_id} - ${user_alarm.user_id}`);
+            let sleepMs = user_alarm
+                ? Math.max(5000, (user_alarm.next_time-cur_epoch) * 1000)
+                : 5000;
             this.timeout = setTimeout(()=> {
                 this.loop();
             }, sleepMs)
         }
-        this.client.sendEmbedToLog(this.createAlarmEmbed());
     }
 
     getFirstAlarm() {

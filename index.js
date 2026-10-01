@@ -63,7 +63,7 @@ for (const alarm_name of readdirSync('./alarms', { recursive: true }).filter(fil
     }
 };
 
-let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm_all", "hi3", "zzz", "hoyo"];
+let commandsList = ["hsr", "youtube", "genshin", "birthday", "image", "alarm_all", "hi3", "zzz", "hoyo", "reddit"];
 
 for (const commandName of commandsList) {
     try {
@@ -75,7 +75,7 @@ for (const commandName of commandsList) {
     }
 }
 
-let scheduleList = ["hsr_dailies", "genshin_login", "birthday", "hi3_dailies", "zzz_login"];
+let scheduleList = ["hsr_dailies", "genshin_login", "birthday", "hi3_dailies", "zzz_login", "reddit"];
 scheduleList.forEach(name => {
     import(`./schedule/${name}.js`).then(sche=>{
         new sche.default(client);

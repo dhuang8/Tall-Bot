@@ -101,4 +101,16 @@ if (sql.pragma("user_version")[0].user_version == 16) {
     sql.pragma("user_version = 17");
 }
 
+if (sql.pragma("user_version")[0].user_version == 17) {
+    sql.prepare(`CREATE TABLE reddit_subscriptions (
+        channel_id TEXT NOT NULL,
+        subreddit TEXT NOT NULL,
+        subscribed_at INTEGER NOT NULL,
+        last_post_id TEXT,
+        last_post_created_utc INTEGER,
+        PRIMARY KEY (channel_id, subreddit)
+    ) WITHOUT ROWID;`).run();
+    sql.pragma("user_version = 18");
+}
+
 export default sql;

@@ -241,7 +241,7 @@ export async function pollRedditSubscriptions(sql, client, fetchImpl = fetch, lo
                 const row = new ActionRowBuilder().addComponents(unsubscribeButton);
                 try {
                     await channel.send({
-                        content: `New post in r/${subreddit}: [${escapeMarkdown(post.title)}](${url})`,
+                        content: `New post in r/${escapeMarkdown(subreddit)}: [${escapeMarkdown(post.title)}](${url})`,
                         allowedMentions: { parse: [] },
                         components: [row]
                     });

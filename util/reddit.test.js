@@ -14,12 +14,12 @@ import {
 
 config.reddit.username = 'reddit_test_user';
 
-function post(id, createdUtc, title = `post ${id}`) {
+function post(id, createdUtc, title = `post ${id}`, permalink = `/r/test/comments/${id}/post/`) {
     return {
         id,
         name: `t3_${id}`,
         title,
-        permalink: `/r/test/comments/${id}/post/`,
+        permalink,
         created_utc: createdUtc
     };
 }
@@ -105,7 +105,7 @@ test('filters post history at the subscription cursor and orders oldest first', 
 test('persists each cursor only after its Discord delivery succeeds', async () => {
     const subscriptions = [{
         channel_id: 'channel-1',
-        subreddit: 'test',
+        subreddit: 'test_',
         subscribed_at: 0,
         last_post_id: 't3_old',
         last_post_created_utc: 10
@@ -123,16 +123,24 @@ test('persists each cursor only after its Discord delivery succeeds', async () =
     const client = {
         channels: { fetch: async () => ({ isTextBased: () => true, send }) }
     };
-    const fetchImpl = async () => listing([post('newest', 30), post('middle', 20), post('old', 10)]);
+    const fetchImpl = async () => listing([
+        post('newest', 30, 'post newest', '/r/test_/comments/newest/post/'),
+        post('middle', 20, 'Special Program Announcement', '/r/test_/comments/wwwwwww/special_program_announcement/'),
+        post('old', 10, 'post old', '/r/test_/comments/old/post/')
+    ]);
     const logError = jest.fn();
 
     await pollRedditSubscriptions(sql, client, fetchImpl, logError, async () => 'test-token');
 
     expect(send).toHaveBeenCalledTimes(2);
-    expect(savedCursors).toEqual([['t3_middle', 20, 'channel-1', 'test']]);
+    expect(send.mock.calls[0][0].content).toContain(
+        '[Special Program Announcement](https://www.vxreddit.com/r/test_/comments/wwwwwww/special_program_announcement/)'
+    );
+    expect(send.mock.calls[0][0].content).toContain('New post in r/test\\_:');
+    expect(savedCursors).toEqual([['t3_middle', 20, 'channel-1', 'test_']]);
     expect(logError).toHaveBeenCalledTimes(1);
     expect(send.mock.calls[0][0].components[0].toJSON().components[0].custom_id)
-        .toBe('reddit|unsubscribe|test');
+        .toBe('reddit|unsubscribe|test_');
 });
 
 test('subscription writes are idempotent and scoped to channel', () => {

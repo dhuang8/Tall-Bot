@@ -1,6 +1,6 @@
 import { escapeMarkdown } from '@discordjs/formatters';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import config from './config.js';
+import config from '../config.json' with { type: 'json' };
 
 let cachedAccessToken;
 let accessTokenExpiresAt = 0;
@@ -8,7 +8,7 @@ let cachedCredentialKey;
 
 function redditUserAgent() {
     const username = config.reddit?.username?.replace(/^u\//i, '');
-    if (!username) throw new Error('Set reddit.username in util/config.js for the Reddit Data API User-Agent.');
+    if (!username) throw new Error('Set reddit.username in config.json for the Reddit Data API User-Agent.');
     return `discord:TallBot:v14.0 (by /u/${username})`;
 }
 
@@ -16,7 +16,7 @@ export async function getRedditAccessToken(fetchImpl = fetch) {
     const clientId = config.reddit?.client_id;
     const clientSecret = config.reddit?.client_secret;
     if (!clientId || !clientSecret) {
-        throw new Error('Set reddit.client_id and reddit.client_secret in util/config.js to authenticate with Reddit.');
+        throw new Error('Set reddit.client_id and reddit.client_secret in config.json to authenticate with Reddit.');
     }
 
     const userAgent = redditUserAgent();

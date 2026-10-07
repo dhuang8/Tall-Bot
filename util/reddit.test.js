@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import config from './config.js';
+import config from '../config.json' with { type: 'json' };
 import {
     checkRedditCredentials,
     fetchPostsThroughCursors,
